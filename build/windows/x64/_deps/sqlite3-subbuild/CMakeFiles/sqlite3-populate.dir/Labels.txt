@@ -1,0 +1,14 @@
+# Target labels
+ sqlite3-populate
+# Source files and their labels
+C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/_deps/sqlite3-subbuild/CMakeFiles/sqlite3-populate
+C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/_deps/sqlite3-subbuild/CMakeFiles/84660655b3162d01d06f97231703a6d2/sqlite3-populate.rule
+C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/_deps/sqlite3-subbuild/CMakeFiles/80d723bbbf54c4f58fe90b4e10211bb9/sqlite3-populate-complete.rule
+C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/_deps/sqlite3-subbuild/CMakeFiles/276b383f8a60518ddd98c0e8073cfa5a/sqlite3-populate-build.rule
+C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/_deps/sqlite3-subbuild/CMakeFiles/276b383f8a60518ddd98c0e8073cfa5a/sqlite3-populate-configure.rule
+C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/_deps/sqlite3-subbuild/CMakeFiles/276b383f8a60518ddd98c0e8073cfa5a/sqlite3-populate-download.rule
+C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/_deps/sqlite3-subbuild/CMakeFiles/276b383f8a60518ddd98c0e8073cfa5a/sqlite3-populate-install.rule
+C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/_deps/sqlite3-subbuild/CMakeFiles/276b383f8a60518ddd98c0e8073cfa5a/sqlite3-populate-mkdir.rule
+C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/_deps/sqlite3-subbuild/CMakeFiles/276b383f8a60518ddd98c0e8073cfa5a/sqlite3-populate-patch.rule
+C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/_deps/sqlite3-subbuild/CMakeFiles/276b383f8a60518ddd98c0e8073cfa5a/sqlite3-populate-test.rule
+C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/_deps/sqlite3-subbuild/CMakeFiles/276b383f8a60518ddd98c0e8073cfa5a/sqlite3-populate-update.rule
