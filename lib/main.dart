@@ -9,7 +9,7 @@ import 'package:promt/core/theme/theme_viewmodel.dart';
 
 /// Ponto de entrada principal do sistema OdontoClinica Universitária.
 void main() async {
-  // Garante que o binding do Flutter esteja inicializado.
+  // Garante queo binding do Flutter esteja inicializado.
   WidgetsFlutterBinding.ensureInitialized();
 
   // Configuração global de Logs
