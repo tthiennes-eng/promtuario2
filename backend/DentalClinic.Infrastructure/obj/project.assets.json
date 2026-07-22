@@ -1256,11 +1256,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Thiago\\AndroidStudioProjects\\promtuario\\backend\\DentalClinic.Infrastructure\\DentalClinic.Infrastructure.csproj",
+      "projectUniqueName": "C:\\Users\\Thiago\\AndroidStudioProjects\\promtuario2\\backend\\DentalClinic.Infrastructure\\DentalClinic.Infrastructure.csproj",
       "projectName": "DentalClinic.Infrastructure",
-      "projectPath": "C:\\Users\\Thiago\\AndroidStudioProjects\\promtuario\\backend\\DentalClinic.Infrastructure\\DentalClinic.Infrastructure.csproj",
+      "projectPath": "C:\\Users\\Thiago\\AndroidStudioProjects\\promtuario2\\backend\\DentalClinic.Infrastructure\\DentalClinic.Infrastructure.csproj",
       "packagesPath": "C:\\Users\\Thiago\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Thiago\\AndroidStudioProjects\\promtuario\\backend\\DentalClinic.Infrastructure\\obj\\",
+      "outputPath": "C:\\Users\\Thiago\\AndroidStudioProjects\\promtuario2\\backend\\DentalClinic.Infrastructure\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Thiago\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -1276,8 +1276,8 @@
           "framework": "net9.0",
           "targetAlias": "net9.0",
           "projectReferences": {
-            "C:\\Users\\Thiago\\AndroidStudioProjects\\promtuario\\backend\\DentalClinic.Core\\DentalClinic.Core.csproj": {
-              "projectPath": "C:\\Users\\Thiago\\AndroidStudioProjects\\promtuario\\backend\\DentalClinic.Core\\DentalClinic.Core.csproj"
+            "C:\\Users\\Thiago\\AndroidStudioProjects\\promtuario2\\backend\\DentalClinic.Core\\DentalClinic.Core.csproj": {
+              "projectPath": "C:\\Users\\Thiago\\AndroidStudioProjects\\promtuario2\\backend\\DentalClinic.Core\\DentalClinic.Core.csproj"
             }
           }
         }

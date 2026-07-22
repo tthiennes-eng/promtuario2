@@ -22,7 +22,7 @@ public class WaitListRepository : IWaitListRepository
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<WaitListEntry>> GetActiveBySpecialtyAsync(DentalClinic.Core.Domain.ValueObjects.Specialty specialty)
+    public async Task<IEnumerable<WaitListEntry>> GetActiveBySpecialtyAsync(Specialty specialty)
     {
         return await _context.WaitListEntries
             .Include(w => w.Patient)

@@ -525,11 +525,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Thiago\\AndroidStudioProjects\\promtuario\\backend\\DentalClinic.Core\\DentalClinic.Core.csproj",
+      "projectUniqueName": "C:\\Users\\Thiago\\AndroidStudioProjects\\promtuario2\\backend\\DentalClinic.Core\\DentalClinic.Core.csproj",
       "projectName": "DentalClinic.Core",
-      "projectPath": "C:\\Users\\Thiago\\AndroidStudioProjects\\promtuario\\backend\\DentalClinic.Core\\DentalClinic.Core.csproj",
+      "projectPath": "C:\\Users\\Thiago\\AndroidStudioProjects\\promtuario2\\backend\\DentalClinic.Core\\DentalClinic.Core.csproj",
       "packagesPath": "C:\\Users\\Thiago\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Thiago\\AndroidStudioProjects\\promtuario\\backend\\DentalClinic.Core\\obj\\",
+      "outputPath": "C:\\Users\\Thiago\\AndroidStudioProjects\\promtuario2\\backend\\DentalClinic.Core\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Thiago\\AppData\\Roaming\\NuGet\\NuGet.Config"

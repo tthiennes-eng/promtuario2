@@ -1,4 +1,4 @@
-using DentalClinic.Core.Domain.Entities; // Ajuste este namespace se sua entidade estiver em outro lugar dentro do Core
+using DentalClinic.Core.Domain.Entities;
 using System.Linq.Expressions;
 
 namespace DentalClinic.Core.Domain.Repositories
@@ -8,7 +8,7 @@ namespace DentalClinic.Core.Domain.Repositories
         Task<LogAuditoria> CreateAsync(LogAuditoria log);
         Task<IEnumerable<LogAuditoria>> GetAllAsync();
         Task<IEnumerable<LogAuditoria>> FindAsync(Expression<Func<LogAuditoria, bool>> predicate);
-        Task<LogAuditoria?> GetByIdAsync(int id);
+        Task<LogAuditoria?> GetByIdAsync(Guid id);
         Task<int> SaveChangesAsync();
     }
 }

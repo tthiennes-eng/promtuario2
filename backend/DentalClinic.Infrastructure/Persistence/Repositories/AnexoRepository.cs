@@ -23,7 +23,7 @@ public class AnexoRepository : IAnexoRepository
             .FirstOrDefaultAsync(a => a.Id == id);
     }
 
-    public async Task<IEnumerable<Anexo>> GetByPacienteIdAsync(int pacienteId)
+    public async Task<IEnumerable<Anexo>> GetByPacienteIdAsync(Guid pacienteId)
     {
         return await _context.Anexos
             .Where(a => a.PacienteId == pacienteId)

@@ -38,7 +38,7 @@ public class LogAuditoriaRepository : ILogAuditoriaRepository
             .ToListAsync();
     }
 
-    public async Task<LogAuditoria?> GetByIdAsync(int id)
+    public async Task<LogAuditoria?> GetByIdAsync(Guid id)
     {
         return await _context.Set<LogAuditoria>()
             .FirstOrDefaultAsync(l => l.Id == id);

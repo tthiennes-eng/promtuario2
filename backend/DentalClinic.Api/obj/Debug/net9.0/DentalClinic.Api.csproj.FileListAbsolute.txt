@@ -66,3 +66,6 @@ C:\Users\Thiago\AndroidStudioProjects\promtuario\backend\DentalClinic.Api\obj\De
 C:\Users\Thiago\AndroidStudioProjects\promtuario\backend\DentalClinic.Api\obj\Debug\net9.0\DentalClinic.Api.pdb
 C:\Users\Thiago\AndroidStudioProjects\promtuario\backend\DentalClinic.Api\obj\Debug\net9.0\DentalClinic.Api.genruntimeconfig.cache
 C:\Users\Thiago\AndroidStudioProjects\promtuario\backend\DentalClinic.Api\obj\Debug\net9.0\ref\DentalClinic.Api.dll
+C:\Users\Thiago\AndroidStudioProjects\promtuario2\backend\DentalClinic.Api\obj\Debug\net9.0\DentalClinic.Api.dll
+C:\Users\Thiago\AndroidStudioProjects\promtuario2\backend\DentalClinic.Api\obj\Debug\net9.0\refint\DentalClinic.Api.dll
+C:\Users\Thiago\AndroidStudioProjects\promtuario2\backend\DentalClinic.Api\obj\Debug\net9.0\DentalClinic.Api.pdb

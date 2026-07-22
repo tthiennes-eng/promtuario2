@@ -39,4 +39,5 @@ public class Patient : Entity
     // Relacionamentos
     public ICollection<Appointment>? Appointments { get; set; }
     public ICollection<Evolution>? Evolutions { get; set; }
+    public ICollection<Anexo>? Anexos { get; set; }
 }
