@@ -7,7 +7,7 @@ import 'package:promt/core/router/app_router.dart';
 import 'package:promt/core/theme/app_theme.dart';
 import 'package:promt/core/theme/theme_viewmodel.dart';
 
-/// Ponto de entrada principal do sistema OdontoClinica Universitária.
+/// Ponto de entrada principaldo sistema OdontoClinica Universitária.
 void main() async {
   // Garante que o binding do Flutter esteja inicializado.
   WidgetsFlutterBinding.ensureInitialized();
