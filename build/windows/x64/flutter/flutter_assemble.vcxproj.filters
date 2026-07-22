@@ -1,20 +1,20 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\CMakeFiles\34ab29db4aa3cf0b7a2b33989a6e87fa\flutter_windows.dll.rule">
+    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\CMakeFiles\53f4d77bb64ead4535b5a3dfea6949ea\flutter_windows.dll.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\CMakeFiles\6768c49d558a7aa36b927e793d41ae5d\flutter_assemble.rule">
+    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\CMakeFiles\83663ece8dfe6a5e0b30a033de079035\flutter_assemble.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\CMakeLists.txt" />
+    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\flutter\CMakeFiles\flutter_assemble" />
+    <None Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\flutter\CMakeFiles\flutter_assemble" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="CMake Rules">
-      <UniqueIdentifier>{124AA140-963E-389F-B641-670356065ED0}</UniqueIdentifier>
+      <UniqueIdentifier>{6A29D1A7-AD8D-383A-8E7C-AEAD791CE10F}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

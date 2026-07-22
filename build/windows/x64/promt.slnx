@@ -6,7 +6,7 @@
 		<BuildType Name="Release"/>
 		<Platform Name="x64"/>
 	</Configurations>
-	<Project Path="ALL_BUILD.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="8895c7c3-b3ac-340a-aa4b-48b6464a0524" DefaultStartup="true">
+	<Project Path="ALL_BUILD.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="f30ab3c3-ab1e-38fb-a7ff-5f4a707146d4" DefaultStartup="true">
 		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 		<BuildDependency Project="plugins/file_selector_windows/file_selector_windows_plugin.vcxproj"/>
 		<BuildDependency Project="plugins/flutter_secure_storage_windows/flutter_secure_storage_windows_plugin.vcxproj"/>
@@ -16,33 +16,33 @@
 		<BuildDependency Project="plugins/sqlite3_flutter_libs/sqlite3.vcxproj"/>
 		<BuildDependency Project="plugins/sqlite3_flutter_libs/sqlite3_flutter_libs_plugin.vcxproj"/>
 	</Project>
-	<Project Path="INSTALL.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="93409289-322c-355f-bdae-9d0fd8a8d8f5">
+	<Project Path="INSTALL.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="ed3d32ee-7977-37a4-a948-903e8fb3b9c3">
 		<BuildDependency Project="ALL_BUILD.vcxproj"/>
 		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 	</Project>
-	<Project Path="ZERO_CHECK.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="7234397e-ee53-3c55-aaee-19bb9b0990e6"/>
-	<Project Path="plugins/file_selector_windows/file_selector_windows_plugin.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="fe0764aa-6a8e-3a94-9226-6945bd31a03a">
+	<Project Path="ZERO_CHECK.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="969181e9-fbe6-34e3-ad06-e58b5134c795"/>
+	<Project Path="plugins/file_selector_windows/file_selector_windows_plugin.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="9c07c971-99c0-361c-a387-f05d66dc604b">
 		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 		<BuildDependency Project="flutter/flutter_assemble.vcxproj"/>
 		<BuildDependency Project="flutter/flutter_wrapper_plugin.vcxproj"/>
 	</Project>
-	<Project Path="flutter/flutter_assemble.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="4614ca3a-52ec-31c2-aca1-1afb66c94056">
+	<Project Path="flutter/flutter_assemble.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="422d1c2c-73fb-3fea-89cb-a0ee9dc0c81e">
 		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 	</Project>
-	<Project Path="plugins/flutter_secure_storage_windows/flutter_secure_storage_windows_plugin.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="160827c8-b22b-383b-a32c-ef2b08e4e088">
+	<Project Path="plugins/flutter_secure_storage_windows/flutter_secure_storage_windows_plugin.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="dda24187-bbcb-3a93-a84c-4feeb523125a">
 		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 		<BuildDependency Project="flutter/flutter_assemble.vcxproj"/>
 		<BuildDependency Project="flutter/flutter_wrapper_plugin.vcxproj"/>
 	</Project>
-	<Project Path="flutter/flutter_wrapper_app.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="6392f70b-8917-3f35-afd6-9c7ae0a2b7c2">
+	<Project Path="flutter/flutter_wrapper_app.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="1d785805-1fe3-38a1-9928-4a7952391778">
 		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 		<BuildDependency Project="flutter/flutter_assemble.vcxproj"/>
 	</Project>
-	<Project Path="flutter/flutter_wrapper_plugin.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="4eabd3e7-d70d-36d6-afbd-0cf57414e83b">
+	<Project Path="flutter/flutter_wrapper_plugin.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="acc80028-06af-3e2c-a57d-f304d46a42e7">
 		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 		<BuildDependency Project="flutter/flutter_assemble.vcxproj"/>
 	</Project>
-	<Project Path="runner/promt.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="a061f737-3728-3ffa-a824-1cdedcd89f9c">
+	<Project Path="runner/promt.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="60a78d82-399e-3d02-b8bb-8bae58328e58">
 		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 		<BuildDependency Project="plugins/file_selector_windows/file_selector_windows_plugin.vcxproj"/>
 		<BuildDependency Project="flutter/flutter_assemble.vcxproj"/>
@@ -50,10 +50,10 @@
 		<BuildDependency Project="flutter/flutter_wrapper_app.vcxproj"/>
 		<BuildDependency Project="plugins/sqlite3_flutter_libs/sqlite3_flutter_libs_plugin.vcxproj"/>
 	</Project>
-	<Project Path="plugins/sqlite3_flutter_libs/sqlite3.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="d68ace72-415b-376b-80a8-61381c5591e0">
+	<Project Path="plugins/sqlite3_flutter_libs/sqlite3.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="15193b26-d6b2-3377-856c-c13f45cc1a31">
 		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 	</Project>
-	<Project Path="plugins/sqlite3_flutter_libs/sqlite3_flutter_libs_plugin.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="44e05572-4608-3f4d-8c47-f57edad26543">
+	<Project Path="plugins/sqlite3_flutter_libs/sqlite3_flutter_libs_plugin.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="d23b1aa3-f8fc-3751-887a-5576726e7fce">
 		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 		<BuildDependency Project="flutter/flutter_assemble.vcxproj"/>
 		<BuildDependency Project="flutter/flutter_wrapper_plugin.vcxproj"/>

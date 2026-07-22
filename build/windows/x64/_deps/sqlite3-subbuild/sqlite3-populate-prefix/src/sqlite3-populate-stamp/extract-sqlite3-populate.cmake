@@ -5,8 +5,8 @@ cmake_minimum_required(VERSION ${CMAKE_VERSION}) # this file comes with cmake
 
 # Make file names absolute:
 #
-get_filename_component(filename "C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/_deps/sqlite3-subbuild/sqlite3-populate-prefix/src/sqlite-autoconf-3520000.tar.gz" ABSOLUTE)
-get_filename_component(directory "C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/_deps/sqlite3-src" ABSOLUTE)
+get_filename_component(filename "C:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64/_deps/sqlite3-subbuild/sqlite3-populate-prefix/src/sqlite-autoconf-3520000.tar.gz" ABSOLUTE)
+get_filename_component(directory "C:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64/_deps/sqlite3-src" ABSOLUTE)
 
 message(VERBOSE "extracting...
      src='${filename}'

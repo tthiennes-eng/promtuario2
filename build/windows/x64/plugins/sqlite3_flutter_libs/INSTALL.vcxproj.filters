@@ -1,13 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\CMakeFiles\58961089c6c170bca669bdce3d6d934b\INSTALL_force.rule">
+    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\CMakeFiles\386cccdf6d1f2cd658f89f0817c86573\INSTALL_force.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="CMake Rules">
-      <UniqueIdentifier>{124AA140-963E-389F-B641-670356065ED0}</UniqueIdentifier>
+      <UniqueIdentifier>{6A29D1A7-AD8D-383A-8E7C-AEAD791CE10F}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

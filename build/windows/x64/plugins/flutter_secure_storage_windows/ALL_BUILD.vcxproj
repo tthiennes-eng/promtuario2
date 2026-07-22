@@ -21,7 +21,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{8895C7C3-B3AC-340A-AA4B-48B6464A0524}</ProjectGuid>
+    <ProjectGuid>{F30AB3C3-AB1E-38FB-A7FF-5F4A707146D4}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
     <Platform>x64</Platform>
@@ -88,11 +88,11 @@
     </Midl>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\.plugin_symlinks\flutter_secure_storage_windows\windows\CMakeLists.txt">
+    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\.plugin_symlinks\flutter_secure_storage_windows\windows\CMakeLists.txt">
       <UseUtf8Encoding>Always</UseUtf8Encoding>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/Thiago/AndroidStudioProjects/promtuario/windows/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_windows/windows/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/Thiago/AndroidStudioProjects/promtuario2/windows/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_windows/windows/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
-"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/Thiago/AndroidStudioProjects/promtuario/windows -BC:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64 --check-stamp-file C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/plugins/flutter_secure_storage_windows/CMakeFiles/generate.stamp
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/Thiago/AndroidStudioProjects/promtuario2/windows -BC:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64 --check-stamp-file C:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64/plugins/flutter_secure_storage_windows/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -101,11 +101,11 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\plugins\flutter_secure_storage_windows\CMakeFiles\generate.stamp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\plugins\flutter_secure_storage_windows\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">Building Custom Rule C:/Users/Thiago/AndroidStudioProjects/promtuario/windows/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_windows/windows/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">Building Custom Rule C:/Users/Thiago/AndroidStudioProjects/promtuario2/windows/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_windows/windows/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">setlocal
-"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/Thiago/AndroidStudioProjects/promtuario/windows -BC:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64 --check-stamp-file C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/plugins/flutter_secure_storage_windows/CMakeFiles/generate.stamp
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/Thiago/AndroidStudioProjects/promtuario2/windows -BC:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64 --check-stamp-file C:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64/plugins/flutter_secure_storage_windows/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -114,11 +114,11 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\plugins\flutter_secure_storage_windows\CMakeFiles\generate.stamp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\plugins\flutter_secure_storage_windows\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">false</LinkObjects>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/Thiago/AndroidStudioProjects/promtuario/windows/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_windows/windows/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/Thiago/AndroidStudioProjects/promtuario2/windows/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_windows/windows/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
-"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/Thiago/AndroidStudioProjects/promtuario/windows -BC:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64 --check-stamp-file C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/plugins/flutter_secure_storage_windows/CMakeFiles/generate.stamp
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/Thiago/AndroidStudioProjects/promtuario2/windows -BC:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64 --check-stamp-file C:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64/plugins/flutter_secure_storage_windows/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -127,7 +127,7 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\plugins\flutter_secure_storage_windows\CMakeFiles\generate.stamp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\plugins\flutter_secure_storage_windows\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
     </CustomBuild>
   </ItemGroup>
@@ -135,14 +135,14 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <ProjectReference Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\ZERO_CHECK.vcxproj">
-      <Project>{7234397E-EE53-3C55-AAEE-19BB9B0990E6}</Project>
+    <ProjectReference Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\ZERO_CHECK.vcxproj">
+      <Project>{969181E9-FBE6-34E3-AD06-E58B5134C795}</Project>
       <Name>ZERO_CHECK</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </ProjectReference>
-    <ProjectReference Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\plugins\flutter_secure_storage_windows\flutter_secure_storage_windows_plugin.vcxproj">
-      <Project>{160827C8-B22B-383B-A32C-EF2B08E4E088}</Project>
+    <ProjectReference Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\plugins\flutter_secure_storage_windows\flutter_secure_storage_windows_plugin.vcxproj">
+      <Project>{DDA24187-BBCB-3A93-A84C-4FEEB523125A}</Project>
       <Name>flutter_secure_storage_windows_plugin</Name>
     </ProjectReference>
   </ItemGroup>

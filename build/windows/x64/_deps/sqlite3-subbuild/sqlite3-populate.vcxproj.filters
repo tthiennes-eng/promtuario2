@@ -1,44 +1,44 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\276b383f8a60518ddd98c0e8073cfa5a\sqlite3-populate-mkdir.rule">
+    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\658184d954ec19d0307f49d8c91f7db5\sqlite3-populate-mkdir.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\276b383f8a60518ddd98c0e8073cfa5a\sqlite3-populate-download.rule">
+    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\658184d954ec19d0307f49d8c91f7db5\sqlite3-populate-download.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\276b383f8a60518ddd98c0e8073cfa5a\sqlite3-populate-update.rule">
+    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\658184d954ec19d0307f49d8c91f7db5\sqlite3-populate-update.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\276b383f8a60518ddd98c0e8073cfa5a\sqlite3-populate-patch.rule">
+    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\658184d954ec19d0307f49d8c91f7db5\sqlite3-populate-patch.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\276b383f8a60518ddd98c0e8073cfa5a\sqlite3-populate-configure.rule">
+    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\658184d954ec19d0307f49d8c91f7db5\sqlite3-populate-configure.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\276b383f8a60518ddd98c0e8073cfa5a\sqlite3-populate-build.rule">
+    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\658184d954ec19d0307f49d8c91f7db5\sqlite3-populate-build.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\276b383f8a60518ddd98c0e8073cfa5a\sqlite3-populate-install.rule">
+    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\658184d954ec19d0307f49d8c91f7db5\sqlite3-populate-install.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\276b383f8a60518ddd98c0e8073cfa5a\sqlite3-populate-test.rule">
+    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\658184d954ec19d0307f49d8c91f7db5\sqlite3-populate-test.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\80d723bbbf54c4f58fe90b4e10211bb9\sqlite3-populate-complete.rule">
+    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\dc6989091ea3805505dd8df704bbc6a8\sqlite3-populate-complete.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\84660655b3162d01d06f97231703a6d2\sqlite3-populate.rule">
+    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\645276247c6a8ecb37331ae5f5537ee7\sqlite3-populate.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\_deps\sqlite3-subbuild\CMakeLists.txt" />
+    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\_deps\sqlite3-subbuild\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\sqlite3-populate" />
+    <None Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\_deps\sqlite3-subbuild\CMakeFiles\sqlite3-populate" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="CMake Rules">
-      <UniqueIdentifier>{AC4E4BED-9907-3E87-923F-1A3E20CDAD8E}</UniqueIdentifier>
+      <UniqueIdentifier>{3D50E5B2-1EEE-3D12-9DAF-7893EA1554BA}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

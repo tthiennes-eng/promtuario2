@@ -18,7 +18,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{FE0764AA-6A8E-3A94-9226-6945BD31A03A}</ProjectGuid>
+    <ProjectGuid>{9C07C971-99C0-361C-A387-F05D66DC604B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
     <Platform>x64</Platform>
@@ -50,19 +50,19 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\plugins\file_selector_windows\Debug\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\plugins\file_selector_windows\Debug\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">file_selector_windows_plugin.dir\Debug\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">file_selector_windows_plugin</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.dll</TargetExt>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateManifest>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\plugins\file_selector_windows\Profile\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\plugins\file_selector_windows\Profile\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">file_selector_windows_plugin.dir\Profile\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">file_selector_windows_plugin</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">.dll</TargetExt>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">false</LinkIncremental>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">true</GenerateManifest>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\plugins\file_selector_windows\Release\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\plugins\file_selector_windows\Release\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">file_selector_windows_plugin.dir\Release\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">file_selector_windows_plugin</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.dll</TargetExt>
@@ -72,7 +72,7 @@
   <PropertyGroup />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral;C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral;C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <BufferSecurityCheck></BufferSecurityCheck>
@@ -101,10 +101,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;_HAS_EXCEPTIONS=0;FLUTTER_PLUGIN_IMPL;_HAS_EXCEPTIONS=1;UNICODE;_UNICODE;CMAKE_INTDIR=\"Debug\";file_selector_windows_plugin_EXPORTS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral;C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral;C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral;C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral;C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -112,16 +112,16 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>..\..\flutter\Debug\flutter_wrapper_plugin.lib;C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\flutter_windows.dll.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>..\..\flutter\Debug\flutter_wrapper_plugin.lib;C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\flutter_windows.dll.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <DataExecutionPrevention></DataExecutionPrevention>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImageHasSafeExceptionHandlers></ImageHasSafeExceptionHandlers>
-      <ImportLibrary>C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/plugins/file_selector_windows/Debug/file_selector_windows_plugin.lib</ImportLibrary>
+      <ImportLibrary>C:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64/plugins/file_selector_windows/Debug/file_selector_windows_plugin.lib</ImportLibrary>
       <LinkErrorReporting></LinkErrorReporting>
-      <ProgramDataBaseFile>C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/plugins/file_selector_windows/Debug/file_selector_windows_plugin.pdb</ProgramDataBaseFile>
+      <ProgramDataBaseFile>C:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64/plugins/file_selector_windows/Debug/file_selector_windows_plugin.pdb</ProgramDataBaseFile>
       <RandomizedBaseAddress></RandomizedBaseAddress>
       <SubSystem>Console</SubSystem>
     </Link>
@@ -131,7 +131,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral;C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral;C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck></BufferSecurityCheck>
@@ -161,10 +161,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_HAS_EXCEPTIONS=0;FLUTTER_PLUGIN_IMPL;_HAS_EXCEPTIONS=1;UNICODE;_UNICODE;CMAKE_INTDIR=\"Profile\";file_selector_windows_plugin_EXPORTS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral;C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral;C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral;C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral;C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -172,16 +172,16 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>..\..\flutter\Profile\flutter_wrapper_plugin.lib;C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\flutter_windows.dll.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>..\..\flutter\Profile\flutter_wrapper_plugin.lib;C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\flutter_windows.dll.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <DataExecutionPrevention></DataExecutionPrevention>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImageHasSafeExceptionHandlers></ImageHasSafeExceptionHandlers>
-      <ImportLibrary>C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/plugins/file_selector_windows/Profile/file_selector_windows_plugin.lib</ImportLibrary>
+      <ImportLibrary>C:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64/plugins/file_selector_windows/Profile/file_selector_windows_plugin.lib</ImportLibrary>
       <LinkErrorReporting></LinkErrorReporting>
-      <ProgramDataBaseFile>C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/plugins/file_selector_windows/Profile/file_selector_windows_plugin.pdb</ProgramDataBaseFile>
+      <ProgramDataBaseFile>C:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64/plugins/file_selector_windows/Profile/file_selector_windows_plugin.pdb</ProgramDataBaseFile>
       <RandomizedBaseAddress></RandomizedBaseAddress>
       <SubSystem>Console</SubSystem>
     </Link>
@@ -191,7 +191,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral;C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral;C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck></BufferSecurityCheck>
@@ -221,10 +221,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_HAS_EXCEPTIONS=0;FLUTTER_PLUGIN_IMPL;_HAS_EXCEPTIONS=1;UNICODE;_UNICODE;CMAKE_INTDIR=\"Release\";file_selector_windows_plugin_EXPORTS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral;C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral;C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral;C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral;C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\cpp_client_wrapper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -232,16 +232,16 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>..\..\flutter\Release\flutter_wrapper_plugin.lib;C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\flutter_windows.dll.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>..\..\flutter\Release\flutter_wrapper_plugin.lib;C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\flutter_windows.dll.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <DataExecutionPrevention></DataExecutionPrevention>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImageHasSafeExceptionHandlers></ImageHasSafeExceptionHandlers>
-      <ImportLibrary>C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/plugins/file_selector_windows/Release/file_selector_windows_plugin.lib</ImportLibrary>
+      <ImportLibrary>C:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64/plugins/file_selector_windows/Release/file_selector_windows_plugin.lib</ImportLibrary>
       <LinkErrorReporting></LinkErrorReporting>
-      <ProgramDataBaseFile>C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/plugins/file_selector_windows/Release/file_selector_windows_plugin.pdb</ProgramDataBaseFile>
+      <ProgramDataBaseFile>C:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64/plugins/file_selector_windows/Release/file_selector_windows_plugin.pdb</ProgramDataBaseFile>
       <RandomizedBaseAddress></RandomizedBaseAddress>
       <SubSystem>Console</SubSystem>
     </Link>
@@ -250,11 +250,11 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\.plugin_symlinks\file_selector_windows\windows\CMakeLists.txt">
+    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\.plugin_symlinks\file_selector_windows\windows\CMakeLists.txt">
       <UseUtf8Encoding>Always</UseUtf8Encoding>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/Thiago/AndroidStudioProjects/promtuario/windows/flutter/ephemeral/.plugin_symlinks/file_selector_windows/windows/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/Thiago/AndroidStudioProjects/promtuario2/windows/flutter/ephemeral/.plugin_symlinks/file_selector_windows/windows/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
-"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/Thiago/AndroidStudioProjects/promtuario/windows -BC:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64 --check-stamp-file C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/plugins/file_selector_windows/CMakeFiles/generate.stamp
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/Thiago/AndroidStudioProjects/promtuario2/windows -BC:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64 --check-stamp-file C:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64/plugins/file_selector_windows/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -263,11 +263,11 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\plugins\file_selector_windows\CMakeFiles\generate.stamp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\plugins\file_selector_windows\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">Building Custom Rule C:/Users/Thiago/AndroidStudioProjects/promtuario/windows/flutter/ephemeral/.plugin_symlinks/file_selector_windows/windows/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">Building Custom Rule C:/Users/Thiago/AndroidStudioProjects/promtuario2/windows/flutter/ephemeral/.plugin_symlinks/file_selector_windows/windows/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">setlocal
-"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/Thiago/AndroidStudioProjects/promtuario/windows -BC:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64 --check-stamp-file C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/plugins/file_selector_windows/CMakeFiles/generate.stamp
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/Thiago/AndroidStudioProjects/promtuario2/windows -BC:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64 --check-stamp-file C:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64/plugins/file_selector_windows/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -276,11 +276,11 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\plugins\file_selector_windows\CMakeFiles\generate.stamp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\plugins\file_selector_windows\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">false</LinkObjects>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/Thiago/AndroidStudioProjects/promtuario/windows/flutter/ephemeral/.plugin_symlinks/file_selector_windows/windows/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/Thiago/AndroidStudioProjects/promtuario2/windows/flutter/ephemeral/.plugin_symlinks/file_selector_windows/windows/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
-"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/Thiago/AndroidStudioProjects/promtuario/windows -BC:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64 --check-stamp-file C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/plugins/file_selector_windows/CMakeFiles/generate.stamp
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/Thiago/AndroidStudioProjects/promtuario2/windows -BC:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64 --check-stamp-file C:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64/plugins/file_selector_windows/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -289,38 +289,38 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\plugins\file_selector_windows\CMakeFiles\generate.stamp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\plugins\file_selector_windows\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\.plugin_symlinks\file_selector_windows\windows\file_selector_windows.cpp" />
-    <ClInclude Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\.plugin_symlinks\file_selector_windows\windows\include\file_selector_windows\file_selector_windows.h" />
-    <ClCompile Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\.plugin_symlinks\file_selector_windows\windows\file_dialog_controller.cpp" />
-    <ClInclude Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\.plugin_symlinks\file_selector_windows\windows\file_dialog_controller.h" />
-    <ClCompile Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\.plugin_symlinks\file_selector_windows\windows\file_selector_plugin.cpp" />
-    <ClInclude Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\.plugin_symlinks\file_selector_windows\windows\file_selector_plugin.h" />
-    <ClCompile Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\.plugin_symlinks\file_selector_windows\windows\messages.g.cpp" />
-    <ClInclude Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\.plugin_symlinks\file_selector_windows\windows\messages.g.h" />
-    <ClCompile Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\.plugin_symlinks\file_selector_windows\windows\string_utils.cpp" />
-    <ClInclude Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\.plugin_symlinks\file_selector_windows\windows\string_utils.h" />
+    <ClCompile Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\.plugin_symlinks\file_selector_windows\windows\file_selector_windows.cpp" />
+    <ClInclude Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\.plugin_symlinks\file_selector_windows\windows\include\file_selector_windows\file_selector_windows.h" />
+    <ClCompile Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\.plugin_symlinks\file_selector_windows\windows\file_dialog_controller.cpp" />
+    <ClInclude Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\.plugin_symlinks\file_selector_windows\windows\file_dialog_controller.h" />
+    <ClCompile Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\.plugin_symlinks\file_selector_windows\windows\file_selector_plugin.cpp" />
+    <ClInclude Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\.plugin_symlinks\file_selector_windows\windows\file_selector_plugin.h" />
+    <ClCompile Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\.plugin_symlinks\file_selector_windows\windows\messages.g.cpp" />
+    <ClInclude Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\.plugin_symlinks\file_selector_windows\windows\messages.g.h" />
+    <ClCompile Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\.plugin_symlinks\file_selector_windows\windows\string_utils.cpp" />
+    <ClInclude Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\.plugin_symlinks\file_selector_windows\windows\string_utils.h" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <ProjectReference Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\ZERO_CHECK.vcxproj">
-      <Project>{7234397E-EE53-3C55-AAEE-19BB9B0990E6}</Project>
+    <ProjectReference Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\ZERO_CHECK.vcxproj">
+      <Project>{969181E9-FBE6-34E3-AD06-E58B5134C795}</Project>
       <Name>ZERO_CHECK</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </ProjectReference>
-    <ProjectReference Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\flutter\flutter_assemble.vcxproj">
-      <Project>{4614CA3A-52EC-31C2-ACA1-1AFB66C94056}</Project>
+    <ProjectReference Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\flutter\flutter_assemble.vcxproj">
+      <Project>{422D1C2C-73FB-3FEA-89CB-A0EE9DC0C81E}</Project>
       <Name>flutter_assemble</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </ProjectReference>
-    <ProjectReference Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\flutter\flutter_wrapper_plugin.vcxproj">
-      <Project>{4EABD3E7-D70D-36D6-AFBD-0CF57414E83B}</Project>
+    <ProjectReference Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\flutter\flutter_wrapper_plugin.vcxproj">
+      <Project>{ACC80028-06AF-3E2C-A57D-F304D46A42E7}</Project>
       <Name>flutter_wrapper_plugin</Name>
     </ProjectReference>
   </ItemGroup>

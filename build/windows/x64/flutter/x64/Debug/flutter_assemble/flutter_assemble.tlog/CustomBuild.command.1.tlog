@@ -1,6 +1,6 @@
-^C:\USERS\THIAGO\ANDROIDSTUDIOPROJECTS\PROMTUARIO\BUILD\WINDOWS\X64\CMAKEFILES\34AB29DB4AA3CF0B7A2B33989A6E87FA\FLUTTER_WINDOWS.DLL.RULE
+^C:\USERS\THIAGO\ANDROIDSTUDIOPROJECTS\PROMTUARIO2\BUILD\WINDOWS\X64\CMAKEFILES\53F4D77BB64EAD4535B5A3DFEA6949EA\FLUTTER_WINDOWS.DLL.RULE
 setlocal
-"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E env FLUTTER_ROOT=C:\flutter\src\flutter PROJECT_DIR=C:\Users\Thiago\AndroidStudioProjects\promtuario FLUTTER_ROOT=C:\flutter\src\flutter FLUTTER_EPHEMERAL_DIR=C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral PROJECT_DIR=C:\Users\Thiago\AndroidStudioProjects\promtuario FLUTTER_TARGET=C:\Users\Thiago\AndroidStudioProjects\promtuario\lib\main.dart DART_DEFINES=Zmx1dHRlci5pbnNwZWN0b3Iuc3RydWN0dXJlZEVycm9ycz10cnVl,RkxVVFRFUl9WRVJTSU9OPTMuNDEuNg==,RkxVVFRFUl9DSEFOTkVMPXN0YWJsZQ==,RkxVVFRFUl9HSVRfVVJMPWh0dHBzOi8vZ2l0aHViLmNvbS9mbHV0dGVyL2ZsdXR0ZXIuZ2l0,RkxVVFRFUl9GUkFNRVdPUktfUkVWSVNJT049ZGI1MGUyMDE2OA==,RkxVVFRFUl9FTkdJTkVfUkVWSVNJT049NDI1Y2ZiNTRkMA==,RkxVVFRFUl9EQVJUX1ZFUlNJT049My4xMS40 DART_OBFUSCATION=false TRACK_WIDGET_CREATION=true TREE_SHAKE_ICONS=false PACKAGE_CONFIG=C:\Users\Thiago\AndroidStudioProjects\promtuario\.dart_tool\package_config.json C:/flutter/src/flutter/packages/flutter_tools/bin/tool_backend.bat windows-x64 Debug
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E env FLUTTER_ROOT=C:\flutter\src\flutter PROJECT_DIR=C:\Users\Thiago\AndroidStudioProjects\promtuario2 FLUTTER_ROOT=C:\flutter\src\flutter FLUTTER_EPHEMERAL_DIR=C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral PROJECT_DIR=C:\Users\Thiago\AndroidStudioProjects\promtuario2 FLUTTER_TARGET=C:\Users\Thiago\AndroidStudioProjects\promtuario2\lib\main.dart DART_DEFINES=RkxVVFRFUl9WRVJTSU9OPTMuNDEuNg==,RkxVVFRFUl9DSEFOTkVMPXN0YWJsZQ==,RkxVVFRFUl9HSVRfVVJMPWh0dHBzOi8vZ2l0aHViLmNvbS9mbHV0dGVyL2ZsdXR0ZXIuZ2l0,RkxVVFRFUl9GUkFNRVdPUktfUkVWSVNJT049ZGI1MGUyMDE2OA==,RkxVVFRFUl9FTkdJTkVfUkVWSVNJT049NDI1Y2ZiNTRkMA==,RkxVVFRFUl9EQVJUX1ZFUlNJT049My4xMS40 DART_OBFUSCATION=false TRACK_WIDGET_CREATION=true TREE_SHAKE_ICONS=false PACKAGE_CONFIG=C:\Users\Thiago\AndroidStudioProjects\promtuario2\.dart_tool\package_config.json C:/flutter/src/flutter/packages/flutter_tools/bin/tool_backend.bat windows-x64 Debug
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
@@ -8,7 +8,7 @@ endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd
-^C:\USERS\THIAGO\ANDROIDSTUDIOPROJECTS\PROMTUARIO\BUILD\WINDOWS\X64\CMAKEFILES\6768C49D558A7AA36B927E793D41AE5D\FLUTTER_ASSEMBLE.RULE
+^C:\USERS\THIAGO\ANDROIDSTUDIOPROJECTS\PROMTUARIO2\BUILD\WINDOWS\X64\CMAKEFILES\83663ECE8DFE6A5E0B30A033DE079035\FLUTTER_ASSEMBLE.RULE
 setlocal
 :cmEnd
 endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
@@ -16,9 +16,9 @@ endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd
-^C:\USERS\THIAGO\ANDROIDSTUDIOPROJECTS\PROMTUARIO\WINDOWS\FLUTTER\CMAKELISTS.TXT
+^C:\USERS\THIAGO\ANDROIDSTUDIOPROJECTS\PROMTUARIO2\WINDOWS\FLUTTER\CMAKELISTS.TXT
 setlocal
-"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/Thiago/AndroidStudioProjects/promtuario/windows -BC:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64 --check-stamp-file C:/Users/Thiago/AndroidStudioProjects/promtuario/build/windows/x64/flutter/CMakeFiles/generate.stamp
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/Thiago/AndroidStudioProjects/promtuario2/windows -BC:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64 --check-stamp-file C:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64/flutter/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone

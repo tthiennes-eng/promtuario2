@@ -18,7 +18,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{93409289-322C-355F-BDAE-9D0FD8A8D8F5}</ProjectGuid>
+    <ProjectGuid>{ED3D32EE-7977-37A4-A948-903E8FB3B9C3}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
     <Platform>x64</Platform>
@@ -100,7 +100,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\CMakeFiles\9b357d540013dcd64e87a1a66e0d16f1\INSTALL_force.rule">
+    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\CMakeFiles\53fe421e175f15cb45ea26b2d15d3abb\INSTALL_force.rule">
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BuildInParallel>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'"> </Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
@@ -113,7 +113,7 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\plugins\file_selector_windows\CMakeFiles\INSTALL_force</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\plugins\file_selector_windows\CMakeFiles\INSTALL_force</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
       <VerifyInputsAndOutputsExist Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</VerifyInputsAndOutputsExist>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">true</BuildInParallel>
@@ -128,7 +128,7 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\plugins\file_selector_windows\CMakeFiles\INSTALL_force</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\plugins\file_selector_windows\CMakeFiles\INSTALL_force</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">false</LinkObjects>
       <VerifyInputsAndOutputsExist Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">false</VerifyInputsAndOutputsExist>
       <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
@@ -143,21 +143,21 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\plugins\file_selector_windows\CMakeFiles\INSTALL_force</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\plugins\file_selector_windows\CMakeFiles\INSTALL_force</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
       <VerifyInputsAndOutputsExist Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</VerifyInputsAndOutputsExist>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <ProjectReference Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\ZERO_CHECK.vcxproj">
-      <Project>{7234397E-EE53-3C55-AAEE-19BB9B0990E6}</Project>
+    <ProjectReference Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\ZERO_CHECK.vcxproj">
+      <Project>{969181E9-FBE6-34E3-AD06-E58B5134C795}</Project>
       <Name>ZERO_CHECK</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </ProjectReference>
-    <ProjectReference Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\build\windows\x64\plugins\file_selector_windows\ALL_BUILD.vcxproj">
-      <Project>{8895C7C3-B3AC-340A-AA4B-48B6464A0524}</Project>
+    <ProjectReference Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\build\windows\x64\plugins\file_selector_windows\ALL_BUILD.vcxproj">
+      <Project>{F30AB3C3-AB1E-38FB-A7FF-5F4A707146D4}</Project>
       <Name>ALL_BUILD</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>

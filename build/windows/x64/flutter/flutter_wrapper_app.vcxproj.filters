@@ -1,28 +1,28 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\cpp_client_wrapper\core_implementations.cc">
+    <ClCompile Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\cpp_client_wrapper\core_implementations.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\cpp_client_wrapper\standard_codec.cc">
+    <ClCompile Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\cpp_client_wrapper\standard_codec.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\cpp_client_wrapper\flutter_engine.cc">
+    <ClCompile Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\cpp_client_wrapper\flutter_engine.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\ephemeral\cpp_client_wrapper\flutter_view_controller.cc">
+    <ClCompile Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\ephemeral\cpp_client_wrapper\flutter_view_controller.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario\windows\flutter\CMakeLists.txt" />
+    <CustomBuild Include="C:\Users\Thiago\AndroidStudioProjects\promtuario2\windows\flutter\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="CMake Rules">
-      <UniqueIdentifier>{124AA140-963E-389F-B641-670356065ED0}</UniqueIdentifier>
+      <UniqueIdentifier>{6A29D1A7-AD8D-383A-8E7C-AEAD791CE10F}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{D7B98AF2-1524-3254-A38F-EB5A2A1821F1}</UniqueIdentifier>
+      <UniqueIdentifier>{4D29D450-73B1-3BEB-92FA-AC880BEA4820}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
