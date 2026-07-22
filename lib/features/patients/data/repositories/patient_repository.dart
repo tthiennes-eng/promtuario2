@@ -4,7 +4,6 @@ import 'package:promt/core/database/local_database.dart' as drift_db;
 import 'package:promt/features/patients/domain/entities/patient.dart' as entity;
 import 'package:promt/features/patients/domain/repositories/i_patient_repository.dart';
 
-/// Implementação do Repositório de Pacientes.
 class PatientRepository implements IPatientRepository {
   final ApiClient _apiClient;
   final drift_db.AppDatabase _localDb;
@@ -19,13 +18,18 @@ class PatientRepository implements IPatientRepository {
         'search': query,
       });
 
-      final List<dynamic> data = response.data['items'];
-      final patients = data.map((json) => _mapJsonToEntity(json)).toList();
+      // Correção: A API retorna um objeto com o campo 'items'
+      final Map<String, dynamic> responseData = response.data;
+      final List<dynamic> items = responseData['items'] ?? [];
+      
+      final patients = items.map((json) => _mapJsonToEntity(json)).toList();
 
+      // Atualiza o cache local
       _updateLocalCache(patients);
 
       return patients;
     } catch (e) {
+      // Se a API falhar, recorre ao banco local
       return getLocalPatients();
     }
   }
@@ -38,16 +42,13 @@ class PatientRepository implements IPatientRepository {
 
   @override
   Future<entity.Patient> createPatient(entity.Patient patient) async {
-    try {
-      final response = await _apiClient.instance.post('/patients', data: _mapEntityToJson(patient));
-      final newPatient = _mapJsonToEntity(response.data);
-      
-      await _saveLocal(newPatient, true);
-      return newPatient;
-    } catch (e) {
-      await _saveLocal(patient, false);
-      return patient;
-    }
+    // Tenta salvar na API primeiro
+    final response = await _apiClient.instance.post('/patients', data: _mapEntityToJson(patient));
+    final newPatient = _mapJsonToEntity(response.data);
+    
+    // Salva localmente marcado como sincronizado
+    await _saveLocal(newPatient, true);
+    return newPatient;
   }
 
   @override
@@ -72,9 +73,8 @@ class PatientRepository implements IPatientRepository {
       try {
         final patient = _mapSchemaToEntity(row);
         await _apiClient.instance.post('/patients', data: _mapEntityToJson(patient));
-        
         await (_localDb.update(_localDb.patients)..where((t) => t.id.equals(row.id))).write(
-          drift_db.PatientsCompanion(isSynced: const Value(true)),
+          const drift_db.PatientsCompanion(isSynced: Value(true)),
         );
       } catch (_) {}
     }
@@ -118,19 +118,19 @@ class PatientRepository implements IPatientRepository {
       phone: json['phone'],
       gender: json['gender'],
       address: json['address'] != null ? entity.PatientAddress(
-        street: json['address']['street'],
-        number: json['address']['number'],
-        neighborhood: json['address']['neighborhood'],
-        city: json['address']['city'],
-        state: json['address']['state'],
-        zipCode: json['address']['zipCode'],
+        street: json['address']['street'] ?? '',
+        number: json['address']['number'] ?? '',
+        neighborhood: json['address']['neighborhood'] ?? '',
+        city: json['address']['city'] ?? '',
+        state: json['address']['state'] ?? '',
+        zipCode: json['address']['zipCode'] ?? '',
       ) : null,
-      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
       lgpdConsent: json['lgpdConsent'] ?? false,
     );
   }
 
-  entity.Patient _mapSchemaToEntity(dynamic row) {
+  entity.Patient _mapSchemaToEntity(drift_db.Patient row) {
     return entity.Patient(
       id: row.id,
       fullName: row.fullName,

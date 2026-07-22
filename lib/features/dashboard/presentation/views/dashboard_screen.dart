@@ -34,8 +34,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               selectedIndex: _selectedIndex,
               onDestinationSelected: (index) {
                 final route = menuItems[index]['route'] as String?;
-                if (route != null) context.push(route);
-                setState(() => _selectedIndex = index);
+                if (route != null) {
+                  context.push(route);
+                } else {
+                  setState(() => _selectedIndex = index);
+                }
               },
               leading: _buildRailHeader(context),
               destinations: menuItems.map((item) {
@@ -67,10 +70,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               selectedIndex: _selectedIndex,
               onDestinationSelected: (index) {
                 final route = menuItems[index]['route'] as String?;
-                if (route != null) context.push(route);
-                setState(() => _selectedIndex = index);
+                if (route != null) {
+                  context.push(route);
+                } else {
+                  setState(() => _selectedIndex = index);
+                }
               },
-              destinations: menuItems.take(3).map((item) {
+              destinations: menuItems.take(4).map((item) {
                 return NavigationDestination(
                   icon: Icon(item['icon'] as IconData),
                   label: item['label'] as String,
@@ -84,7 +90,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   List<Map<String, dynamic>> _getMenuItems(UserRole? role) {
     final List<Map<String, dynamic>> items = [
       {
-        'label': 'Dashboard',
+        'label': 'Início',
         'icon': Icons.dashboard_outlined,
         'selectedIcon': Icons.dashboard,
         'route': null,
@@ -116,12 +122,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         'selectedIcon': Icons.manage_accounts,
         'route': '/dashboard/users',
       });
-      items.add({
-        'label': 'Auditoria',
-        'icon': Icons.security_outlined,
-        'selectedIcon': Icons.security,
-        'route': '/dashboard/audit-logs',
-      });
     }
 
     items.add({
@@ -140,7 +140,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         const SizedBox(height: 20),
         const Icon(Icons.medical_services, size: 40, color: Color(0xFF006494)),
         const SizedBox(height: 10),
-        Text('OdontoClinica', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        const Text('Odonto', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         const SizedBox(height: 20),
       ],
     );
@@ -148,17 +148,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildHeader(BuildContext context, User? user) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
       ),
       child: Row(
         children: [
-          Text('Sistema de Gestão Clínica', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-          const Spacer(),
+          Expanded(
+            child: Text(
+              'Sistema de Gestão Clínica', 
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, fontSize: 18),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
           IconButton(icon: const Icon(Icons.notifications_none), onPressed: () => context.push('/dashboard/notifications')),
-          const SizedBox(width: 16),
+          const SizedBox(width: 8),
           _buildUserAvatar(context, user),
         ],
       ),
@@ -167,24 +172,31 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildUserAvatar(BuildContext context, User? user) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         CircleAvatar(
+          radius: 16,
           backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-          child: Text(user?.name.substring(0, 1).toUpperCase() ?? 'U')),
-        const SizedBox(width: 12),
-        if (MediaQuery.of(context).size.width > 600)
+          child: Text(user?.name.isNotEmpty == true ? user!.name[0].toUpperCase() : 'U'),
+        ),
+        if (MediaQuery.of(context).size.width > 700) ...[
+          const SizedBox(width: 10),
           Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(user?.name ?? 'Usuário', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              Text(user?.role.displayName ?? 'Perfil', style: Theme.of(context).textTheme.bodySmall),
+              Text(user?.name ?? 'Usuário', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              Text(user?.role.displayName ?? 'Perfil', style: const TextStyle(fontSize: 10, color: Colors.grey)),
             ],
           ),
+        ],
       ],
     );
   }
 
   Widget _buildContent(dynamic stats, User? user) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return RefreshIndicator(
       onRefresh: () => ref.read(dashboardViewModelProvider.notifier).refresh(),
       child: SingleChildScrollView(
@@ -193,25 +205,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Olá, ${user?.name.split(' ').first}!', 
-              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF006494))),
-            const Text('Aqui está o resumo das atividades de hoje.', style: TextStyle(color: Colors.grey)),
-            const SizedBox(height: 32),
+            Text('Olá, ${user?.name.split(' ').first ?? 'Bem-vindo'}!', 
+              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF006494))),
+            const Text('Resumo das atividades do dia.', style: TextStyle(color: Colors.grey)),
+            const SizedBox(height: 24),
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: MediaQuery.of(context).size.width > 1200 ? 4 : (MediaQuery.of(context).size.width > 800 ? 2 : 1),
+              crossAxisCount: screenWidth > 1200 ? 4 : (screenWidth > 800 ? 2 : 1),
               mainAxisSpacing: 16,
               crossAxisSpacing: 16,
-              childAspectRatio: 1.5,
+              childAspectRatio: screenWidth > 800 ? 1.5 : 2.5,
               children: [
-                _buildStatCard('Pacientes Totais', stats.totalPatients.toString(), Icons.group, Colors.blue),
-                _buildStatCard('Consultas Hoje', stats.appointmentsToday.toString(), Icons.event_note, Colors.green),
-                _buildStatCard('Procedimentos/Mês', stats.proceduresThisMonth.toString(), Icons.medical_information, Colors.orange),
-                _buildStatCard('Alertas LGPD', stats.pendingAlerts.toString(), Icons.admin_panel_settings, Colors.red),
+                _buildStatCard('Pacientes', stats.totalPatients.toString(), Icons.group, Colors.blue),
+                _buildStatCard('Consultas', stats.appointmentsToday.toString(), Icons.event_note, Colors.green),
+                _buildStatCard('Atendimentos', stats.proceduresThisMonth.toString(), Icons.medical_information, Colors.orange),
+                _buildStatCard('Alertas', stats.pendingAlerts.toString(), Icons.warning_amber, Colors.red),
               ],
             ),
-            const SizedBox(height: 48),
+            const SizedBox(height: 32),
             const Text('Acesso Rápido', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             Wrap(
@@ -219,9 +231,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               runSpacing: 16,
               children: [
                 _buildQuickAction('Novo Paciente', Icons.person_add, Colors.blue, () => context.push('/dashboard/patients/add')),
+                _buildQuickAction('Lista de Pacientes', Icons.format_list_bulleted, Colors.indigo, () => context.push('/dashboard/patients')),
                 _buildQuickAction('Nova Consulta', Icons.add_alarm, Colors.green, () => context.push('/dashboard/agenda/add')),
                 if (user?.role == UserRole.admin)
-                  _buildQuickAction('Logs de Auditoria', Icons.history_edu, Colors.blueGrey, () => context.push('/dashboard/audit-logs')),
+                  _buildQuickAction('Auditoria', Icons.security, Colors.blueGrey, () => context.push('/dashboard/audit-logs')),
               ],
             ),
           ],
@@ -235,21 +248,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.grey.shade200)),
       child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        padding: const EdgeInsets.all(16),
+        child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-              child: Icon(icon, color: color, size: 24),
+              child: Icon(icon, color: color, size: 20),
             ),
+            const SizedBox(width: 16),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(value, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-                Text(title, style: const TextStyle(color: Colors.grey, fontSize: 14)),
+                Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
               ],
             ),
           ],
@@ -263,8 +276,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        width: 160,
-        padding: const EdgeInsets.all(20),
+        width: 150,
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: color.withOpacity(0.05),
           borderRadius: BorderRadius.circular(16),
@@ -272,9 +285,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 32),
-            const SizedBox(height: 12),
-            Text(label, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+            Icon(icon, color: color, size: 28),
+            const SizedBox(height: 8),
+            Text(label, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11)),
           ],
         ),
       ),
@@ -286,13 +299,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, size: 64, color: Colors.red),
-          const SizedBox(height: 16),
-          Text('Falha ao carregar dashboard: $message'),
-          TextButton(
-            onPressed: () => ref.read(dashboardViewModelProvider.notifier).refresh(), 
-            child: const Text('Tentar Novamente')
-          ),
+          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+          Text('Erro: $message'),
+          TextButton(onPressed: () => ref.read(dashboardViewModelProvider.notifier).refresh(), child: const Text('Tentar Novamente')),
         ],
       ),
     );

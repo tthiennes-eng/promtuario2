@@ -1,15 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/entities/appointment.dart';
-import '../../domain/repositories/i_appointment_repository.dart';
-import '../../../../core/providers/providers.dart';
-import '../../../../core/network/realtime_service.dart';
+import 'package:promt/features/agenda/domain/entities/appointment.dart';
+import 'package:promt/core/providers/providers.dart';
+import 'package:promt/core/network/realtime_service.dart';
 
 /// Gerencia o estado da agenda de atendimentos.
-/// Integra com SignalR para atualizações em tempo real e suporta cache offline.
 class AppointmentViewModel extends StateNotifier<AsyncValue<List<Appointment>>> {
   AppointmentViewModel(this.ref) : super(const AsyncValue.loading()) {
     _initRealtime();
-    _fetchDailyAppointments(_currentDate);
+    _init();
   }
 
   final Ref ref;
@@ -17,11 +15,13 @@ class AppointmentViewModel extends StateNotifier<AsyncValue<List<Appointment>>> 
 
   void _initRealtime() {
     final realtime = ref.read(realtimeServiceProvider);
-
-    // Escuta atualizações da agenda vindas do servidor (ex: novo agendamento por outro usuário)
     realtime.on('AppointmentUpdated', (args) {
-      ref.invalidateSelf();
+      refresh();
     });
+  }
+
+  Future<void> _init() async {
+    state = await AsyncValue.guard(() => _fetchDailyAppointments(_currentDate));
   }
 
   Future<List<Appointment>> _fetchDailyAppointments(DateTime date) async {
@@ -37,6 +37,10 @@ class AppointmentViewModel extends StateNotifier<AsyncValue<List<Appointment>>> 
   Future<void> fetchByDate(DateTime date) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() => _fetchDailyAppointments(date));
+  }
+
+  Future<void> refresh() async {
+    state = await AsyncValue.guard(() => _fetchDailyAppointments(_currentDate));
   }
 
   /// Agenda um novo atendimento.

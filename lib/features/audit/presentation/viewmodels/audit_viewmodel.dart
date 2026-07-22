@@ -5,10 +5,14 @@ import 'package:promt/core/providers/providers.dart';
 /// Gerencia os logs de auditoria (LGPD).
 class AuditViewModel extends StateNotifier<AsyncValue<List<AuditLog>>> {
   AuditViewModel(this.ref) : super(const AsyncValue.loading()) {
-    _fetchLogs();
+    _init();
   }
 
   final Ref ref;
+
+  Future<void> _init() async {
+    state = await AsyncValue.guard(() => _fetchLogs());
+  }
 
   Future<List<AuditLog>> _fetchLogs({String? userId, String? action}) async {
     final repository = ref.read(auditRepositoryProvider);
@@ -25,12 +29,6 @@ class AuditViewModel extends StateNotifier<AsyncValue<List<AuditLog>>> {
   Future<void> filterByUser(String userId) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() => _fetchLogs(userId: userId));
-  }
-
-  /// Filtra logs por ação.
-  Future<void> filterByAction(String action) async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() => _fetchLogs(action: action));
   }
 }
 

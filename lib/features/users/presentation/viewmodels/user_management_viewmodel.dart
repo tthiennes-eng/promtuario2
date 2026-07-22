@@ -5,10 +5,14 @@ import 'package:promt/features/auth/domain/entities/user.dart';
 /// Gerencia o cadastro e administração de usuários.
 class UserManagementViewModel extends StateNotifier<AsyncValue<List<User>>> {
   UserManagementViewModel(this.ref) : super(const AsyncValue.loading()) {
-    _fetchUsers();
+    _init();
   }
 
   final Ref ref;
+
+  Future<void> _init() async {
+    state = await AsyncValue.guard(() => _fetchUsers());
+  }
 
   Future<List<User>> _fetchUsers({UserRole? role, String? query}) async {
     final repository = ref.read(userManagementRepositoryProvider);

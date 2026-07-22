@@ -5,10 +5,14 @@ import 'package:promt/core/providers/providers.dart';
 /// Gerencia os procedimentos disponíveis.
 class ProceduresViewModel extends StateNotifier<AsyncValue<List<Procedure>>> {
   ProceduresViewModel(this.ref) : super(const AsyncValue.loading()) {
-    _fetchProcedures();
+    _init();
   }
 
   final Ref ref;
+
+  Future<void> _init() async {
+    state = await AsyncValue.guard(() => _fetchProcedures());
+  }
 
   Future<List<Procedure>> _fetchProcedures() async {
     final repository = ref.read(proceduresRepositoryProvider);
