@@ -9,6 +9,7 @@ import 'package:promt/features/prontuario/domain/entities/treatment_plan.dart';
 import 'package:promt/features/prontuario/domain/entities/evolution.dart';
 import 'package:promt/features/prontuario/domain/repositories/i_prontuario_repository.dart';
 import 'package:promt/features/auth/domain/entities/user.dart';
+import 'package:uuid/uuid.dart';
 
 /// Implementação do Repositório de Prontuário com suporte a Cache Offline e Sincronização.
 class ProntuarioRepository implements IProntuarioRepository {
@@ -23,8 +24,24 @@ class ProntuarioRepository implements IProntuarioRepository {
     try {
       final response =
           await _apiClient.instance.get('/prontuario/$patientId/odontogram');
-      final odontogram = Odontogram.fromJson(response.data);
+      
+      // Verificação robusta do tipo de dado retornado
+      dynamic rawData = response.data;
+      
+      if (rawData == null || (rawData is String && rawData.isEmpty)) {
+        return _initialOdontogram(patientId);
+      }
 
+      Map<String, dynamic> jsonData;
+      if (rawData is String) {
+        jsonData = jsonDecode(rawData);
+      } else if (rawData is Map) {
+        jsonData = Map<String, dynamic>.from(rawData);
+      } else {
+        return _initialOdontogram(patientId);
+      }
+
+      final odontogram = Odontogram.fromJson(jsonData);
       await _saveOdontogramLocal(odontogram);
       return odontogram;
     } catch (e) {
@@ -35,8 +52,19 @@ class ProntuarioRepository implements IProntuarioRepository {
       if (local != null) {
         return _mapLocalToOdontogram(local);
       }
-      rethrow;
+      
+      return _initialOdontogram(patientId);
     }
+  }
+
+  Odontogram _initialOdontogram(String patientId) {
+    return Odontogram(
+      id: const Uuid().v4(),
+      patientId: patientId,
+      teeth: [],
+      updatedAt: DateTime.now(),
+      updatedBy: _currentUser?.id ?? 'system',
+    );
   }
 
   @override
@@ -49,7 +77,7 @@ class ProntuarioRepository implements IProntuarioRepository {
       );
       await _markOdontogramAsSynced(odontogram.patientId);
     } catch (_) {
-      // O registro local já foi gravado como pendente antes da tentativa remota.
+      // O registro local já foi gravado como pendente.
     }
   }
 
@@ -57,9 +85,7 @@ class ProntuarioRepository implements IProntuarioRepository {
   Future<void> addEvolution(
       String patientId, String description, String professorId) async {
     final now = DateTime.now();
-    final evolutionId = now.millisecondsSinceEpoch.toString();
-    
-    // Determina se o usuário atual é professor para assinatura automática
+    final evolutionId = const Uuid().v4();
     final isProfessor = _currentUser?.role == UserRole.professor;
     
     try {
@@ -76,7 +102,6 @@ class ProntuarioRepository implements IProntuarioRepository {
         },
       );
     } catch (e) {
-      // Persiste localmente em modo offline-first com dados completos
       await _localDb.into(_localDb.evolutionsLocal).insert(
             EvolutionsLocalCompanion.insert(
               id: evolutionId,
@@ -131,7 +156,6 @@ class ProntuarioRepository implements IProntuarioRepository {
     try {
       await _apiClient.instance.patch('/prontuario/evolutions/$evolutionId/sign');
     } catch (e) {
-      // Atualiza localmente se estiver offline
       final existing = await (_localDb.select(_localDb.evolutionsLocal)
             ..where((t) => t.id.equals(evolutionId)))
           .getSingleOrNull();
@@ -207,7 +231,7 @@ class ProntuarioRepository implements IProntuarioRepository {
     try {
       final response =
           await _apiClient.instance.get('/patients/$patientId/anamnese');
-      if (response.data == null) return null;
+      if (response.data == null || response.data == '') return null;
       return Anamnese.fromJson(response.data);
     } catch (e) {
       final anamneses = await getAnamneses(patientId);
@@ -218,7 +242,7 @@ class ProntuarioRepository implements IProntuarioRepository {
   @override
   Future<void> saveAnamnese(String patientId, Map<String, dynamic> responses) async {
     final anamnese = Anamnese(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       patientId: patientId,
       responses: responses,
       createdAt: DateTime.now(),
@@ -295,7 +319,6 @@ class ProntuarioRepository implements IProntuarioRepository {
 
       if (localItems.isEmpty) return [];
 
-      // Agrupa itens por planId
       final plansMap = <String, List<TreatmentItem>>{};
       for (var item in localItems) {
         if (!plansMap.containsKey(item.planId)) {
@@ -321,7 +344,7 @@ class ProntuarioRepository implements IProntuarioRepository {
     try {
       final response =
           await _apiClient.instance.get('/patients/$patientId/treatment-plan');
-      if (response.data == null) return null;
+      if (response.data == null || response.data == '') return null;
       return TreatmentPlan.fromJson(response.data);
     } catch (e) {
       final plans = await getTreatmentPlans(patientId);
@@ -386,7 +409,6 @@ class ProntuarioRepository implements IProntuarioRepository {
       } catch (_) {}
     }
 
-    // Sincroniza Anamneses
     final unsyncedAnamnese = await (_localDb.select(_localDb.anamneseLocal)
           ..where((t) => t.isSynced.equals(false)))
         .get();
@@ -400,7 +422,6 @@ class ProntuarioRepository implements IProntuarioRepository {
       } catch (_) {}
     }
 
-    // Sincroniza Evoluções
     final unsyncedEvolutions = await (_localDb.select(_localDb.evolutionsLocal)
           ..where((t) => t.isSynced.equals(false)))
         .get();
@@ -417,7 +438,6 @@ class ProntuarioRepository implements IProntuarioRepository {
       } catch (_) {}
     }
 
-    // Sincroniza Itens do Plano de Tratamento
     final unsyncedItems = await (_localDb.select(_localDb.treatmentItemsLocal)
           ..where((t) => t.isSynced.equals(false)))
         .get();
