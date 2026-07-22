@@ -26,11 +26,11 @@ public class LogsController : ControllerBase
     /// Lista os logs de auditoria de forma paginada.
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Get([FromQuery] int page = 1, [FromQuery] int pageSize = 50, [FromQuery] string? userId = null)
+    public async Task<IActionResult> Get([FromQuery] int page = 1, [FromQuery] int pageSize = 50, [FromQuery] Guid? userId = null)
     {
         try
         {
-            var logs = await _repository.FindAsync(x => userId == null || x.Usuario == userId);
+            var logs = await _repository.FindAsync(x => userId == null || x.UsuarioId == userId);
             var total = logs.Count();
 
             return Ok(new
