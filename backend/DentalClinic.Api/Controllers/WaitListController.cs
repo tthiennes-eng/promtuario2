@@ -1,8 +1,7 @@
-using DentalClinic.Core.Domain.Entities;
 using DentalClinic.Core.Domain.Repositories;
+using DentalClinic.Core.Domain.ValueObjects;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using DentalClinic.Core.Domain.ValueObjects;
 
 namespace DentalClinic.Api.Controllers;
 
