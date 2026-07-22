@@ -13,22 +13,17 @@ class ApiClient {
   late final Dio _dio;
 
   ApiClient(this._storage) {
-    // Detecta a plataforma para definir o endereço correto
     String baseUrl;
+    // Adicionada a barra '/' ao final de todas as baseUrls
     if (kIsWeb) {
-      baseUrl = 'http://localhost:5000/api';
+      baseUrl = 'http://localhost:5000/api/';
     } else {
       switch (defaultTargetPlatform) {
         case TargetPlatform.android:
-          baseUrl = 'http://10.0.2.2:5000/api';
-          break;
-        case TargetPlatform.windows:
-        case TargetPlatform.linux:
-        case TargetPlatform.macOS:
-          baseUrl = 'http://localhost:5000/api';
+          baseUrl = 'http://10.0.2.2:5000/api/';
           break;
         default:
-          baseUrl = 'http://localhost:5000/api';
+          baseUrl = 'http://localhost:5000/api/';
       }
     }
 
@@ -47,27 +42,25 @@ class ApiClient {
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
-        debugPrint('>>> API REQ: ${options.method} ${options.path}');
         return handler.next(options);
       },
       onError: (DioException e, handler) async {
-        debugPrint('>>> API ERROR [${e.response?.statusCode}]: ${e.message}');
         if (e.response?.statusCode == 401) {
           final refreshToken = await _storage.getRefreshToken();
           if (refreshToken != null) {
             try {
               final refreshResponse = await Dio(BaseOptions(baseUrl: _dio.options.baseUrl))
-                  .post('/auth/refresh', data: {'refreshToken': refreshToken});
+                  .post('auth/refresh', data: {'refreshToken': refreshToken});
 
               if (refreshResponse.statusCode == 200) {
-                final newAccessToken = refreshResponse.data['accessToken'];
-                final newRefreshToken = refreshResponse.data['refreshToken'];
-                await _storage.saveTokens(access: newAccessToken, refresh: newRefreshToken);
-                e.requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
+                final newAccess = refreshResponse.data['accessToken'];
+                final newRefresh = refreshResponse.data['refreshToken'];
+                await _storage.saveTokens(access: newAccess, refresh: newRefresh);
+                e.requestOptions.headers['Authorization'] = 'Bearer $newAccess';
                 final response = await _dio.fetch(e.requestOptions);
                 return handler.resolve(response);
               }
-            } catch (refreshError) {
+            } catch (_) {
               await _storage.clearSession();
             }
           }
