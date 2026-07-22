@@ -65,11 +65,10 @@ public class AuthService : IAuthService
         user.ResetFailedLogin();
         await _userRepository.UpdateAsync(user);
 
-        // Mapeia para o formato esperado pelo Flutter (@JsonValue)
+        // Mapeia o papel para o formato que o Flutter entende
         var flutterRole = MapRoleToFlutter(user.Role);
         var userDto = new UserDto(user.Id, user.Name, user.EmailAddress.Value, flutterRole);
 
-        _logger.LogInformation(">>> Login realizado com sucesso para {Email}.", loginDto.Email);
         return Result<TokenDto>.Ok(new TokenDto(accessToken, refreshToken, userDto));
     }
 
@@ -93,9 +92,7 @@ public class AuthService : IAuthService
         var newSession = UserSession.Create(user.Id, newRefreshToken, 7, session.CreatedByIp);
         await _sessionRepository.AddAsync(newSession);
 
-        var flutterRole = MapRoleToFlutter(user.Role);
-        var userDto = new UserDto(user.Id, user.Name, user.EmailAddress.Value, flutterRole);
-
+        var userDto = new UserDto(user.Id, user.Name, user.EmailAddress.Value, MapRoleToFlutter(user.Role));
         return Result<TokenDto>.Ok(new TokenDto(newAccessToken, newRefreshToken, userDto));
     }
 
@@ -109,15 +106,6 @@ public class AuthService : IAuthService
 
     private string MapRoleToFlutter(UserRole role)
     {
-        return role switch
-        {
-            UserRole.Admin => "admin",
-            UserRole.Coordinator => "coordenador",
-            UserRole.Professor => "professor",
-            UserRole.Student => "aluno",
-            UserRole.Receptionist => "recepcionista",
-            UserRole.Secretary => "secretaria",
-            _ => "aluno"
-        };
+        return role.ToString().ToLower();
     }
 }

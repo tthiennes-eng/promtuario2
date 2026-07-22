@@ -7,6 +7,7 @@ public class PatientValidator : AbstractValidator<Patient>
 {
     public PatientValidator()
     {
+        // Regra para Nome: Sincronizado com propriedade FullName
         RuleFor(x => x.FullName)
             .NotEmpty().WithMessage("O nome do paciente é obrigatório.")
             .MinimumLength(3).WithMessage("O nome deve ter pelo menos 3 caracteres.")
@@ -21,9 +22,7 @@ public class PatientValidator : AbstractValidator<Patient>
             .NotEmpty().WithMessage("O email é obrigatório.")
             .EmailAddress().WithMessage("O formato do email é inválido.");
 
-        RuleFor(x => x.Phone)
-            .NotEmpty().WithMessage("O telefone é obrigatório.");
-
+        // Regra para Data de Nascimento: Sincronizado com propriedade BirthDate
         RuleFor(x => x.BirthDate)
             .NotEmpty().WithMessage("A data de nascimento é obrigatória.")
             .LessThan(DateTime.Now).WithMessage("A data de nascimento deve ser no passado.");
