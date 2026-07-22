@@ -18,18 +18,14 @@ class PatientRepository implements IPatientRepository {
         'search': query,
       });
 
-      // Correção: A API retorna um objeto com o campo 'items'
       final Map<String, dynamic> responseData = response.data;
       final List<dynamic> items = responseData['items'] ?? [];
-      
       final patients = items.map((json) => _mapJsonToEntity(json)).toList();
 
-      // Atualiza o cache local
       _updateLocalCache(patients);
-
       return patients;
     } catch (e) {
-      // Se a API falhar, recorre ao banco local
+      // Em caso de erro de rede, retorna o que está no banco local
       return getLocalPatients();
     }
   }
@@ -42,19 +38,31 @@ class PatientRepository implements IPatientRepository {
 
   @override
   Future<entity.Patient> createPatient(entity.Patient patient) async {
-    // Tenta salvar na API primeiro
-    final response = await _apiClient.instance.post('/patients', data: _mapEntityToJson(patient));
-    final newPatient = _mapJsonToEntity(response.data);
-    
-    // Salva localmente marcado como sincronizado
-    await _saveLocal(newPatient, true);
-    return newPatient;
+    // 1. Salva localmente primeiro (Offline-First)
+    await _saveLocal(patient, false);
+
+    try {
+      // 2. Tenta sincronizar com a API
+      final response = await _apiClient.instance.post('/patients', data: _mapEntityToJson(patient));
+      final syncedPatient = _mapJsonToEntity(response.data);
+      
+      // 3. Se deu certo, marca como sincronizado
+      await _saveLocal(syncedPatient, true);
+      return syncedPatient;
+    } catch (e) {
+      // Se falhar a API, o paciente continua salvo localmente com isSynced = false
+      // O SyncService tentará novamente depois.
+      return patient;
+    }
   }
 
   @override
   Future<void> updatePatient(entity.Patient patient) async {
-    await _apiClient.instance.put('/patients/${patient.id}', data: _mapEntityToJson(patient));
-    await _saveLocal(patient, true);
+    await _saveLocal(patient, false);
+    try {
+      await _apiClient.instance.put('/patients/${patient.id}', data: _mapEntityToJson(patient));
+      await _saveLocal(patient, true);
+    } catch (_) {}
   }
 
   @override
@@ -80,26 +88,27 @@ class PatientRepository implements IPatientRepository {
     }
   }
 
+  // Métodos de Mapeamento
   Future<void> _saveLocal(entity.Patient patient, bool isSynced) async {
     await _localDb.into(_localDb.patients).insertOnConflictUpdate(
-          drift_db.PatientsCompanion.insert(
-            id: patient.id,
-            fullName: patient.fullName,
-            cpf: patient.cpf,
-            birthDate: patient.birthDate,
-            email: Value(patient.email),
-            phone: Value(patient.phone),
-            gender: Value(patient.gender),
-            lgpdConsent: Value(patient.lgpdConsent),
-            isSynced: Value(isSynced),
-            street: Value(patient.address?.street),
-            number: Value(patient.address?.number),
-            neighborhood: Value(patient.address?.neighborhood),
-            city: Value(patient.address?.city),
-            state: Value(patient.address?.state),
-            zipCode: Value(patient.address?.zipCode),
-          ),
-        );
+      drift_db.PatientsCompanion.insert(
+        id: patient.id,
+        fullName: patient.fullName,
+        cpf: patient.cpf,
+        birthDate: patient.birthDate,
+        email: Value(patient.email),
+        phone: Value(patient.phone),
+        gender: Value(patient.gender),
+        lgpdConsent: Value(patient.lgpdConsent),
+        isSynced: Value(isSynced),
+        street: Value(patient.address?.street),
+        number: Value(patient.address?.number),
+        neighborhood: Value(patient.address?.neighborhood),
+        city: Value(patient.address?.city),
+        state: Value(patient.address?.state),
+        zipCode: Value(patient.address?.zipCode),
+      ),
+    );
   }
 
   void _updateLocalCache(List<entity.Patient> patients) async {
@@ -111,9 +120,9 @@ class PatientRepository implements IPatientRepository {
   entity.Patient _mapJsonToEntity(Map<String, dynamic> json) {
     return entity.Patient(
       id: json['id'],
-      fullName: json['fullName'],
-      cpf: json['cpf'],
-      birthDate: DateTime.parse(json['birthDate']),
+      fullName: json['fullName'] ?? 'Sem Nome',
+      cpf: json['cpf'] ?? '',
+      birthDate: DateTime.parse(json['birthDate'] ?? DateTime.now().toIso8601String()),
       email: json['email'],
       phone: json['phone'],
       gender: json['gender'],
@@ -125,7 +134,7 @@ class PatientRepository implements IPatientRepository {
         state: json['address']['state'] ?? '',
         zipCode: json['address']['zipCode'] ?? '',
       ) : null,
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
       lgpdConsent: json['lgpdConsent'] ?? false,
     );
   }
