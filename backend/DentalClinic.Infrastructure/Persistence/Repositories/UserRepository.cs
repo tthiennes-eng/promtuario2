@@ -6,6 +6,7 @@ namespace DentalClinic.Infrastructure.Persistence.Repositories;
 
 /// <summary>
 /// Implementação do repositório de usuários utilizando Entity Framework Core.
+/// Sincronizado com o esquema PostgreSQL (usuarios).
 /// </summary>
 public class UserRepository : IUserRepository
 {
@@ -33,6 +34,7 @@ public class UserRepository : IUserRepository
 
         if (role.HasValue)
         {
+            // Busca dentro da lista JSONB configurada no UserConfiguration
             query = query.Where(u => u.Roles.Contains(role.Value));
         }
 
