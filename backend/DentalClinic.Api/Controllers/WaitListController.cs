@@ -1,3 +1,4 @@
+using DentalClinic.Core.Domain.Entities;
 using DentalClinic.Core.Domain.Repositories;
 using DentalClinic.Core.Domain.ValueObjects;
 using Microsoft.AspNetCore.Authorization;
@@ -64,5 +65,5 @@ public class WaitListController : ControllerBase
     }
 }
 
-// Alterado PatientId de int para Guid para manter a consistência com o restante do sistema
+// Record para a requisição de criação na lista de espera
 public record CreateWaitListRequest(Guid PatientId, Guid ClinicId, Specialty Specialty, string Priority, string? Observation);

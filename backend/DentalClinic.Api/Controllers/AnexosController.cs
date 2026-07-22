@@ -7,10 +7,6 @@ using System.Security.Claims;
 
 namespace DentalClinic.Api.Controllers;
 
-/// <summary>
-/// Controller para gestão de anexos (Radiografias, Fotos e Documentos).
-/// Segue rigorosamente os requisitos de armazenamento em Object Storage e referência em Banco.
-/// </summary>
 [Authorize]
 [ApiController]
 [Route("api/[controller]")]
@@ -30,12 +26,7 @@ public class AnexosController : ControllerBase
         _logger = logger;
     }
 
-    /// <summary>
-    /// Realiza o upload de um novo anexo para um paciente.
-    /// Registra o metadado no banco e armazena o binário no Storage.
-    /// </summary>
     [HttpPost("upload/{pacienteId}")]
-    [ProducesResponseType(typeof(Anexo), StatusCodes.Status201Created)]
     public async Task<IActionResult> Upload(Guid pacienteId, IFormFile file, [FromQuery] string tipo)
     {
         if (file == null || file.Length == 0)
@@ -71,9 +62,6 @@ public class AnexosController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Lista todos os anexos registrados para um paciente.
-    /// </summary>
     [HttpGet("paciente/{pacienteId}")]
     public async Task<IActionResult> GetByPaciente(Guid pacienteId)
     {
@@ -81,9 +69,6 @@ public class AnexosController : ControllerBase
         return Ok(anexos);
     }
 
-    /// <summary>
-    /// Remove um anexo permanentemente (Banco e Storage).
-    /// </summary>
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin,Professor")]
     public async Task<IActionResult> Delete(Guid id)

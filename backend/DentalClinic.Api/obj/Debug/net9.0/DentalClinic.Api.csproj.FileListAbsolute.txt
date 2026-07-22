@@ -69,3 +69,12 @@ C:\Users\Thiago\AndroidStudioProjects\promtuario\backend\DentalClinic.Api\obj\De
 C:\Users\Thiago\AndroidStudioProjects\promtuario2\backend\DentalClinic.Api\obj\Debug\net9.0\DentalClinic.Api.dll
 C:\Users\Thiago\AndroidStudioProjects\promtuario2\backend\DentalClinic.Api\obj\Debug\net9.0\refint\DentalClinic.Api.dll
 C:\Users\Thiago\AndroidStudioProjects\promtuario2\backend\DentalClinic.Api\obj\Debug\net9.0\DentalClinic.Api.pdb
+C:\Users\Thiago\AndroidStudioProjects\promtuario2\backend\DentalClinic.Api\obj\Debug\net9.0\DentalClinic.Api.csproj.AssemblyReference.cache
+C:\Users\Thiago\AndroidStudioProjects\promtuario2\backend\DentalClinic.Api\obj\Debug\net9.0\rpswa.dswa.cache.json
+C:\Users\Thiago\AndroidStudioProjects\promtuario2\backend\DentalClinic.Api\obj\Debug\net9.0\DentalClinic.Api.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Thiago\AndroidStudioProjects\promtuario2\backend\DentalClinic.Api\obj\Debug\net9.0\DentalClinic.Api.AssemblyInfoInputs.cache
+C:\Users\Thiago\AndroidStudioProjects\promtuario2\backend\DentalClinic.Api\obj\Debug\net9.0\DentalClinic.Api.AssemblyInfo.cs
+C:\Users\Thiago\AndroidStudioProjects\promtuario2\backend\DentalClinic.Api\obj\Debug\net9.0\DentalClinic.Api.csproj.CoreCompileInputs.cache
+C:\Users\Thiago\AndroidStudioProjects\promtuario2\backend\DentalClinic.Api\obj\Debug\net9.0\DentalClinic.Api.MvcApplicationPartsAssemblyInfo.cs
+C:\Users\Thiago\AndroidStudioProjects\promtuario2\backend\DentalClinic.Api\obj\Debug\net9.0\DentalClinic.Api.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\Thiago\AndroidStudioProjects\promtuario2\backend\DentalClinic.Api\obj\Debug\net9.0\DentalClinic.Api.sourcelink.json
