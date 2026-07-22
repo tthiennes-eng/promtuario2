@@ -13,45 +13,49 @@ class PatientRepository implements IPatientRepository {
   @override
   Future<List<entity.Patient>> getPatients({int page = 1, String? query}) async {
     try {
-      final response = await _apiClient.instance.get('/patients', queryParameters: {
+      final response = await _apiClient.instance.get('patients', queryParameters: {
         'page': page,
         'search': query,
       });
 
-      final Map<String, dynamic> responseData = response.data;
-      final List<dynamic> items = responseData['items'] ?? [];
-      final patients = items.map((json) => _mapJsonToEntity(json)).toList();
-
-      _updateLocalCache(patients);
-      return patients;
+      if (response.data != null) {
+        // Lida tanto com lista direta quanto com objeto paginado { items: [] }
+        final List<dynamic> rawList = response.data is List 
+            ? response.data 
+            : (response.data['items'] ?? []);
+            
+        final apiPatients = rawList.map((json) => _mapJsonToEntity(json)).toList();
+        await _updateLocalCache(apiPatients);
+      }
     } catch (e) {
-      // Em caso de erro de rede, retorna o que está no banco local
-      return getLocalPatients();
+      // Em caso de erro, continua para retornar o que houver no banco local
     }
+    return getLocalPatients();
   }
 
   @override
   Future<entity.Patient> getPatientById(String id) async {
-    final response = await _apiClient.instance.get('/patients/$id');
-    return _mapJsonToEntity(response.data);
+    try {
+      final response = await _apiClient.instance.get('patients/$id');
+      return _mapJsonToEntity(response.data);
+    } catch (e) {
+      final row = await (_localDb.select(_localDb.patients)..where((t) => t.id.equals(id))).getSingle();
+      return _mapSchemaToEntity(row);
+    }
   }
 
   @override
   Future<entity.Patient> createPatient(entity.Patient patient) async {
-    // 1. Salva localmente primeiro (Offline-First)
+    // Salva localmente primeiro
     await _saveLocal(patient, false);
 
     try {
-      // 2. Tenta sincronizar com a API
-      final response = await _apiClient.instance.post('/patients', data: _mapEntityToJson(patient));
-      final syncedPatient = _mapJsonToEntity(response.data);
-      
-      // 3. Se deu certo, marca como sincronizado
-      await _saveLocal(syncedPatient, true);
-      return syncedPatient;
+      final response = await _apiClient.instance.post('patients', data: _mapEntityToJson(patient));
+      final synced = _mapJsonToEntity(response.data);
+      await _saveLocal(synced, true);
+      return synced;
     } catch (e) {
-      // Se falhar a API, o paciente continua salvo localmente com isSynced = false
-      // O SyncService tentará novamente depois.
+      // Permanece no banco local para sincronização posterior
       return patient;
     }
   }
@@ -60,14 +64,15 @@ class PatientRepository implements IPatientRepository {
   Future<void> updatePatient(entity.Patient patient) async {
     await _saveLocal(patient, false);
     try {
-      await _apiClient.instance.put('/patients/${patient.id}', data: _mapEntityToJson(patient));
+      await _apiClient.instance.put('patients/${patient.id}', data: _mapEntityToJson(patient));
       await _saveLocal(patient, true);
     } catch (_) {}
   }
 
   @override
   Future<List<entity.Patient>> getLocalPatients() async {
-    final results = await _localDb.select(_localDb.patients).get();
+    final results = await (_localDb.select(_localDb.patients)
+      ..orderBy([(t) => OrderingTerm(expression: t.fullName)])).get();
     return results.map((row) => _mapSchemaToEntity(row)).toList();
   }
 
@@ -80,7 +85,7 @@ class PatientRepository implements IPatientRepository {
     for (final row in unsynced) {
       try {
         final patient = _mapSchemaToEntity(row);
-        await _apiClient.instance.post('/patients', data: _mapEntityToJson(patient));
+        await _apiClient.instance.post('patients', data: _mapEntityToJson(patient));
         await (_localDb.update(_localDb.patients)..where((t) => t.id.equals(row.id))).write(
           const drift_db.PatientsCompanion(isSynced: Value(true)),
         );
@@ -88,7 +93,7 @@ class PatientRepository implements IPatientRepository {
     }
   }
 
-  // Métodos de Mapeamento
+  // Mapeamentos
   Future<void> _saveLocal(entity.Patient patient, bool isSynced) async {
     await _localDb.into(_localDb.patients).insertOnConflictUpdate(
       drift_db.PatientsCompanion.insert(
@@ -111,7 +116,7 @@ class PatientRepository implements IPatientRepository {
     );
   }
 
-  void _updateLocalCache(List<entity.Patient> patients) async {
+  Future<void> _updateLocalCache(List<entity.Patient> patients) async {
     for (var patient in patients) {
       await _saveLocal(patient, true);
     }
@@ -120,12 +125,12 @@ class PatientRepository implements IPatientRepository {
   entity.Patient _mapJsonToEntity(Map<String, dynamic> json) {
     return entity.Patient(
       id: json['id'],
-      fullName: json['fullName'] ?? 'Sem Nome',
+      fullName: json['fullName'] ?? json['nomeCompleto'] ?? 'Sem Nome',
       cpf: json['cpf'] ?? '',
-      birthDate: DateTime.parse(json['birthDate'] ?? DateTime.now().toIso8601String()),
+      birthDate: DateTime.parse(json['birthDate'] ?? json['dataNascimento'] ?? DateTime.now().toIso8601String()),
       email: json['email'],
-      phone: json['phone'],
-      gender: json['gender'],
+      phone: json['phone'] ?? json['telefone'],
+      gender: json['gender'] ?? json['sexo'],
       address: json['address'] != null ? entity.PatientAddress(
         street: json['address']['street'] ?? '',
         number: json['address']['number'] ?? '',
@@ -134,8 +139,8 @@ class PatientRepository implements IPatientRepository {
         state: json['address']['state'] ?? '',
         zipCode: json['address']['zipCode'] ?? '',
       ) : null,
-      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
-      lgpdConsent: json['lgpdConsent'] ?? false,
+      createdAt: DateTime.parse(json['createdAt'] ?? json['criadoEm'] ?? DateTime.now().toIso8601String()),
+      lgpdConsent: json['lgpdConsent'] ?? json['consentimentoLgpd'] ?? false,
     );
   }
 

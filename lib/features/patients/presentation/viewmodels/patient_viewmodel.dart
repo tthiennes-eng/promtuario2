@@ -10,7 +10,7 @@ class PatientViewModel extends StateNotifier<AsyncValue<List<Patient>>> {
 
   final Ref ref;
 
-  /// Recarrega a lista de pacientes do repositório.
+  /// Recarrega a lista de pacientes.
   Future<void> refresh() async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
@@ -28,24 +28,23 @@ class PatientViewModel extends StateNotifier<AsyncValue<List<Patient>>> {
     });
   }
 
-  /// Cadastra um novo paciente e atualiza a lista.
+  /// Cadastra um novo paciente. 
+  /// O erro é propagado para que a UI possa tratá-lo.
   Future<void> addPatient(Patient patient) async {
+    final repository = ref.read(patientRepositoryProvider);
+    
+    // Atualiza estado local para loading
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      final repository = ref.read(patientRepositoryProvider);
+    
+    try {
       await repository.createPatient(patient);
-      return await repository.getPatients();
-    });
-  }
-
-  /// Atualiza os dados de um paciente existente.
-  Future<void> updatePatient(Patient patient) async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      final repository = ref.read(patientRepositoryProvider);
-      await repository.updatePatient(patient);
-      return await repository.getPatients();
-    });
+      // Recarrega a lista após o sucesso
+      final patients = await repository.getPatients();
+      state = AsyncValue.data(patients);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow; // Repropaga para a tela de cadastro tratar
+    }
   }
 }
 

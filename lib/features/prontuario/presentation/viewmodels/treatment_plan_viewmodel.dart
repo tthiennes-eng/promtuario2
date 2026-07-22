@@ -4,63 +4,66 @@ import 'package:promt/core/providers/providers.dart';
 import 'package:promt/features/auth/presentation/viewmodels/auth_viewmodel.dart';
 import 'package:uuid/uuid.dart';
 
-/// Gerencia os planos de tratamento dos pacientes.
+/// Gerencia a lógica de negócio dos planos de tratamento de um paciente.
 class TreatmentPlanViewModel extends StateNotifier<AsyncValue<List<TreatmentPlan>>> {
-  final Ref ref;
-  final String patientId;
+  final Ref _ref;
+  final String _patientId;
 
-  TreatmentPlanViewModel(this.ref, this.patientId) : super(const AsyncValue.loading()) {
+  TreatmentPlanViewModel(this._ref, this._patientId) : super(const AsyncValue.loading()) {
     _init();
   }
 
   Future<void> _init() async {
     state = await AsyncValue.guard(() => 
-      ref.read(prontuarioRepositoryProvider).getTreatmentPlans(patientId)
+      _ref.read(prontuarioRepositoryProvider).getTreatmentPlans(_patientId)
     );
   }
 
   Future<void> refresh() async => _init();
 
-  /// Adiciona um item ao plano de tratamento.
+  /// Adiciona um item ao plano atual ou cria um novo se necessário.
   Future<void> addItem(TreatmentItem item) async {
-    final currentState = state.value;
+    final currentState = state.value ?? [];
     state = const AsyncValue.loading();
+    
     state = await AsyncValue.guard(() async {
-      if (currentState == null || currentState.isEmpty) {
-        final authState = ref.read(authViewModelProvider);
+      final repo = _ref.read(prontuarioRepositoryProvider);
+      
+      if (currentState.isEmpty) {
+        final authState = _ref.read(authViewModelProvider);
         final plan = TreatmentPlan(
           id: const Uuid().v4(),
-          patientId: patientId,
+          patientId: _patientId,
           description: 'Plano de tratamento',
           items: [item],
           createdByUserId: authState.user?.id ?? 'system',
           status: TreatmentPlanStatus.draft,
           createdAt: DateTime.now(),
         );
-        await ref.read(prontuarioRepositoryProvider).saveTreatmentPlan(plan);
+        await repo.saveTreatmentPlan(plan);
       } else {
         final plan = currentState.first;
         final updatedPlan = plan.copyWith(
           items: [...plan.items, item],
           updatedAt: DateTime.now(),
         );
-        await ref.read(prontuarioRepositoryProvider).saveTreatmentPlan(updatedPlan);
+        await repo.saveTreatmentPlan(updatedPlan);
       }
-      return await ref.read(prontuarioRepositoryProvider).getTreatmentPlans(patientId);
+      return repo.getTreatmentPlans(_patientId);
     });
   }
 
-  /// Salva ou atualiza um plano completo.
+  /// Salva ou atualiza um plano de tratamento completo.
   Future<void> savePlan(TreatmentPlan plan) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-      await ref.read(prontuarioRepositoryProvider).saveTreatmentPlan(plan);
-      return await ref.read(prontuarioRepositoryProvider).getTreatmentPlans(patientId);
+      await _ref.read(prontuarioRepositoryProvider).saveTreatmentPlan(plan);
+      return _ref.read(prontuarioRepositoryProvider).getTreatmentPlans(_patientId);
     });
   }
 }
 
-/// Provider para criar a instância do TreatmentPlanViewModel por paciente.
+/// Provider especializado para o prontuário.
 final treatmentPlanViewModelProvider = StateNotifierProvider.family<TreatmentPlanViewModel, AsyncValue<List<TreatmentPlan>>, String>((ref, patientId) {
   return TreatmentPlanViewModel(ref, patientId);
 });
