@@ -49,7 +49,7 @@ class ProntuarioRepository implements IProntuarioRepository {
       );
       await _markOdontogramAsSynced(odontogram.patientId);
     } catch (_) {
-      // O registro local jÃ¡ foi gravado como pendente antes da tentativa remota.
+      // O registro local já foi gravado como pendente antes da tentativa remota.
     }
   }
 
@@ -203,6 +203,19 @@ class ProntuarioRepository implements IProntuarioRepository {
   }
 
   @override
+  Future<Anamnese?> getAnamneseByPatientId(String patientId) async {
+    try {
+      final response =
+          await _apiClient.instance.get('/patients/$patientId/anamnese');
+      if (response.data == null) return null;
+      return Anamnese.fromJson(response.data);
+    } catch (e) {
+      final anamneses = await getAnamneses(patientId);
+      return anamneses.isNotEmpty ? anamneses.first : null;
+    }
+  }
+
+  @override
   Future<void> saveAnamnese(String patientId, Map<String, dynamic> responses) async {
     final anamnese = Anamnese(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -300,6 +313,19 @@ class ProntuarioRepository implements IProntuarioRepository {
         status: TreatmentPlanStatus.inProgress,
         createdAt: DateTime.now(),
       )).toList();
+    }
+  }
+
+  @override
+  Future<TreatmentPlan?> getTreatmentPlan(String patientId) async {
+    try {
+      final response =
+          await _apiClient.instance.get('/patients/$patientId/treatment-plan');
+      if (response.data == null) return null;
+      return TreatmentPlan.fromJson(response.data);
+    } catch (e) {
+      final plans = await getTreatmentPlans(patientId);
+      return plans.isNotEmpty ? plans.first : null;
     }
   }
 
