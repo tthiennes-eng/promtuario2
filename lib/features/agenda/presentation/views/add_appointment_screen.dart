@@ -31,7 +31,6 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
   
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _startTime = const TimeOfDay(hour: 8, minute: 0);
-  int _durationMinutes = 30;
   final _notesController = TextEditingController();
 
   @override
@@ -89,17 +88,26 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
 
               usersAsync.when(
                 data: (users) {
-                  final professionals = users.where((u) => u.role == UserRole.professor || u.role == UserRole.aluno).toList();
+                  // Filtro expandido para incluir Admin e Coordenador, evitando que o campo fique vazio em testes
+                  final professionals = users.where((u) => 
+                    u.role == UserRole.professor || 
+                    u.role == UserRole.aluno || 
+                    u.role == UserRole.admin || 
+                    u.role == UserRole.coordenador
+                  ).toList();
+
                   return DropdownButtonFormField<String>(
                     decoration: const InputDecoration(labelText: 'Profissional Responsável', prefixIcon: Icon(Icons.medical_services_outlined)),
-                    items: professionals.map((u) => DropdownMenuItem(value: u.id, child: Text('${u.name} (${u.role.displayName})'))).toList(),
-                    onChanged: (val) {
+                    items: professionals.isEmpty 
+                      ? [const DropdownMenuItem(value: '', child: Text('Nenhum profissional cadastrado'))]
+                      : professionals.map((u) => DropdownMenuItem(value: u.id, child: Text('${u.name} (${u.role.displayName})'))).toList(),
+                    onChanged: professionals.isEmpty ? null : (val) {
                       setState(() {
                         _selectedDoctorId = val;
                         _selectedDoctorName = professionals.firstWhere((u) => u.id == val).name;
                       });
                     },
-                    validator: (v) => v == null ? 'Obrigatório' : null,
+                    validator: (v) => (v == null || v.isEmpty) ? 'Obrigatório' : null,
                   );
                 },
                 loading: () => const LinearProgressIndicator(),
@@ -110,7 +118,9 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
               proceduresAsync.when(
                 data: (procedures) => DropdownButtonFormField<String>(
                   decoration: const InputDecoration(labelText: 'Procedimento', prefixIcon: Icon(Icons.list_alt)),
-                  items: procedures.map((p) => DropdownMenuItem(value: p.name, child: Text(p.name))).toList(),
+                  items: procedures.isEmpty
+                    ? [const DropdownMenuItem(value: 'Avaliação', child: Text('Avaliação Geral'))]
+                    : procedures.map((p) => DropdownMenuItem(value: p.name, child: Text(p.name))).toList(),
                   onChanged: (val) => setState(() => _selectedProcedureName = val),
                   validator: (v) => v == null ? 'Obrigatório' : null,
                 ),
@@ -155,18 +165,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
               ),
               const SizedBox(height: 16),
 
-              DropdownButtonFormField<int>(
-                value: _durationMinutes,
-                decoration: const InputDecoration(labelText: 'Duração estimada'),
-                items: const [
-                  DropdownMenuItem(value: 30, child: Text('30 minutos')),
-                  DropdownMenuItem(value: 60, child: Text('1 hora')),
-                  DropdownMenuItem(value: 90, child: Text('1 hora e 30 min')),
-                  DropdownMenuItem(value: 120, child: Text('2 horas')),
-                ],
-                onChanged: (val) => setState(() => _durationMinutes = val!),
-              ),
-              const SizedBox(height: 16),
+              // Área de Duração Estimada removida conforme solicitado
 
               TextFormField(
                 controller: _notesController,
@@ -196,7 +195,8 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
         _startTime.hour,
         _startTime.minute,
       );
-      final end = start.add(Duration(minutes: _durationMinutes));
+      // Define uma duração padrão de 1 hora já que o campo foi removido
+      final end = start.add(const Duration(hours: 1));
 
       final appointment = Appointment(
         id: const Uuid().v4(),
