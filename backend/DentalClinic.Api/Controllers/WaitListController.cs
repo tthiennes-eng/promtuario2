@@ -1,14 +1,12 @@
 using DentalClinic.Core.Domain.Entities;
 using DentalClinic.Core.Domain.Repositories;
-using DentalClinic.Core.Domain.ValueObjects;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+// Alias para resolver ambiguidade
+using Specialty = DentalClinic.Core.Domain.Entities.Specialty;
 
 namespace DentalClinic.Api.Controllers;
 
-/// <summary>
-/// Controller para gestão da lista de espera por clínica e especialidade.
-/// </summary>
 [Authorize]
 [ApiController]
 [Route("api/[controller]")]
@@ -23,9 +21,6 @@ public class WaitListController : ControllerBase
         _logger = logger;
     }
 
-    /// <summary>
-    /// Lista pacientes na fila de espera de uma clínica específica.
-    /// </summary>
     [HttpGet("clinic/{clinicId}")]
     public async Task<IActionResult> GetByClinic(Guid clinicId)
     {
@@ -33,9 +28,6 @@ public class WaitListController : ControllerBase
         return Ok(entries);
     }
 
-    /// <summary>
-    /// Adiciona um paciente à lista de espera.
-    /// </summary>
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateWaitListRequest request)
     {
@@ -50,9 +42,6 @@ public class WaitListController : ControllerBase
         return CreatedAtAction(nameof(GetByClinic), new { clinicId = entry.ClinicId }, entry);
     }
 
-    /// <summary>
-    /// Resolve uma entrada na lista de espera (quando o paciente é agendado).
-    /// </summary>
     [HttpPatch("{id}/resolve")]
     public async Task<IActionResult> Resolve(Guid id)
     {
@@ -65,5 +54,9 @@ public class WaitListController : ControllerBase
     }
 }
 
-// Record para a requisição de criação na lista de espera
-public record CreateWaitListRequest(Guid PatientId, Guid ClinicId, Specialty Specialty, string Priority, string? Observation);
+public record CreateWaitListRequest(
+    Guid PatientId,
+    Guid ClinicId,
+    Specialty Specialty,
+    string Priority,
+    string? Observation);
