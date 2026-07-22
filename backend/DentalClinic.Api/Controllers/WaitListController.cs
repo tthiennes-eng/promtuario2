@@ -1,3 +1,4 @@
+using DentalClinic.Core.Domain.Entities;
 using DentalClinic.Core.Domain.Repositories;
 using DentalClinic.Core.Domain.ValueObjects;
 using Microsoft.AspNetCore.Authorization;
