@@ -49,7 +49,7 @@ public class AuthService : IAuthService
             return Result<TokenDto>.Failure("Credenciais inválidas.");
         }
 
-        if (!user.IsActive)
+        if (!user.IsActive) // Sincronizado: IsActive em vez de Status
         {
             _logger.LogWarning(">>> Falha: Conta inativa.");
             return Result<TokenDto>.Failure("Sua conta está bloqueada.");
@@ -65,10 +65,7 @@ public class AuthService : IAuthService
         user.ResetFailedLogin();
         await _userRepository.UpdateAsync(user);
 
-        // Mapeia o papel para o formato que o Flutter entende
-        var flutterRole = MapRoleToFlutter(user.Role);
-        var userDto = new UserDto(user.Id, user.Name, user.EmailAddress.Value, flutterRole);
-
+        var userDto = new UserDto(user.Id, user.Name, user.EmailAddress.Value, user.Role.ToString().ToLower());
         return Result<TokenDto>.Ok(new TokenDto(accessToken, refreshToken, userDto));
     }
 
@@ -80,7 +77,7 @@ public class AuthService : IAuthService
             return Result<TokenDto>.Failure("Sessão inválida.");
 
         var user = await _userRepository.GetByIdAsync(session.UserId);
-        if (user == null || !user.IsActive)
+        if (user == null || !user.IsActive) // Sincronizado
             return Result<TokenDto>.Failure("Usuário inválido.");
 
         session.Revoke();
@@ -92,7 +89,7 @@ public class AuthService : IAuthService
         var newSession = UserSession.Create(user.Id, newRefreshToken, 7, session.CreatedByIp);
         await _sessionRepository.AddAsync(newSession);
 
-        var userDto = new UserDto(user.Id, user.Name, user.EmailAddress.Value, MapRoleToFlutter(user.Role));
+        var userDto = new UserDto(user.Id, user.Name, user.EmailAddress.Value, user.Role.ToString().ToLower());
         return Result<TokenDto>.Ok(new TokenDto(newAccessToken, newRefreshToken, userDto));
     }
 
@@ -102,10 +99,5 @@ public class AuthService : IAuthService
         {
             await _sessionRepository.RevokeAllUserSessionsAsync(userGuid);
         }
-    }
-
-    private string MapRoleToFlutter(UserRole role)
-    {
-        return role.ToString().ToLower();
     }
 }
