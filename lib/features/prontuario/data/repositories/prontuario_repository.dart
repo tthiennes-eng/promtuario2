@@ -10,7 +10,6 @@ import 'package:promt/features/prontuario/domain/entities/evolution.dart';
 import 'package:promt/features/prontuario/domain/repositories/i_prontuario_repository.dart';
 import 'package:promt/features/auth/domain/entities/user.dart';
 import 'package:uuid/uuid.dart';
-import 'package:dio/dio.dart';
 
 class ProntuarioRepository implements IProntuarioRepository {
   final ApiClient _apiClient;
@@ -71,12 +70,6 @@ class ProntuarioRepository implements IProntuarioRepository {
   }
 
   @override
-  Future<List<Prescription>> getPrescriptionHistory(String patientId) async {
-    final response = await _apiClient.instance.get('Documentos/receitas/$patientId');
-    return (response.data as List).map((json) => Prescription.fromJson(json)).toList();
-  }
-
-  @override
   Future<MedicalCertificate> createCertificate(MedicalCertificate certificate) async {
     final clinicId = await _getDefaultClinicId();
     final data = certificate.toJson();
@@ -86,20 +79,25 @@ class ProntuarioRepository implements IProntuarioRepository {
   }
 
   @override
-  Future<List<MedicalCertificate>> getCertificateHistory(String patientId) async {
-    final response = await _apiClient.instance.get('Documentos/atestados/$patientId');
-    return (response.data as List).map((json) => MedicalCertificate.fromJson(json)).toList();
-  }
-
-  @override
   Future<List<TreatmentPlan>> getTreatmentPlans(String patientId) async {
     try {
       final response = await _apiClient.instance.get('TreatmentPlans/active/$patientId');
       return [TreatmentPlan.fromJson(response.data)];
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) return [];
-      rethrow;
+    } catch (_) {
+      return [];
     }
+  }
+
+  @override
+  Future<List<Prescription>> getPrescriptionHistory(String patientId) async {
+    final response = await _apiClient.instance.get('Documentos/receitas/$patientId');
+    return (response.data as List).map((json) => Prescription.fromJson(json)).toList();
+  }
+
+  @override
+  Future<List<MedicalCertificate>> getCertificateHistory(String patientId) async {
+    final response = await _apiClient.instance.get('Documentos/atestados/$patientId');
+    return (response.data as List).map((json) => MedicalCertificate.fromJson(json)).toList();
   }
 
   @override
@@ -124,13 +122,9 @@ class ProntuarioRepository implements IProntuarioRepository {
 
   @override
   Future<List<Anamnese>> getAnamneses(String patientId) async {
-    try {
-      final response = await _apiClient.instance.get('Prontuario/$patientId/anamneses');
-      final List<dynamic> data = response.data ?? [];
-      return data.map((json) => Anamnese.fromJson(json)).toList();
-    } catch (_) {
-      return [];
-    }
+    final response = await _apiClient.instance.get('Prontuario/$patientId/anamnese');
+    if (response.data == null) return [];
+    return [Anamnese.fromJson(response.data)];
   }
 
   @override
@@ -144,12 +138,8 @@ class ProntuarioRepository implements IProntuarioRepository {
     await _apiClient.instance.post('Prontuario/$patientId/anamnese', data: responses);
   }
 
-  @override
-  Future<void> syncPendingData() async {}
-  @override
-  Future<List<Evolution>> getEvolutionHistory(String patientId) async => getEvolutions(patientId);
-  @override
-  Future<TreatmentPlan?> getTreatmentPlan(String patientId) async => null;
-  @override
-  Future<void> updateTreatmentItemStatus(String planId, String itemId, String status) async {}
+  @override Future<void> syncPendingData() async {}
+  @override Future<List<Evolution>> getEvolutionHistory(String id) async => getEvolutions(id);
+  @override Future<TreatmentPlan?> getTreatmentPlan(String id) async => null;
+  @override Future<void> updateTreatmentItemStatus(String p, String i, String s) async {}
 }

@@ -84,7 +84,7 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
                     await ref.read(treatmentPlanViewModelProvider(widget.patientId).notifier).addItem(newItem);
                     if (mounted) Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Procedimento salvo com sucesso!'), backgroundColor: Colors.green),
+                      const SnackBar(content: Text('Procedimento adicionado com sucesso!'), backgroundColor: Colors.green),
                     );
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -119,11 +119,13 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
             children: [
               _buildPlanHeader(plan),
               Expanded(child: _buildItemsList(plan.items)),
+              const Divider(height: 1),
+              _buildPlanSummary(plan),
             ],
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Erro ao carregar plano: ${err.toString()}')),
+        error: (err, _) => Center(child: Text('Erro: ${err.toString()}')),
       ),
     );
   }
@@ -140,7 +142,7 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
           FilledButton.icon(
             onPressed: _showAddProcedureDialog,
             icon: const Icon(Icons.add),
-            label: const Text('Adicionar Procedimento'),
+            label: const Text('Iniciar Plano de Tratamento'),
             style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20)),
           ),
         ],
@@ -152,7 +154,7 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
     return ListTile(
       tileColor: Colors.blue.withOpacity(0.05),
       title: Text('Paciente: ${widget.patientName}', style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle: Text('Status do Plano: ${plan.status.name.toUpperCase()}'),
+      subtitle: Text('Status: ${plan.status.name.toUpperCase()}'),
       trailing: IconButton(
         icon: const Icon(Icons.add_circle_outline, color: Colors.blue),
         onPressed: _showAddProcedureDialog,
@@ -181,6 +183,19 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildPlanSummary(TreatmentPlan plan) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text('Total de Procedimentos:', style: TextStyle(fontWeight: FontWeight.bold)),
+          Text('${plan.items.length}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
+        ],
+      ),
     );
   }
 
