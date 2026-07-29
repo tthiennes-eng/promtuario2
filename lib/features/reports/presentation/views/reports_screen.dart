@@ -4,8 +4,6 @@ import 'package:intl/intl.dart';
 import '../viewmodels/reports_viewmodel.dart';
 import '../../domain/entities/report_data.dart';
 
-/// Tela de Relatórios e Indicadores de Gestão.
-/// Integrada ao ReportsViewModel para dados reais e filtragem por período.
 class ReportsScreen extends ConsumerWidget {
   const ReportsScreen({super.key});
 
@@ -15,15 +13,15 @@ class ReportsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Relatórios & Indicadores'),
+        title: const Text('Indicadores de Desempenho Clínico'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => ref.read(reportsViewModelProvider.notifier).refresh(),
           ),
           IconButton(
-            icon: const Icon(Icons.download_outlined),
-            tooltip: 'Exportar PDF',
+            icon: const Icon(Icons.picture_as_pdf_outlined),
+            tooltip: 'Exportar Relatório',
             onPressed: () => _exportReport(context),
           ),
           const SizedBox(width: 8),
@@ -41,12 +39,12 @@ class ReportsScreen extends ConsumerWidget {
               const SizedBox(height: 32),
               if (metrics != null) _buildChartSection(context, metrics.growthHistory),
               const SizedBox(height: 32),
-              // TODO: _buildDetailedTable precisa ser implementado ou removido
+              if (metrics != null) _buildDetailedTable(context, metrics.specialtyProduction),
             ],
           ),
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Erro ao carregar dados: $err')),
+        error: (err, _) => Center(child: Text('Erro ao carregar dados: ${err.toString()}')),
       ),
     );
   }
@@ -70,28 +68,14 @@ class ReportsScreen extends ConsumerWidget {
             ),
             const Spacer(),
             FilledButton.tonalIcon(
-              onPressed: () => _selectDateRange(context, ref, state),
+              onPressed: () {}, // Funcionalidade de filtro
               icon: const Icon(Icons.filter_alt_outlined),
-              label: const Text('Alterar Período'),
+              label: const Text('Filtrar'),
             ),
           ],
         ),
       ),
     );
-  }
-
-  Future<void> _selectDateRange(BuildContext context, WidgetRef ref, AsyncValue<ClinicPerformanceMetrics?> state) async {
-    if (state.value == null) return;
-    final picked = await showDateRangePicker(
-      context: context,
-      initialDateRange: DateTimeRange(start: state.value!.startDate, end: state.value!.endDate),
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-    );
-
-    if (picked != null) {
-      // TODO: Implement updatePeriod no viewmodel se necessário
-    }
   }
 
   Widget _buildSummaryGrid(ClinicPerformanceMetrics metrics) {
@@ -104,7 +88,7 @@ class ReportsScreen extends ConsumerWidget {
         mainAxisSpacing: 16,
         childAspectRatio: 2.5,
         children: [
-          _reportStat('Atendimentos', '${metrics.totalProceduresThisMonth}', Icons.assignment_turned_in, Colors.blue),
+          _reportStat('Atendimentos Realizados', '${metrics.totalProceduresThisMonth}', Icons.assignment_turned_in, Colors.blue),
           _reportStat('Taxa de Ocupação', '${(metrics.occupancyRate * 100).toStringAsFixed(1)}%', Icons.pie_chart, Colors.orange),
           _reportStat('Índice de Faltas', '${(metrics.absenceRate * 100).toStringAsFixed(1)}%', Icons.person_off, Colors.red),
         ],
@@ -144,7 +128,7 @@ class ReportsScreen extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Evolução Mensal', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const Text('Evolução de Atendimentos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
         Card(
           child: Padding(
@@ -164,7 +148,6 @@ class ReportsScreen extends ConsumerWidget {
   }
 
   Widget _buildBar(BuildContext context, MonthlyGrowth data) {
-    // Cálculo simples de altura para o gráfico de barras
     final double height = (data.count * 2.0).clamp(10, 150);
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -190,7 +173,7 @@ class ReportsScreen extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Produção Detalhada por Especialidade', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const Text('Produção Acadêmica por Especialidade', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
@@ -198,14 +181,12 @@ class ReportsScreen extends ConsumerWidget {
             child: DataTable(
               columns: const [
                 DataColumn(label: Text('Especialidade')),
-                DataColumn(label: Text('Qtd')),
-                DataColumn(label: Text('Valor Total')),
+                DataColumn(label: Text('Qtd Atendimentos')),
                 DataColumn(label: Text('Eficiência')),
               ],
               rows: production.map((p) => DataRow(cells: [
                 DataCell(Text(p.specialty)),
                 DataCell(Text(p.appointmentCount.toString())),
-                DataCell(Text(NumberFormat.currency(symbol: 'R\$').format(p.totalValue))),
                 DataCell(Text('${(p.efficiencyRate * 100).toStringAsFixed(0)}%')),
               ])).toList(),
             ),
@@ -217,7 +198,7 @@ class ReportsScreen extends ConsumerWidget {
 
   void _exportReport(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Gerando arquivo PDF consolidado...'), behavior: SnackBarBehavior.floating),
+      const SnackBar(content: Text('Gerando relatório acadêmico PDF...'), behavior: SnackBarBehavior.floating),
     );
   }
 }

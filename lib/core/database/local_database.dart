@@ -142,11 +142,11 @@ class EvolutionsLocal extends Table {
 }
 
 /// Itens do Plano de Tratamento com suporte a sincronização.
+/// Removida menção a 'value' para adequação universitária.
 class TreatmentItemsLocal extends Table {
   TextColumn get id => text()();
   TextColumn get planId => text()();
   TextColumn get procedureName => text()();
-  RealColumn get value => real()();
   IntColumn get toothNumber => integer().nullable()();
   TextColumn get status => text()();
   BoolColumn get isSynced => boolean().withDefault(const Constant(true))();
@@ -171,7 +171,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 20;
+  int get schemaVersion => 22;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -181,7 +181,6 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(odontogramLocal, odontogramLocal.isSynced);
           }
           if (from < 20) {
-            // Adiciona colunas na tabela evolutions_local se não existirem
             await m.addColumn(evolutionsLocal, evolutionsLocal.studentId);
             await m.addColumn(evolutionsLocal, evolutionsLocal.studentName);
             await m.addColumn(evolutionsLocal, evolutionsLocal.professorName);

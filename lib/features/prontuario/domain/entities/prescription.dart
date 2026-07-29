@@ -17,6 +17,8 @@ class Prescription with _$Prescription {
   }) = _Prescription;
 
   factory Prescription.fromJson(Map<String, dynamic> json) => _$PrescriptionFromJson(json);
+  
+  Map<String, dynamic> toJson() => _$$PrescriptionImplToJson(this as _$PrescriptionImpl);
 }
 
 @freezed
@@ -28,6 +30,8 @@ class PrescriptionItem with _$PrescriptionItem {
   }) = _PrescriptionItem;
 
   factory PrescriptionItem.fromJson(Map<String, dynamic> json) => _$PrescriptionItemFromJson(json);
+  
+  Map<String, dynamic> toJson() => _$$PrescriptionItemImplToJson(this as _$PrescriptionItemImpl);
 }
 
 @freezed
@@ -45,4 +49,6 @@ class MedicalCertificate with _$MedicalCertificate {
   }) = _MedicalCertificate;
 
   factory MedicalCertificate.fromJson(Map<String, dynamic> json) => _$MedicalCertificateFromJson(json);
+
+  Map<String, dynamic> toJson() => _$$MedicalCertificateImplToJson(this as _$MedicalCertificateImpl);
 }

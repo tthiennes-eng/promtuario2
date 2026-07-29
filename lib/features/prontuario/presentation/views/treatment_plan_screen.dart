@@ -25,13 +25,12 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
   void _showAddProcedureDialog() {
     String? selectedProcedure;
     int? toothNumber;
-    double value = 0.0;
     final obsController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Novo Procedimento'),
+        title: const Text('Novo Procedimento Acadêmico'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -54,16 +53,14 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
                 onChanged: (v) => toothNumber = int.tryParse(v),
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Valor (R$)', border: OutlineInputBorder()),
-                keyboardType: TextInputType.number,
-                onChanged: (v) => value = double.tryParse(v) ?? 0.0,
-              ),
-              const SizedBox(height: 16),
               TextField(
                 controller: obsController,
-                maxLines: 3,
-                decoration: const InputDecoration(labelText: 'Observações / Detalhes', border: OutlineInputBorder()),
+                maxLines: 4,
+                decoration: const InputDecoration(
+                  labelText: 'Observações Técnicas', 
+                  hintText: 'Descreva a necessidade e detalhes do atendimento...',
+                  border: OutlineInputBorder()
+                ),
               ),
             ],
           ),
@@ -77,7 +74,6 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
                   id: const Uuid().v4(),
                   procedureId: const Uuid().v4(),
                   procedureName: selectedProcedure!,
-                  value: value,
                   toothNumber: toothNumber,
                   observation: obsController.text,
                   status: TreatmentItemStatus.pending,
@@ -86,7 +82,7 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
                 Navigator.pop(context);
               }
             },
-            child: const Text('Adicionar'),
+            child: const Text('Adicionar ao Plano'),
           ),
         ],
       ),
@@ -107,20 +103,11 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
             children: [
               _buildPlanHeader(plan),
               Expanded(child: _buildItemsList(plan.items)),
-              _buildFooter(plan),
             ],
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Erro: $err')),
-      ),
-      floatingActionButton: planAsync.maybeWhen(
-        data: (plans) => plans.isNotEmpty ? FloatingActionButton.extended(
-          onPressed: _showAddProcedureDialog,
-          label: const Text('Novo Procedimento'),
-          icon: const Icon(Icons.add),
-        ) : null,
-        orElse: () => null,
+        error: (err, _) => Center(child: Text('Erro ao carregar plano: ${err.toString()}')),
       ),
     );
   }
@@ -132,7 +119,7 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
         children: [
           const Icon(Icons.assignment_outlined, size: 80, color: Colors.grey),
           const SizedBox(height: 16),
-          const Text('Nenhum plano para este paciente.', style: TextStyle(color: Colors.grey)),
+          const Text('Nenhum planejamento registrado para este paciente.', style: TextStyle(color: Colors.grey)),
           const SizedBox(height: 32),
           FilledButton.icon(
             onPressed: _showAddProcedureDialog,
@@ -150,39 +137,43 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
       tileColor: Colors.blue.withOpacity(0.05),
       title: Text('Paciente: ${widget.patientName}', style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text('Status do Plano: ${plan.status.name.toUpperCase()}'),
+      trailing: IconButton(
+        icon: const Icon(Icons.add_circle_outline, color: Colors.blue),
+        onPressed: _showAddProcedureDialog,
+        tooltip: 'Adicionar',
+      ),
     );
   }
 
   Widget _buildItemsList(List<TreatmentItem> items) {
     return ListView.builder(
+      padding: const EdgeInsets.all(8),
       itemCount: items.length,
       itemBuilder: (context, i) {
         final item = items[i];
-        return ListTile(
-          title: Text(item.procedureName),
-          subtitle: item.observation != null ? Text(item.observation!) : null,
-          trailing: Text('R$ ${item.value.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
-          leading: item.toothNumber != null ? CircleAvatar(child: Text(item.toothNumber.toString())) : const Icon(Icons.medical_services_outlined),
+        return Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            leading: item.toothNumber != null ? CircleAvatar(child: Text(item.toothNumber.toString())) : const Icon(Icons.medical_services),
+            title: Text(item.procedureName, style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: (item.observation != null && item.observation!.isNotEmpty) 
+                ? Text(item.observation!) 
+                : const Text('Sem observações registradas.'),
+            trailing: _buildStatusIcon(item.status),
+          ),
         );
       },
     );
   }
 
-  Widget _buildFooter(TreatmentPlan plan) {
-    final total = plan.items.fold<double>(0, (sum, item) => sum + item.value);
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text('Total Estimado:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          Text('R$ ${total.toStringAsFixed(2)}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue)),
-        ],
-      ),
-    );
+  Widget _buildStatusIcon(TreatmentItemStatus status) {
+    return switch (status) {
+      TreatmentItemStatus.pending => const Icon(Icons.hourglass_empty, color: Colors.orange),
+      TreatmentItemStatus.inProgress => const Icon(Icons.pending, color: Colors.blue),
+      TreatmentItemStatus.completed => const Icon(Icons.check_circle, color: Colors.green),
+      TreatmentItemStatus.cancelled => const Icon(Icons.cancel, color: Colors.red),
+    };
   }
 }

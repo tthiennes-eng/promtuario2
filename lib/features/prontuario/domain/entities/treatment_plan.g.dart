@@ -47,8 +47,8 @@ _$TreatmentItemImpl _$$TreatmentItemImplFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String,
       procedureId: json['procedureId'] as String,
       procedureName: json['procedureName'] as String,
-      value: (json['value'] as num).toDouble(),
       toothNumber: (json['toothNumber'] as num?)?.toInt(),
+      observation: json['observation'] as String?,
       status: $enumDecode(_$TreatmentItemStatusEnumMap, json['status']),
     );
 
@@ -57,8 +57,8 @@ Map<String, dynamic> _$$TreatmentItemImplToJson(_$TreatmentItemImpl instance) =>
       'id': instance.id,
       'procedureId': instance.procedureId,
       'procedureName': instance.procedureName,
-      'value': instance.value,
       'toothNumber': instance.toothNumber,
+      'observation': instance.observation,
       'status': _$TreatmentItemStatusEnumMap[instance.status]!,
     };
 

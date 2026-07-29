@@ -11,7 +11,6 @@ _$SpecialtyProductionImpl _$$SpecialtyProductionImplFromJson(
     _$SpecialtyProductionImpl(
       specialty: json['specialty'] as String,
       appointmentCount: (json['appointmentCount'] as num).toInt(),
-      totalValue: (json['totalValue'] as num).toDouble(),
       efficiencyRate: (json['efficiencyRate'] as num).toDouble(),
     );
 
@@ -20,7 +19,6 @@ Map<String, dynamic> _$$SpecialtyProductionImplToJson(
     <String, dynamic>{
       'specialty': instance.specialty,
       'appointmentCount': instance.appointmentCount,
-      'totalValue': instance.totalValue,
       'efficiencyRate': instance.efficiencyRate,
     };
 
@@ -34,6 +32,9 @@ _$ClinicPerformanceMetricsImpl _$$ClinicPerformanceMetricsImplFromJson(
       growthHistory: (json['growthHistory'] as List<dynamic>)
           .map((e) => MonthlyGrowth.fromJson(e as Map<String, dynamic>))
           .toList(),
+      specialtyProduction: (json['specialtyProduction'] as List<dynamic>)
+          .map((e) => SpecialtyProduction.fromJson(e as Map<String, dynamic>))
+          .toList(),
       startDate: DateTime.parse(json['startDate'] as String),
       endDate: DateTime.parse(json['endDate'] as String),
     );
@@ -45,6 +46,7 @@ Map<String, dynamic> _$$ClinicPerformanceMetricsImplToJson(
       'absenceRate': instance.absenceRate,
       'totalProceduresThisMonth': instance.totalProceduresThisMonth,
       'growthHistory': instance.growthHistory,
+      'specialtyProduction': instance.specialtyProduction,
       'startDate': instance.startDate.toIso8601String(),
       'endDate': instance.endDate.toIso8601String(),
     };

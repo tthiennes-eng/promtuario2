@@ -4007,11 +4007,6 @@ class $TreatmentItemsLocalTable extends TreatmentItemsLocal
   late final GeneratedColumn<String> procedureName = GeneratedColumn<String>(
       'procedure_name', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _valueMeta = const VerificationMeta('value');
-  @override
-  late final GeneratedColumn<double> value = GeneratedColumn<double>(
-      'value', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
   static const VerificationMeta _toothNumberMeta =
       const VerificationMeta('toothNumber');
   @override
@@ -4035,7 +4030,7 @@ class $TreatmentItemsLocalTable extends TreatmentItemsLocal
       defaultValue: const Constant(true));
   @override
   List<GeneratedColumn> get $columns =>
-      [id, planId, procedureName, value, toothNumber, status, isSynced];
+      [id, planId, procedureName, toothNumber, status, isSynced];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -4065,12 +4060,6 @@ class $TreatmentItemsLocalTable extends TreatmentItemsLocal
               data['procedure_name']!, _procedureNameMeta));
     } else if (isInserting) {
       context.missing(_procedureNameMeta);
-    }
-    if (data.containsKey('value')) {
-      context.handle(
-          _valueMeta, value.isAcceptableOrUnknown(data['value']!, _valueMeta));
-    } else if (isInserting) {
-      context.missing(_valueMeta);
     }
     if (data.containsKey('tooth_number')) {
       context.handle(
@@ -4104,8 +4093,6 @@ class $TreatmentItemsLocalTable extends TreatmentItemsLocal
           .read(DriftSqlType.string, data['${effectivePrefix}plan_id'])!,
       procedureName: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}procedure_name'])!,
-      value: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}value'])!,
       toothNumber: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}tooth_number']),
       status: attachedDatabase.typeMapping
@@ -4126,7 +4113,6 @@ class TreatmentItemsLocalData extends DataClass
   final String id;
   final String planId;
   final String procedureName;
-  final double value;
   final int? toothNumber;
   final String status;
   final bool isSynced;
@@ -4134,7 +4120,6 @@ class TreatmentItemsLocalData extends DataClass
       {required this.id,
       required this.planId,
       required this.procedureName,
-      required this.value,
       this.toothNumber,
       required this.status,
       required this.isSynced});
@@ -4144,7 +4129,6 @@ class TreatmentItemsLocalData extends DataClass
     map['id'] = Variable<String>(id);
     map['plan_id'] = Variable<String>(planId);
     map['procedure_name'] = Variable<String>(procedureName);
-    map['value'] = Variable<double>(value);
     if (!nullToAbsent || toothNumber != null) {
       map['tooth_number'] = Variable<int>(toothNumber);
     }
@@ -4158,7 +4142,6 @@ class TreatmentItemsLocalData extends DataClass
       id: Value(id),
       planId: Value(planId),
       procedureName: Value(procedureName),
-      value: Value(value),
       toothNumber: toothNumber == null && nullToAbsent
           ? const Value.absent()
           : Value(toothNumber),
@@ -4174,7 +4157,6 @@ class TreatmentItemsLocalData extends DataClass
       id: serializer.fromJson<String>(json['id']),
       planId: serializer.fromJson<String>(json['planId']),
       procedureName: serializer.fromJson<String>(json['procedureName']),
-      value: serializer.fromJson<double>(json['value']),
       toothNumber: serializer.fromJson<int?>(json['toothNumber']),
       status: serializer.fromJson<String>(json['status']),
       isSynced: serializer.fromJson<bool>(json['isSynced']),
@@ -4187,7 +4169,6 @@ class TreatmentItemsLocalData extends DataClass
       'id': serializer.toJson<String>(id),
       'planId': serializer.toJson<String>(planId),
       'procedureName': serializer.toJson<String>(procedureName),
-      'value': serializer.toJson<double>(value),
       'toothNumber': serializer.toJson<int?>(toothNumber),
       'status': serializer.toJson<String>(status),
       'isSynced': serializer.toJson<bool>(isSynced),
@@ -4198,7 +4179,6 @@ class TreatmentItemsLocalData extends DataClass
           {String? id,
           String? planId,
           String? procedureName,
-          double? value,
           Value<int?> toothNumber = const Value.absent(),
           String? status,
           bool? isSynced}) =>
@@ -4206,7 +4186,6 @@ class TreatmentItemsLocalData extends DataClass
         id: id ?? this.id,
         planId: planId ?? this.planId,
         procedureName: procedureName ?? this.procedureName,
-        value: value ?? this.value,
         toothNumber: toothNumber.present ? toothNumber.value : this.toothNumber,
         status: status ?? this.status,
         isSynced: isSynced ?? this.isSynced,
@@ -4218,7 +4197,6 @@ class TreatmentItemsLocalData extends DataClass
       procedureName: data.procedureName.present
           ? data.procedureName.value
           : this.procedureName,
-      value: data.value.present ? data.value.value : this.value,
       toothNumber:
           data.toothNumber.present ? data.toothNumber.value : this.toothNumber,
       status: data.status.present ? data.status.value : this.status,
@@ -4232,7 +4210,6 @@ class TreatmentItemsLocalData extends DataClass
           ..write('id: $id, ')
           ..write('planId: $planId, ')
           ..write('procedureName: $procedureName, ')
-          ..write('value: $value, ')
           ..write('toothNumber: $toothNumber, ')
           ..write('status: $status, ')
           ..write('isSynced: $isSynced')
@@ -4241,8 +4218,8 @@ class TreatmentItemsLocalData extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(
-      id, planId, procedureName, value, toothNumber, status, isSynced);
+  int get hashCode =>
+      Object.hash(id, planId, procedureName, toothNumber, status, isSynced);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -4250,7 +4227,6 @@ class TreatmentItemsLocalData extends DataClass
           other.id == this.id &&
           other.planId == this.planId &&
           other.procedureName == this.procedureName &&
-          other.value == this.value &&
           other.toothNumber == this.toothNumber &&
           other.status == this.status &&
           other.isSynced == this.isSynced);
@@ -4261,7 +4237,6 @@ class TreatmentItemsLocalCompanion
   final Value<String> id;
   final Value<String> planId;
   final Value<String> procedureName;
-  final Value<double> value;
   final Value<int?> toothNumber;
   final Value<String> status;
   final Value<bool> isSynced;
@@ -4270,7 +4245,6 @@ class TreatmentItemsLocalCompanion
     this.id = const Value.absent(),
     this.planId = const Value.absent(),
     this.procedureName = const Value.absent(),
-    this.value = const Value.absent(),
     this.toothNumber = const Value.absent(),
     this.status = const Value.absent(),
     this.isSynced = const Value.absent(),
@@ -4280,7 +4254,6 @@ class TreatmentItemsLocalCompanion
     required String id,
     required String planId,
     required String procedureName,
-    required double value,
     this.toothNumber = const Value.absent(),
     required String status,
     this.isSynced = const Value.absent(),
@@ -4288,13 +4261,11 @@ class TreatmentItemsLocalCompanion
   })  : id = Value(id),
         planId = Value(planId),
         procedureName = Value(procedureName),
-        value = Value(value),
         status = Value(status);
   static Insertable<TreatmentItemsLocalData> custom({
     Expression<String>? id,
     Expression<String>? planId,
     Expression<String>? procedureName,
-    Expression<double>? value,
     Expression<int>? toothNumber,
     Expression<String>? status,
     Expression<bool>? isSynced,
@@ -4304,7 +4275,6 @@ class TreatmentItemsLocalCompanion
       if (id != null) 'id': id,
       if (planId != null) 'plan_id': planId,
       if (procedureName != null) 'procedure_name': procedureName,
-      if (value != null) 'value': value,
       if (toothNumber != null) 'tooth_number': toothNumber,
       if (status != null) 'status': status,
       if (isSynced != null) 'is_synced': isSynced,
@@ -4316,7 +4286,6 @@ class TreatmentItemsLocalCompanion
       {Value<String>? id,
       Value<String>? planId,
       Value<String>? procedureName,
-      Value<double>? value,
       Value<int?>? toothNumber,
       Value<String>? status,
       Value<bool>? isSynced,
@@ -4325,7 +4294,6 @@ class TreatmentItemsLocalCompanion
       id: id ?? this.id,
       planId: planId ?? this.planId,
       procedureName: procedureName ?? this.procedureName,
-      value: value ?? this.value,
       toothNumber: toothNumber ?? this.toothNumber,
       status: status ?? this.status,
       isSynced: isSynced ?? this.isSynced,
@@ -4344,9 +4312,6 @@ class TreatmentItemsLocalCompanion
     }
     if (procedureName.present) {
       map['procedure_name'] = Variable<String>(procedureName.value);
-    }
-    if (value.present) {
-      map['value'] = Variable<double>(value.value);
     }
     if (toothNumber.present) {
       map['tooth_number'] = Variable<int>(toothNumber.value);
@@ -4369,7 +4334,6 @@ class TreatmentItemsLocalCompanion
           ..write('id: $id, ')
           ..write('planId: $planId, ')
           ..write('procedureName: $procedureName, ')
-          ..write('value: $value, ')
           ..write('toothNumber: $toothNumber, ')
           ..write('status: $status, ')
           ..write('isSynced: $isSynced, ')
@@ -6394,7 +6358,6 @@ typedef $$TreatmentItemsLocalTableCreateCompanionBuilder
   required String id,
   required String planId,
   required String procedureName,
-  required double value,
   Value<int?> toothNumber,
   required String status,
   Value<bool> isSynced,
@@ -6405,7 +6368,6 @@ typedef $$TreatmentItemsLocalTableUpdateCompanionBuilder
   Value<String> id,
   Value<String> planId,
   Value<String> procedureName,
-  Value<double> value,
   Value<int?> toothNumber,
   Value<String> status,
   Value<bool> isSynced,
@@ -6429,9 +6391,6 @@ class $$TreatmentItemsLocalTableFilterComposer
 
   ColumnFilters<String> get procedureName => $composableBuilder(
       column: $table.procedureName, builder: (column) => ColumnFilters(column));
-
-  ColumnFilters<double> get value => $composableBuilder(
-      column: $table.value, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get toothNumber => $composableBuilder(
       column: $table.toothNumber, builder: (column) => ColumnFilters(column));
@@ -6462,9 +6421,6 @@ class $$TreatmentItemsLocalTableOrderingComposer
       column: $table.procedureName,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<double> get value => $composableBuilder(
-      column: $table.value, builder: (column) => ColumnOrderings(column));
-
   ColumnOrderings<int> get toothNumber => $composableBuilder(
       column: $table.toothNumber, builder: (column) => ColumnOrderings(column));
 
@@ -6492,9 +6448,6 @@ class $$TreatmentItemsLocalTableAnnotationComposer
 
   GeneratedColumn<String> get procedureName => $composableBuilder(
       column: $table.procedureName, builder: (column) => column);
-
-  GeneratedColumn<double> get value =>
-      $composableBuilder(column: $table.value, builder: (column) => column);
 
   GeneratedColumn<int> get toothNumber => $composableBuilder(
       column: $table.toothNumber, builder: (column) => column);
@@ -6539,7 +6492,6 @@ class $$TreatmentItemsLocalTableTableManager extends RootTableManager<
             Value<String> id = const Value.absent(),
             Value<String> planId = const Value.absent(),
             Value<String> procedureName = const Value.absent(),
-            Value<double> value = const Value.absent(),
             Value<int?> toothNumber = const Value.absent(),
             Value<String> status = const Value.absent(),
             Value<bool> isSynced = const Value.absent(),
@@ -6549,7 +6501,6 @@ class $$TreatmentItemsLocalTableTableManager extends RootTableManager<
             id: id,
             planId: planId,
             procedureName: procedureName,
-            value: value,
             toothNumber: toothNumber,
             status: status,
             isSynced: isSynced,
@@ -6559,7 +6510,6 @@ class $$TreatmentItemsLocalTableTableManager extends RootTableManager<
             required String id,
             required String planId,
             required String procedureName,
-            required double value,
             Value<int?> toothNumber = const Value.absent(),
             required String status,
             Value<bool> isSynced = const Value.absent(),
@@ -6569,7 +6519,6 @@ class $$TreatmentItemsLocalTableTableManager extends RootTableManager<
             id: id,
             planId: planId,
             procedureName: procedureName,
-            value: value,
             toothNumber: toothNumber,
             status: status,
             isSynced: isSynced,

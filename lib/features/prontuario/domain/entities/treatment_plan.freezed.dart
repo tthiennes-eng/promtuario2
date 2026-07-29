@@ -337,8 +337,8 @@ mixin _$TreatmentItem {
   String get id => throw _privateConstructorUsedError;
   String get procedureId => throw _privateConstructorUsedError;
   String get procedureName => throw _privateConstructorUsedError;
-  double get value => throw _privateConstructorUsedError;
   int? get toothNumber => throw _privateConstructorUsedError;
+  String? get observation => throw _privateConstructorUsedError;
   TreatmentItemStatus get status => throw _privateConstructorUsedError;
 
   /// Serializes this TreatmentItem to a JSON map.
@@ -361,8 +361,8 @@ abstract class $TreatmentItemCopyWith<$Res> {
       {String id,
       String procedureId,
       String procedureName,
-      double value,
       int? toothNumber,
+      String? observation,
       TreatmentItemStatus status});
 }
 
@@ -384,8 +384,8 @@ class _$TreatmentItemCopyWithImpl<$Res, $Val extends TreatmentItem>
     Object? id = null,
     Object? procedureId = null,
     Object? procedureName = null,
-    Object? value = null,
     Object? toothNumber = freezed,
+    Object? observation = freezed,
     Object? status = null,
   }) {
     return _then(_value.copyWith(
@@ -401,14 +401,14 @@ class _$TreatmentItemCopyWithImpl<$Res, $Val extends TreatmentItem>
           ? _value.procedureName
           : procedureName // ignore: cast_nullable_to_non_nullable
               as String,
-      value: null == value
-          ? _value.value
-          : value // ignore: cast_nullable_to_non_nullable
-              as double,
       toothNumber: freezed == toothNumber
           ? _value.toothNumber
           : toothNumber // ignore: cast_nullable_to_non_nullable
               as int?,
+      observation: freezed == observation
+          ? _value.observation
+          : observation // ignore: cast_nullable_to_non_nullable
+              as String?,
       status: null == status
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
@@ -429,8 +429,8 @@ abstract class _$$TreatmentItemImplCopyWith<$Res>
       {String id,
       String procedureId,
       String procedureName,
-      double value,
       int? toothNumber,
+      String? observation,
       TreatmentItemStatus status});
 }
 
@@ -450,8 +450,8 @@ class __$$TreatmentItemImplCopyWithImpl<$Res>
     Object? id = null,
     Object? procedureId = null,
     Object? procedureName = null,
-    Object? value = null,
     Object? toothNumber = freezed,
+    Object? observation = freezed,
     Object? status = null,
   }) {
     return _then(_$TreatmentItemImpl(
@@ -467,14 +467,14 @@ class __$$TreatmentItemImplCopyWithImpl<$Res>
           ? _value.procedureName
           : procedureName // ignore: cast_nullable_to_non_nullable
               as String,
-      value: null == value
-          ? _value.value
-          : value // ignore: cast_nullable_to_non_nullable
-              as double,
       toothNumber: freezed == toothNumber
           ? _value.toothNumber
           : toothNumber // ignore: cast_nullable_to_non_nullable
               as int?,
+      observation: freezed == observation
+          ? _value.observation
+          : observation // ignore: cast_nullable_to_non_nullable
+              as String?,
       status: null == status
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
@@ -490,8 +490,8 @@ class _$TreatmentItemImpl implements _TreatmentItem {
       {required this.id,
       required this.procedureId,
       required this.procedureName,
-      required this.value,
       this.toothNumber,
+      this.observation,
       required this.status});
 
   factory _$TreatmentItemImpl.fromJson(Map<String, dynamic> json) =>
@@ -504,15 +504,15 @@ class _$TreatmentItemImpl implements _TreatmentItem {
   @override
   final String procedureName;
   @override
-  final double value;
-  @override
   final int? toothNumber;
+  @override
+  final String? observation;
   @override
   final TreatmentItemStatus status;
 
   @override
   String toString() {
-    return 'TreatmentItem(id: $id, procedureId: $procedureId, procedureName: $procedureName, value: $value, toothNumber: $toothNumber, status: $status)';
+    return 'TreatmentItem(id: $id, procedureId: $procedureId, procedureName: $procedureName, toothNumber: $toothNumber, observation: $observation, status: $status)';
   }
 
   @override
@@ -525,16 +525,17 @@ class _$TreatmentItemImpl implements _TreatmentItem {
                 other.procedureId == procedureId) &&
             (identical(other.procedureName, procedureName) ||
                 other.procedureName == procedureName) &&
-            (identical(other.value, value) || other.value == value) &&
             (identical(other.toothNumber, toothNumber) ||
                 other.toothNumber == toothNumber) &&
+            (identical(other.observation, observation) ||
+                other.observation == observation) &&
             (identical(other.status, status) || other.status == status));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
-      runtimeType, id, procedureId, procedureName, value, toothNumber, status);
+  int get hashCode => Object.hash(runtimeType, id, procedureId, procedureName,
+      toothNumber, observation, status);
 
   /// Create a copy of TreatmentItem
   /// with the given fields replaced by the non-null parameter values.
@@ -557,8 +558,8 @@ abstract class _TreatmentItem implements TreatmentItem {
       {required final String id,
       required final String procedureId,
       required final String procedureName,
-      required final double value,
       final int? toothNumber,
+      final String? observation,
       required final TreatmentItemStatus status}) = _$TreatmentItemImpl;
 
   factory _TreatmentItem.fromJson(Map<String, dynamic> json) =
@@ -571,9 +572,9 @@ abstract class _TreatmentItem implements TreatmentItem {
   @override
   String get procedureName;
   @override
-  double get value;
-  @override
   int? get toothNumber;
+  @override
+  String? get observation;
   @override
   TreatmentItemStatus get status;
 

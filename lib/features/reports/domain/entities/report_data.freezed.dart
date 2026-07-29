@@ -22,7 +22,6 @@ SpecialtyProduction _$SpecialtyProductionFromJson(Map<String, dynamic> json) {
 mixin _$SpecialtyProduction {
   String get specialty => throw _privateConstructorUsedError;
   int get appointmentCount => throw _privateConstructorUsedError;
-  double get totalValue => throw _privateConstructorUsedError;
   double get efficiencyRate => throw _privateConstructorUsedError;
 
   /// Serializes this SpecialtyProduction to a JSON map.
@@ -41,11 +40,7 @@ abstract class $SpecialtyProductionCopyWith<$Res> {
           SpecialtyProduction value, $Res Function(SpecialtyProduction) then) =
       _$SpecialtyProductionCopyWithImpl<$Res, SpecialtyProduction>;
   @useResult
-  $Res call(
-      {String specialty,
-      int appointmentCount,
-      double totalValue,
-      double efficiencyRate});
+  $Res call({String specialty, int appointmentCount, double efficiencyRate});
 }
 
 /// @nodoc
@@ -65,7 +60,6 @@ class _$SpecialtyProductionCopyWithImpl<$Res, $Val extends SpecialtyProduction>
   $Res call({
     Object? specialty = null,
     Object? appointmentCount = null,
-    Object? totalValue = null,
     Object? efficiencyRate = null,
   }) {
     return _then(_value.copyWith(
@@ -77,10 +71,6 @@ class _$SpecialtyProductionCopyWithImpl<$Res, $Val extends SpecialtyProduction>
           ? _value.appointmentCount
           : appointmentCount // ignore: cast_nullable_to_non_nullable
               as int,
-      totalValue: null == totalValue
-          ? _value.totalValue
-          : totalValue // ignore: cast_nullable_to_non_nullable
-              as double,
       efficiencyRate: null == efficiencyRate
           ? _value.efficiencyRate
           : efficiencyRate // ignore: cast_nullable_to_non_nullable
@@ -97,11 +87,7 @@ abstract class _$$SpecialtyProductionImplCopyWith<$Res>
       __$$SpecialtyProductionImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {String specialty,
-      int appointmentCount,
-      double totalValue,
-      double efficiencyRate});
+  $Res call({String specialty, int appointmentCount, double efficiencyRate});
 }
 
 /// @nodoc
@@ -119,7 +105,6 @@ class __$$SpecialtyProductionImplCopyWithImpl<$Res>
   $Res call({
     Object? specialty = null,
     Object? appointmentCount = null,
-    Object? totalValue = null,
     Object? efficiencyRate = null,
   }) {
     return _then(_$SpecialtyProductionImpl(
@@ -131,10 +116,6 @@ class __$$SpecialtyProductionImplCopyWithImpl<$Res>
           ? _value.appointmentCount
           : appointmentCount // ignore: cast_nullable_to_non_nullable
               as int,
-      totalValue: null == totalValue
-          ? _value.totalValue
-          : totalValue // ignore: cast_nullable_to_non_nullable
-              as double,
       efficiencyRate: null == efficiencyRate
           ? _value.efficiencyRate
           : efficiencyRate // ignore: cast_nullable_to_non_nullable
@@ -149,7 +130,6 @@ class _$SpecialtyProductionImpl implements _SpecialtyProduction {
   const _$SpecialtyProductionImpl(
       {required this.specialty,
       required this.appointmentCount,
-      required this.totalValue,
       required this.efficiencyRate});
 
   factory _$SpecialtyProductionImpl.fromJson(Map<String, dynamic> json) =>
@@ -160,13 +140,11 @@ class _$SpecialtyProductionImpl implements _SpecialtyProduction {
   @override
   final int appointmentCount;
   @override
-  final double totalValue;
-  @override
   final double efficiencyRate;
 
   @override
   String toString() {
-    return 'SpecialtyProduction(specialty: $specialty, appointmentCount: $appointmentCount, totalValue: $totalValue, efficiencyRate: $efficiencyRate)';
+    return 'SpecialtyProduction(specialty: $specialty, appointmentCount: $appointmentCount, efficiencyRate: $efficiencyRate)';
   }
 
   @override
@@ -178,16 +156,14 @@ class _$SpecialtyProductionImpl implements _SpecialtyProduction {
                 other.specialty == specialty) &&
             (identical(other.appointmentCount, appointmentCount) ||
                 other.appointmentCount == appointmentCount) &&
-            (identical(other.totalValue, totalValue) ||
-                other.totalValue == totalValue) &&
             (identical(other.efficiencyRate, efficiencyRate) ||
                 other.efficiencyRate == efficiencyRate));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
-      runtimeType, specialty, appointmentCount, totalValue, efficiencyRate);
+  int get hashCode =>
+      Object.hash(runtimeType, specialty, appointmentCount, efficiencyRate);
 
   /// Create a copy of SpecialtyProduction
   /// with the given fields replaced by the non-null parameter values.
@@ -210,7 +186,6 @@ abstract class _SpecialtyProduction implements SpecialtyProduction {
   const factory _SpecialtyProduction(
       {required final String specialty,
       required final int appointmentCount,
-      required final double totalValue,
       required final double efficiencyRate}) = _$SpecialtyProductionImpl;
 
   factory _SpecialtyProduction.fromJson(Map<String, dynamic> json) =
@@ -220,8 +195,6 @@ abstract class _SpecialtyProduction implements SpecialtyProduction {
   String get specialty;
   @override
   int get appointmentCount;
-  @override
-  double get totalValue;
   @override
   double get efficiencyRate;
 
@@ -244,6 +217,8 @@ mixin _$ClinicPerformanceMetrics {
   double get absenceRate => throw _privateConstructorUsedError;
   int get totalProceduresThisMonth => throw _privateConstructorUsedError;
   List<MonthlyGrowth> get growthHistory => throw _privateConstructorUsedError;
+  List<SpecialtyProduction> get specialtyProduction =>
+      throw _privateConstructorUsedError;
   DateTime get startDate => throw _privateConstructorUsedError;
   DateTime get endDate => throw _privateConstructorUsedError;
 
@@ -268,6 +243,7 @@ abstract class $ClinicPerformanceMetricsCopyWith<$Res> {
       double absenceRate,
       int totalProceduresThisMonth,
       List<MonthlyGrowth> growthHistory,
+      List<SpecialtyProduction> specialtyProduction,
       DateTime startDate,
       DateTime endDate});
 }
@@ -292,6 +268,7 @@ class _$ClinicPerformanceMetricsCopyWithImpl<$Res,
     Object? absenceRate = null,
     Object? totalProceduresThisMonth = null,
     Object? growthHistory = null,
+    Object? specialtyProduction = null,
     Object? startDate = null,
     Object? endDate = null,
   }) {
@@ -312,6 +289,10 @@ class _$ClinicPerformanceMetricsCopyWithImpl<$Res,
           ? _value.growthHistory
           : growthHistory // ignore: cast_nullable_to_non_nullable
               as List<MonthlyGrowth>,
+      specialtyProduction: null == specialtyProduction
+          ? _value.specialtyProduction
+          : specialtyProduction // ignore: cast_nullable_to_non_nullable
+              as List<SpecialtyProduction>,
       startDate: null == startDate
           ? _value.startDate
           : startDate // ignore: cast_nullable_to_non_nullable
@@ -338,6 +319,7 @@ abstract class _$$ClinicPerformanceMetricsImplCopyWith<$Res>
       double absenceRate,
       int totalProceduresThisMonth,
       List<MonthlyGrowth> growthHistory,
+      List<SpecialtyProduction> specialtyProduction,
       DateTime startDate,
       DateTime endDate});
 }
@@ -361,6 +343,7 @@ class __$$ClinicPerformanceMetricsImplCopyWithImpl<$Res>
     Object? absenceRate = null,
     Object? totalProceduresThisMonth = null,
     Object? growthHistory = null,
+    Object? specialtyProduction = null,
     Object? startDate = null,
     Object? endDate = null,
   }) {
@@ -381,6 +364,10 @@ class __$$ClinicPerformanceMetricsImplCopyWithImpl<$Res>
           ? _value._growthHistory
           : growthHistory // ignore: cast_nullable_to_non_nullable
               as List<MonthlyGrowth>,
+      specialtyProduction: null == specialtyProduction
+          ? _value._specialtyProduction
+          : specialtyProduction // ignore: cast_nullable_to_non_nullable
+              as List<SpecialtyProduction>,
       startDate: null == startDate
           ? _value.startDate
           : startDate // ignore: cast_nullable_to_non_nullable
@@ -401,9 +388,11 @@ class _$ClinicPerformanceMetricsImpl implements _ClinicPerformanceMetrics {
       required this.absenceRate,
       required this.totalProceduresThisMonth,
       required final List<MonthlyGrowth> growthHistory,
+      required final List<SpecialtyProduction> specialtyProduction,
       required this.startDate,
       required this.endDate})
-      : _growthHistory = growthHistory;
+      : _growthHistory = growthHistory,
+        _specialtyProduction = specialtyProduction;
 
   factory _$ClinicPerformanceMetricsImpl.fromJson(Map<String, dynamic> json) =>
       _$$ClinicPerformanceMetricsImplFromJson(json);
@@ -422,6 +411,15 @@ class _$ClinicPerformanceMetricsImpl implements _ClinicPerformanceMetrics {
     return EqualUnmodifiableListView(_growthHistory);
   }
 
+  final List<SpecialtyProduction> _specialtyProduction;
+  @override
+  List<SpecialtyProduction> get specialtyProduction {
+    if (_specialtyProduction is EqualUnmodifiableListView)
+      return _specialtyProduction;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_specialtyProduction);
+  }
+
   @override
   final DateTime startDate;
   @override
@@ -429,7 +427,7 @@ class _$ClinicPerformanceMetricsImpl implements _ClinicPerformanceMetrics {
 
   @override
   String toString() {
-    return 'ClinicPerformanceMetrics(occupancyRate: $occupancyRate, absenceRate: $absenceRate, totalProceduresThisMonth: $totalProceduresThisMonth, growthHistory: $growthHistory, startDate: $startDate, endDate: $endDate)';
+    return 'ClinicPerformanceMetrics(occupancyRate: $occupancyRate, absenceRate: $absenceRate, totalProceduresThisMonth: $totalProceduresThisMonth, growthHistory: $growthHistory, specialtyProduction: $specialtyProduction, startDate: $startDate, endDate: $endDate)';
   }
 
   @override
@@ -446,6 +444,8 @@ class _$ClinicPerformanceMetricsImpl implements _ClinicPerformanceMetrics {
                 other.totalProceduresThisMonth == totalProceduresThisMonth) &&
             const DeepCollectionEquality()
                 .equals(other._growthHistory, _growthHistory) &&
+            const DeepCollectionEquality()
+                .equals(other._specialtyProduction, _specialtyProduction) &&
             (identical(other.startDate, startDate) ||
                 other.startDate == startDate) &&
             (identical(other.endDate, endDate) || other.endDate == endDate));
@@ -459,6 +459,7 @@ class _$ClinicPerformanceMetricsImpl implements _ClinicPerformanceMetrics {
       absenceRate,
       totalProceduresThisMonth,
       const DeepCollectionEquality().hash(_growthHistory),
+      const DeepCollectionEquality().hash(_specialtyProduction),
       startDate,
       endDate);
 
@@ -485,6 +486,7 @@ abstract class _ClinicPerformanceMetrics implements ClinicPerformanceMetrics {
       required final double absenceRate,
       required final int totalProceduresThisMonth,
       required final List<MonthlyGrowth> growthHistory,
+      required final List<SpecialtyProduction> specialtyProduction,
       required final DateTime startDate,
       required final DateTime endDate}) = _$ClinicPerformanceMetricsImpl;
 
@@ -499,6 +501,8 @@ abstract class _ClinicPerformanceMetrics implements ClinicPerformanceMetrics {
   int get totalProceduresThisMonth;
   @override
   List<MonthlyGrowth> get growthHistory;
+  @override
+  List<SpecialtyProduction> get specialtyProduction;
   @override
   DateTime get startDate;
   @override

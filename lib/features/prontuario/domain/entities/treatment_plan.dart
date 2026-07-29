@@ -17,6 +17,8 @@ class TreatmentPlan with _$TreatmentPlan {
   }) = _TreatmentPlan;
 
   factory TreatmentPlan.fromJson(Map<String, dynamic> json) => _$TreatmentPlanFromJson(json);
+
+  Map<String, dynamic> toJson() => _$$TreatmentPlanImplToJson(this as _$TreatmentPlanImpl);
 }
 
 @freezed
@@ -25,13 +27,14 @@ class TreatmentItem with _$TreatmentItem {
     required String id,
     required String procedureId,
     required String procedureName,
-    required double value,
     int? toothNumber,
     String? observation,
     required TreatmentItemStatus status,
   }) = _TreatmentItem;
 
   factory TreatmentItem.fromJson(Map<String, dynamic> json) => _$TreatmentItemFromJson(json);
+
+  Map<String, dynamic> toJson() => _$$TreatmentItemImplToJson(this as _$TreatmentItemImpl);
 }
 
 enum TreatmentPlanStatus {

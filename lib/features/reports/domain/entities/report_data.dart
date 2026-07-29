@@ -8,7 +8,6 @@ class SpecialtyProduction with _$SpecialtyProduction {
   const factory SpecialtyProduction({
     required String specialty,
     required int appointmentCount,
-    required double totalValue,
     required double efficiencyRate,
   }) = _SpecialtyProduction;
 
@@ -22,6 +21,7 @@ class ClinicPerformanceMetrics with _$ClinicPerformanceMetrics {
     required double absenceRate,
     required int totalProceduresThisMonth,
     required List<MonthlyGrowth> growthHistory,
+    required List<SpecialtyProduction> specialtyProduction,
     required DateTime startDate,
     required DateTime endDate,
   }) = _ClinicPerformanceMetrics;
