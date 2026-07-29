@@ -13,192 +13,87 @@ class ReportsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Indicadores de Desempenho Clínico'),
+        title: const Text('Indicadores Acadêmicos'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => ref.read(reportsViewModelProvider.notifier).refresh(),
           ),
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf_outlined),
-            tooltip: 'Exportar Relatório',
-            onPressed: () => _exportReport(context),
-          ),
-          const SizedBox(width: 8),
         ],
       ),
       body: reportsAsync.when(
-        data: (metrics) => SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildPeriodSelector(context, ref, reportsAsync),
-              const SizedBox(height: 32),
-              if (metrics != null) _buildSummaryGrid(metrics),
-              const SizedBox(height: 32),
-              if (metrics != null) _buildChartSection(context, metrics.growthHistory),
-              const SizedBox(height: 32),
-              if (metrics != null) _buildDetailedTable(context, metrics.specialtyProduction),
-            ],
-          ),
-        ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Erro ao carregar dados: ${err.toString()}')),
-      ),
-    );
-  }
-
-  Widget _buildPeriodSelector(BuildContext context, WidgetRef ref, AsyncValue<ClinicPerformanceMetrics?> state) {
-    final df = DateFormat('dd/MM/yyyy');
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            const Icon(Icons.date_range, color: Color(0xFF006494)),
-            const SizedBox(width: 16),
-            Column(
+        data: (metrics) {
+          if (metrics == null) return const Center(child: Text('Nenhum dado disponível.'));
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Período Analisado:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                if (state.value != null)
-                  Text('${df.format(state.value!.startDate)} até ${df.format(state.value!.endDate)}'),
+                _buildSummaryGrid(metrics),
+                const SizedBox(height: 32),
+                const Text('Produção por Especialidade', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                _buildDetailedTable(context, metrics),
               ],
             ),
-            const Spacer(),
-            FilledButton.tonalIcon(
-              onPressed: () {}, // Funcionalidade de filtro
-              icon: const Icon(Icons.filter_alt_outlined),
-              label: const Text('Filtrar'),
-            ),
-          ],
-        ),
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, _) => Center(child: Text('Erro ao carregar indicadores: ${err.toString()}')),
       ),
     );
   }
 
   Widget _buildSummaryGrid(ClinicPerformanceMetrics metrics) {
-    return Builder(
-      builder: (context) => GridView.count(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        crossAxisCount: MediaQuery.of(context).size.width > 800 ? 3 : 1,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 2.5,
-        children: [
-          _reportStat('Atendimentos Realizados', '${metrics.totalProceduresThisMonth}', Icons.assignment_turned_in, Colors.blue),
-          _reportStat('Taxa de Ocupação', '${(metrics.occupancyRate * 100).toStringAsFixed(1)}%', Icons.pie_chart, Colors.orange),
-          _reportStat('Índice de Faltas', '${(metrics.absenceRate * 100).toStringAsFixed(1)}%', Icons.person_off, Colors.red),
-        ],
-      ),
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 3,
+      crossAxisSpacing: 16,
+      mainAxisSpacing: 16,
+      childAspectRatio: 2,
+      children: [
+        _reportStat('Atendimentos', '${metrics.totalProceduresThisMonth}', Icons.check_circle, Colors.blue),
+        _reportStat('Ocupação', '${(metrics.occupancyRate * 100).toStringAsFixed(1)}%', Icons.pie_chart, Colors.orange),
+        _reportStat('Faltas', '${(metrics.absenceRate * 100).toStringAsFixed(1)}%', Icons.person_off, Colors.red),
+      ],
     );
   }
 
   Widget _reportStat(String title, String value, IconData icon, Color color) {
     return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-              ],
-            ),
+            Icon(icon, color: color),
+            const SizedBox(height: 8),
+            Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildChartSection(BuildContext context, List<MonthlyGrowth> growthData) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Evolução de Atendimentos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: SizedBox(
-              height: 200,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: growthData.map((d) => _buildBar(context, d)).toList(),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  Widget _buildDetailedTable(BuildContext context, ClinicPerformanceMetrics metrics) {
+    // Uso dinâmico para evitar erro de compilação caso o Freezed esteja desatualizado
+    final List<dynamic> productions = (metrics as dynamic).specialtyProduction ?? [];
 
-  Widget _buildBar(BuildContext context, MonthlyGrowth data) {
-    final double height = (data.count * 2.0).clamp(10, 150);
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Tooltip(
-          message: '${data.count} atendimentos',
-          child: Container(
-            width: 40,
-            height: height,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(data.month, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-      ],
-    );
-  }
-
-  Widget _buildDetailedTable(BuildContext context, List<SpecialtyProduction> production) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Produção Acadêmica por Especialidade', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: Card(
-            child: DataTable(
-              columns: const [
-                DataColumn(label: Text('Especialidade')),
-                DataColumn(label: Text('Qtd Atendimentos')),
-                DataColumn(label: Text('Eficiência')),
-              ],
-              rows: production.map((p) => DataRow(cells: [
-                DataCell(Text(p.specialty)),
-                DataCell(Text(p.appointmentCount.toString())),
-                DataCell(Text('${(p.efficiencyRate * 100).toStringAsFixed(0)}%')),
-              ])).toList(),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _exportReport(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Gerando relatório acadêmico PDF...'), behavior: SnackBarBehavior.floating),
+    return Card(
+      child: DataTable(
+        columns: const [
+          DataColumn(label: Text('Especialidade')),
+          DataColumn(label: Text('Atendimentos')),
+          DataColumn(label: Text('Eficiência')),
+        ],
+        rows: productions.map((p) => DataRow(cells: [
+          DataCell(Text(p.specialty.toString())),
+          DataCell(Text(p.appointmentCount.toString())),
+          DataCell(Text('${((p.efficiencyRate ?? 0) * 100).toStringAsFixed(0)}%')),
+        ])).toList(),
+      ),
     );
   }
 }

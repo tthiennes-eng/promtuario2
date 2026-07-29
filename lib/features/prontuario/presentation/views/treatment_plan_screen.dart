@@ -37,7 +37,7 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(labelText: 'Procedimento', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: 'Procedimento *', border: OutlineInputBorder()),
                   items: const [
                     DropdownMenuItem(value: 'Limpeza', child: Text('Limpeza / Profilaxia')),
                     DropdownMenuItem(value: 'Restauração', child: Text('Restauração')),
@@ -70,29 +70,34 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
             FilledButton(
               onPressed: _isSaving ? null : () async {
-                if (selectedProcedure != null) {
-                  setDialogState(() => _isSaving = true);
-                  try {
-                    final newItem = TreatmentItem(
-                      id: const Uuid().v4(),
-                      procedureId: const Uuid().v4(),
-                      procedureName: selectedProcedure!,
-                      toothNumber: toothNumber,
-                      observation: obsController.text,
-                      status: TreatmentItemStatus.pending,
-                    );
-                    await ref.read(treatmentPlanViewModelProvider(widget.patientId).notifier).addItem(newItem);
-                    if (mounted) Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Procedimento adicionado com sucesso!'), backgroundColor: Colors.green),
-                    );
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Erro ao salvar: ${e.toString()}'), backgroundColor: Colors.red),
-                    );
-                  } finally {
-                    setDialogState(() => _isSaving = false);
-                  }
+                if (selectedProcedure == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Selecione o procedimento.'), backgroundColor: Colors.orange),
+                  );
+                  return;
+                }
+
+                setDialogState(() => _isSaving = true);
+                try {
+                  final newItem = TreatmentItem(
+                    id: const Uuid().v4(),
+                    procedureId: const Uuid().v4(),
+                    procedureName: selectedProcedure!,
+                    toothNumber: toothNumber,
+                    observation: obsController.text,
+                    status: TreatmentItemStatus.pending,
+                  );
+                  await ref.read(treatmentPlanViewModelProvider(widget.patientId).notifier).addItem(newItem);
+                  if (mounted) Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Procedimento adicionado com sucesso!'), backgroundColor: Colors.green),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Erro ao salvar: ${e.toString()}'), backgroundColor: Colors.red),
+                  );
+                } finally {
+                  setDialogState(() => _isSaving = false);
                 }
               },
               child: _isSaving 
@@ -154,11 +159,10 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
     return ListTile(
       tileColor: Colors.blue.withOpacity(0.05),
       title: Text('Paciente: ${widget.patientName}', style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle: Text('Status: ${plan.status.name.toUpperCase()}'),
+      subtitle: Text('Status do Plano: ${plan.status.name.toUpperCase()}'),
       trailing: IconButton(
         icon: const Icon(Icons.add_circle_outline, color: Colors.blue),
         onPressed: _showAddProcedureDialog,
-        tooltip: 'Adicionar',
       ),
     );
   }
@@ -179,7 +183,6 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
             subtitle: (item.observation != null && item.observation!.isNotEmpty) 
                 ? Text(item.observation!) 
                 : const Text('Sem observações registradas.'),
-            trailing: _buildStatusIcon(item.status),
           ),
         );
       },
@@ -197,14 +200,5 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
         ],
       ),
     );
-  }
-
-  Widget _buildStatusIcon(TreatmentItemStatus status) {
-    return switch (status) {
-      TreatmentItemStatus.pending => const Icon(Icons.hourglass_empty, color: Colors.orange),
-      TreatmentItemStatus.inProgress => const Icon(Icons.pending, color: Colors.blue),
-      TreatmentItemStatus.completed => const Icon(Icons.check_circle, color: Colors.green),
-      TreatmentItemStatus.cancelled => const Icon(Icons.cancel, color: Colors.red),
-    };
   }
 }
