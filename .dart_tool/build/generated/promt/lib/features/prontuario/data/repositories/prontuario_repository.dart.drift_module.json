@@ -11,6 +11,7 @@
     "package:promt/features/prontuario/domain/entities/evolution.dart",
     "package:promt/features/prontuario/domain/repositories/i_prontuario_repository.dart",
     "package:promt/features/auth/domain/entities/user.dart",
-    "package:uuid/uuid.dart"
+    "package:uuid/uuid.dart",
+    "package:dio/dio.dart"
   ]
 }

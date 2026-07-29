@@ -149,12 +149,13 @@ class _ToothTile extends StatelessWidget {
     } else if (localPosition.dy > size - padding) {
       selectedSurface = ToothSurface.lingual;
     } else {
+      // Lógica simplificada para mesial/distal baseada no quadrante
       int quadrant = number ~/ 10;
-      bool mesialIsLeft = (quadrant == 2 || quadrant == 3);
+      bool isLeftArcade = (quadrant == 1 || quadrant == 4);
       if (localPosition.dx < padding) {
-        selectedSurface = mesialIsLeft ? ToothSurface.mesial : ToothSurface.distal;
-      } else {
-        selectedSurface = mesialIsLeft ? ToothSurface.distal : ToothSurface.mesial;
+        selectedSurface = isLeftArcade ? ToothSurface.distal : ToothSurface.mesial;
+      } else if (localPosition.dx > size - padding) {
+        selectedSurface = isLeftArcade ? ToothSurface.mesial : ToothSurface.distal;
       }
     }
 
@@ -257,7 +258,7 @@ class _FaceActionSheetState extends State<_FaceActionSheet> {
             value: _type,
             items: ConditionType.values.map((t) => DropdownMenuItem(value: t, child: Text(widget.getConditionLabel(t)))).toList(),
             onChanged: (v) => setState(() => _type = v!),
-            decoration: const InputDecoration(labelText: 'Condição Clínca'),
+            decoration: const InputDecoration(labelText: 'Condição Clínica'),
           ),
           const SizedBox(height: 16),
           TextField(controller: _obs, decoration: const InputDecoration(labelText: 'Observação (Opcional)')),
