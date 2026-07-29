@@ -19,6 +19,7 @@ class _PrescriptionScreenState extends ConsumerState<PrescriptionScreen> {
   final _formKey = GlobalKey<FormState>();
   final List<PrescriptionItem> _items = [];
   final _observationsController = TextEditingController();
+  bool _isSaving = false;
 
   final _medicineController = TextEditingController();
   final _dosageController = TextEditingController();
@@ -39,7 +40,7 @@ class _PrescriptionScreenState extends ConsumerState<PrescriptionScreen> {
     }
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (_items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Adicione pelo menos um medicamento.')),
@@ -49,36 +50,46 @@ class _PrescriptionScreenState extends ConsumerState<PrescriptionScreen> {
 
     final authState = ref.read(authViewModelProvider);
     final user = authState.user;
-
     if (user == null) return;
 
-    final prescription = Prescription(
-      id: const Uuid().v4(),
-      patientId: widget.patientId,
-      doctorId: user.id,
-      doctorName: user.name,
-      date: DateTime.now(),
-      items: List.from(_items),
-      observations: _observationsController.text,
-      clinicId: const Uuid().v4(), // Seria obtido do contexto da clínica
-    );
+    setState(() => _isSaving = true);
 
-    ref.read(documentsViewModelProvider(widget.patientId).notifier)
-       .emitPrescription(prescription)
-       .then((_) {
-      context.pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Receita emitida com sucesso!')),
+    try {
+      final prescription = Prescription(
+        id: const Uuid().v4(),
+        patientId: widget.patientId,
+        doctorId: user.id,
+        doctorName: user.name,
+        date: DateTime.now(),
+        items: List.from(_items),
+        observations: _observationsController.text,
+        clinicId: Guid.empty.toString(), // O backend atribuirá a clínica padrão
       );
-    });
+
+      await ref.read(documentsViewModelProvider(widget.patientId).notifier)
+         .emitPrescription(prescription);
+      
+      if (mounted) {
+        context.pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Receita salva com sucesso!'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Emitir Receita'),
-      ),
+      appBar: AppBar(title: const Text('Emitir Receita')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
@@ -86,80 +97,53 @@ class _PrescriptionScreenState extends ConsumerState<PrescriptionScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Medicamentos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
+              const Text('Novo Item', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      TextFormField(
-                        controller: _medicineController,
-                        decoration: const InputDecoration(labelText: 'Medicamento'),
-                      ),
+                      TextFormField(controller: _medicineController, decoration: const InputDecoration(labelText: 'Medicamento')),
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _dosageController,
-                              decoration: const InputDecoration(labelText: 'Dosagem'),
-                            ),
-                          ),
+                          Expanded(child: TextFormField(controller: _dosageController, decoration: const InputDecoration(labelText: 'Posologia (ex: 500mg)'))),
                           const SizedBox(width: 8),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _instructionsController,
-                              decoration: const InputDecoration(labelText: 'Instruções'),
-                            ),
-                          ),
+                          Expanded(child: TextFormField(controller: _instructionsController, decoration: const InputDecoration(labelText: 'Frequência (ex: 8/8h)'))),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      FilledButton.icon(
-                        onPressed: _addItem,
-                        icon: const Icon(Icons.add),
-                        label: const Text('Adicionar Item'),
-                      ),
+                      TextButton.icon(onPressed: _addItem, icon: const Icon(Icons.add), label: const Text('Inserir na Receita')),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 24),
               if (_items.isNotEmpty) ...[
-                const Text('Itens da Receita', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text('Medicamentos Prescritos', style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _items.length,
-                  itemBuilder: (context, index) {
-                    final item = _items[index];
-                    return ListTile(
-                      title: Text(item.medicineName),
-                      subtitle: Text('${item.dosage} - ${item.instructions}'),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete_outline, color: Colors.red),
-                        onPressed: () => setState(() => _items.removeAt(index)),
-                      ),
-                    );
-                  },
-                ),
+                ..._items.asMap().entries.map((entry) => Card(
+                  child: ListTile(
+                    title: Text(entry.value.medicineName),
+                    subtitle: Text('${entry.value.dosage} - ${entry.value.instructions}'),
+                    trailing: IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red), onPressed: () => setState(() => _items.removeAt(entry.key))),
+                  ),
+                )),
               ],
               const SizedBox(height: 24),
               TextFormField(
                 controller: _observationsController,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Observações Adicionais',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: 'Orientações Adicionais', border: OutlineInputBorder()),
               ),
               const SizedBox(height: 48),
               FilledButton(
-                onPressed: _submit,
+                onPressed: _isSaving ? null : _submit,
                 style: FilledButton.styleFrom(padding: const EdgeInsets.all(16)),
-                child: const Text('Gerar Receita PDF & Salvar', style: TextStyle(fontSize: 16)),
+                child: _isSaving 
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('Salvar Prescrição', style: TextStyle(fontSize: 16)),
               ),
             ],
           ),

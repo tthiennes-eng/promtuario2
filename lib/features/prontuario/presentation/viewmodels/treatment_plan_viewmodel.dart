@@ -4,7 +4,6 @@ import 'package:promt/core/providers/providers.dart';
 import 'package:promt/features/auth/presentation/viewmodels/auth_viewmodel.dart';
 import 'package:uuid/uuid.dart';
 
-/// Gerencia a lógica de negócio dos planos de tratamento de um paciente.
 class TreatmentPlanViewModel extends StateNotifier<AsyncValue<List<TreatmentPlan>>> {
   final Ref _ref;
   final String _patientId;
@@ -14,6 +13,7 @@ class TreatmentPlanViewModel extends StateNotifier<AsyncValue<List<TreatmentPlan
   }
 
   Future<void> _init() async {
+    state = const AsyncValue.loading();
     state = await AsyncValue.guard(() => 
       _ref.read(prontuarioRepositoryProvider).getTreatmentPlans(_patientId)
     );
@@ -21,12 +21,11 @@ class TreatmentPlanViewModel extends StateNotifier<AsyncValue<List<TreatmentPlan
 
   Future<void> refresh() async => _init();
 
-  /// Adiciona um item ao plano atual ou cria um novo se necessário.
   Future<void> addItem(TreatmentItem item) async {
     final currentState = state.value ?? [];
     state = const AsyncValue.loading();
     
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       final repo = _ref.read(prontuarioRepositoryProvider);
       
       if (currentState.isEmpty) {
@@ -51,19 +50,16 @@ class TreatmentPlanViewModel extends StateNotifier<AsyncValue<List<TreatmentPlan
       }
       return repo.getTreatmentPlans(_patientId);
     });
-  }
 
-  /// Salva ou atualiza um plano de tratamento completo.
-  Future<void> savePlan(TreatmentPlan plan) async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      await _ref.read(prontuarioRepositoryProvider).saveTreatmentPlan(plan);
-      return _ref.read(prontuarioRepositoryProvider).getTreatmentPlans(_patientId);
-    });
+    if (result is AsyncError) {
+      state = AsyncValue.data(currentState);
+      throw result.error!;
+    } else {
+      state = result;
+    }
   }
 }
 
-/// Provider especializado para o prontuário.
 final treatmentPlanViewModelProvider = StateNotifierProvider.family<TreatmentPlanViewModel, AsyncValue<List<TreatmentPlan>>, String>((ref, patientId) {
   return TreatmentPlanViewModel(ref, patientId);
 });

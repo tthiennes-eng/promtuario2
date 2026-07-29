@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../../domain/entities/prescription.dart';
 import '../viewmodels/documents_viewmodel.dart';
 import '../../../auth/presentation/viewmodels/auth_viewmodel.dart';
 
-/// Tela para emissão de Atestados Médicos/Odontológicos.
 class CertificateScreen extends ConsumerStatefulWidget {
   final String patientId;
   final String patientName;
@@ -27,6 +25,7 @@ class _CertificateScreenState extends ConsumerState<CertificateScreen> {
   final _contentController = TextEditingController();
   final _daysController = TextEditingController(text: '1');
   final _cidController = TextEditingController();
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -43,42 +42,53 @@ class _CertificateScreenState extends ConsumerState<CertificateScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
       final authState = ref.read(authViewModelProvider);
       final user = authState.user;
       if (user == null) return;
 
-      final certificate = MedicalCertificate(
-        id: const Uuid().v4(),
-        patientId: widget.patientId,
-        doctorId: user.id,
-        doctorName: user.name,
-        date: DateTime.now(),
-        content: _contentController.text,
-        daysOfRest: int.parse(_daysController.text),
-        cid: _cidController.text,
-        clinicId: const Uuid().v4(), // Mock
-      );
+      setState(() => _isSaving = true);
 
-      ref
-          .read(documentsViewModelProvider(widget.patientId).notifier)
-          .emitCertificate(certificate)
-          .then((_) {
-        context.pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Atestado emitido com sucesso!')),
+      try {
+        final certificate = MedicalCertificate(
+          id: const Uuid().v4(),
+          patientId: widget.patientId,
+          doctorId: user.id,
+          doctorName: user.name,
+          date: DateTime.now(),
+          content: _contentController.text,
+          daysOfRest: int.parse(_daysController.text),
+          cid: _cidController.text,
+          clinicId: const Uuid().v4(),
         );
-      });
+
+        await ref
+            .read(documentsViewModelProvider(widget.patientId).notifier)
+            .emitCertificate(certificate);
+        
+        if (mounted) {
+          context.pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Atestado emitido e salvo com sucesso!'), backgroundColor: Colors.green),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao emitir atestado: $e'), backgroundColor: Colors.red),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isSaving = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Emitir Atestado'),
-      ),
+      appBar: AppBar(title: const Text('Emitir Atestado')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
@@ -86,19 +96,12 @@ class _CertificateScreenState extends ConsumerState<CertificateScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Paciente: ${widget.patientName}',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
+              Text('Paciente: ${widget.patientName}', style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 24),
               TextFormField(
                 controller: _contentController,
                 maxLines: 8,
-                decoration: const InputDecoration(
-                  labelText: 'Texto do Atestado',
-                  alignLabelWithHint: true,
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: 'Texto do Atestado', border: OutlineInputBorder()),
                 validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
               ),
               const SizedBox(height: 16),
@@ -108,10 +111,7 @@ class _CertificateScreenState extends ConsumerState<CertificateScreen> {
                     child: TextFormField(
                       controller: _daysController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Dias de Repouso',
-                        prefixIcon: Icon(Icons.calendar_today),
-                      ),
+                      decoration: const InputDecoration(labelText: 'Dias de Repouso', prefixIcon: Icon(Icons.calendar_today)),
                       validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
                     ),
                   ),
@@ -119,20 +119,18 @@ class _CertificateScreenState extends ConsumerState<CertificateScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _cidController,
-                      decoration: const InputDecoration(
-                        labelText: 'CID (Opcional)',
-                        prefixIcon: Icon(Icons.info_outline),
-                      ),
+                      decoration: const InputDecoration(labelText: 'CID (Opcional)'),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 48),
-              FilledButton.icon(
-                onPressed: _submit,
-                icon: const Icon(Icons.print),
-                label: const Text('Gerar e Assinar Atestado'),
+              FilledButton(
+                onPressed: _isSaving ? null : _submit,
                 style: FilledButton.styleFrom(padding: const EdgeInsets.all(16)),
+                child: _isSaving 
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('Gerar e Salvar Atestado'),
               ),
             ],
           ),

@@ -4,8 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import 'package:promt/features/prontuario/domain/entities/treatment_plan.dart';
 import 'package:promt/features/prontuario/presentation/viewmodels/treatment_plan_viewmodel.dart';
-import 'package:promt/features/auth/domain/entities/user.dart';
-import 'package:promt/features/auth/presentation/viewmodels/auth_viewmodel.dart';
 
 class TreatmentPlanScreen extends ConsumerStatefulWidget {
   final String patientId;
@@ -22,69 +20,87 @@ class TreatmentPlanScreen extends ConsumerStatefulWidget {
 }
 
 class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
-  void _showAddProcedureDialog() {
+  bool _isSaving = false;
+
+  Future<void> _showAddProcedureDialog() async {
     String? selectedProcedure;
     int? toothNumber;
     final obsController = TextEditingController();
 
-    showDialog(
+    await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Novo Procedimento Acadêmico'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(labelText: 'Procedimento', border: OutlineInputBorder()),
-                items: const [
-                  DropdownMenuItem(value: 'Limpeza', child: Text('Limpeza / Profilaxia')),
-                  DropdownMenuItem(value: 'Restauração', child: Text('Restauração')),
-                  DropdownMenuItem(value: 'Endodontia', child: Text('Tratamento de Canal')),
-                  DropdownMenuItem(value: 'Extração', child: Text('Exodontia')),
-                  DropdownMenuItem(value: 'Avaliação', child: Text('Avaliação Clínica')),
-                ],
-                onChanged: (v) => selectedProcedure = v,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Dente (Elemento)', border: OutlineInputBorder()),
-                keyboardType: TextInputType.number,
-                onChanged: (v) => toothNumber = int.tryParse(v),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: obsController,
-                maxLines: 4,
-                decoration: const InputDecoration(
-                  labelText: 'Observações Técnicas', 
-                  hintText: 'Descreva a necessidade e detalhes do atendimento...',
-                  border: OutlineInputBorder()
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Novo Procedimento Acadêmico'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(labelText: 'Procedimento', border: OutlineInputBorder()),
+                  items: const [
+                    DropdownMenuItem(value: 'Limpeza', child: Text('Limpeza / Profilaxia')),
+                    DropdownMenuItem(value: 'Restauração', child: Text('Restauração')),
+                    DropdownMenuItem(value: 'Endodontia', child: Text('Tratamento de Canal')),
+                    DropdownMenuItem(value: 'Extração', child: Text('Exodontia')),
+                    DropdownMenuItem(value: 'Avaliação', child: Text('Avaliação Clínica')),
+                  ],
+                  onChanged: (v) => selectedProcedure = v,
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                TextFormField(
+                  decoration: const InputDecoration(labelText: 'Dente (Elemento)', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                  onChanged: (v) => toothNumber = int.tryParse(v),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: obsController,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    labelText: 'Observações Técnicas', 
+                    hintText: 'Descreva a necessidade do procedimento...',
+                    border: OutlineInputBorder()
+                  ),
+                ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            FilledButton(
+              onPressed: _isSaving ? null : () async {
+                if (selectedProcedure != null) {
+                  setDialogState(() => _isSaving = true);
+                  try {
+                    final newItem = TreatmentItem(
+                      id: const Uuid().v4(),
+                      procedureId: const Uuid().v4(),
+                      procedureName: selectedProcedure!,
+                      toothNumber: toothNumber,
+                      observation: obsController.text,
+                      status: TreatmentItemStatus.pending,
+                    );
+                    await ref.read(treatmentPlanViewModelProvider(widget.patientId).notifier).addItem(newItem);
+                    if (mounted) Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Procedimento salvo com sucesso!'), backgroundColor: Colors.green),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Erro ao salvar: $e'), backgroundColor: Colors.red),
+                    );
+                  } finally {
+                    setDialogState(() => _isSaving = false);
+                  }
+                }
+              },
+              child: _isSaving 
+                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : const Text('Adicionar ao Plano'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          FilledButton(
-            onPressed: () {
-              if (selectedProcedure != null) {
-                final newItem = TreatmentItem(
-                  id: const Uuid().v4(),
-                  procedureId: const Uuid().v4(),
-                  procedureName: selectedProcedure!,
-                  toothNumber: toothNumber,
-                  observation: obsController.text,
-                  status: TreatmentItemStatus.pending,
-                );
-                ref.read(treatmentPlanViewModelProvider(widget.patientId).notifier).addItem(newItem);
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Adicionar ao Plano'),
-          ),
-        ],
       ),
     );
   }
@@ -107,7 +123,7 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Erro ao carregar plano: ${err.toString()}')),
+        error: (err, _) => Center(child: Text('Erro: $err')),
       ),
     );
   }
@@ -119,7 +135,7 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
         children: [
           const Icon(Icons.assignment_outlined, size: 80, color: Colors.grey),
           const SizedBox(height: 16),
-          const Text('Nenhum planejamento registrado para este paciente.', style: TextStyle(color: Colors.grey)),
+          const Text('Nenhum planejamento registrado.', style: TextStyle(color: Colors.grey)),
           const SizedBox(height: 32),
           FilledButton.icon(
             onPressed: _showAddProcedureDialog,
@@ -136,11 +152,10 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
     return ListTile(
       tileColor: Colors.blue.withOpacity(0.05),
       title: Text('Paciente: ${widget.patientName}', style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle: Text('Status do Plano: ${plan.status.name.toUpperCase()}'),
+      subtitle: Text('Status: ${plan.status.name.toUpperCase()}'),
       trailing: IconButton(
         icon: const Icon(Icons.add_circle_outline, color: Colors.blue),
         onPressed: _showAddProcedureDialog,
-        tooltip: 'Adicionar',
       ),
     );
   }
@@ -152,28 +167,15 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
       itemBuilder: (context, i) {
         final item = items[i];
         return Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
-          margin: const EdgeInsets.only(bottom: 8),
           child: ListTile(
             leading: item.toothNumber != null ? CircleAvatar(child: Text(item.toothNumber.toString())) : const Icon(Icons.medical_services),
             title: Text(item.procedureName, style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: (item.observation != null && item.observation!.isNotEmpty) 
                 ? Text(item.observation!) 
                 : const Text('Sem observações registradas.'),
-            trailing: _buildStatusIcon(item.status),
           ),
         );
       },
     );
-  }
-
-  Widget _buildStatusIcon(TreatmentItemStatus status) {
-    return switch (status) {
-      TreatmentItemStatus.pending => const Icon(Icons.hourglass_empty, color: Colors.orange),
-      TreatmentItemStatus.inProgress => const Icon(Icons.pending, color: Colors.blue),
-      TreatmentItemStatus.completed => const Icon(Icons.check_circle, color: Colors.green),
-      TreatmentItemStatus.cancelled => const Icon(Icons.cancel, color: Colors.red),
-    };
   }
 }
