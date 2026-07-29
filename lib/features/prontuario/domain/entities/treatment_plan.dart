@@ -17,6 +17,8 @@ class TreatmentPlan with _$TreatmentPlan {
   }) = _TreatmentPlan;
 
   factory TreatmentPlan.fromJson(Map<String, dynamic> json) => _$TreatmentPlanFromJson(json);
+
+  Map<String, dynamic> toJson() => _$$TreatmentPlanImplToJson(this as _$TreatmentPlanImpl);
 }
 
 @freezed
@@ -31,19 +33,21 @@ class TreatmentItem with _$TreatmentItem {
   }) = _TreatmentItem;
 
   factory TreatmentItem.fromJson(Map<String, dynamic> json) => _$TreatmentItemFromJson(json);
+
+  Map<String, dynamic> toJson() => _$$TreatmentItemImplToJson(this as _$TreatmentItemImpl);
 }
 
 enum TreatmentPlanStatus {
-  draft,
-  approved,
-  inProgress,
-  completed,
-  cancelled,
+  @JsonValue('Draft') draft,
+  @JsonValue('Approved') approved,
+  @JsonValue('InProgress') inProgress,
+  @JsonValue('Completed') completed,
+  @JsonValue('Cancelled') cancelled,
 }
 
 enum TreatmentItemStatus {
-  pending,
-  inProgress,
-  completed,
-  cancelled,
+  @JsonValue('Pending') pending,
+  @JsonValue('InProgress') inProgress,
+  @JsonValue('Completed') completed,
+  @JsonValue('Cancelled') cancelled,
 }

@@ -17,11 +17,23 @@ class ToothCondition with _$ToothCondition {
 }
 
 enum ToothSurface {
-  mesial, distal, occlusal, buccal, lingual, palatal, root
+  @JsonValue('Mesial') mesial,
+  @JsonValue('Distal') distal,
+  @JsonValue('Occlusal') occlusal,
+  @JsonValue('Buccal') buccal,
+  @JsonValue('Lingual') lingual,
+  @JsonValue('Palatal') palatal,
+  @JsonValue('Root') root
 }
 
 enum ConditionType {
-  healthy, decayed, restored, missing, implant, endodontic, prosthesis
+  @JsonValue('Healthy') healthy,
+  @JsonValue('Decayed') decayed,
+  @JsonValue('Restored') restored,
+  @JsonValue('Missing') missing,
+  @JsonValue('Implant') implant,
+  @JsonValue('Endodontic') endodontic,
+  @JsonValue('Prosthesis') prosthesis
 }
 
 @freezed

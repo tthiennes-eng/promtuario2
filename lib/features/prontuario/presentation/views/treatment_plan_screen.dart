@@ -37,7 +37,7 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(labelText: 'Procedimento *', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: 'Procedimento', border: OutlineInputBorder()),
                   items: const [
                     DropdownMenuItem(value: 'Limpeza', child: Text('Limpeza / Profilaxia')),
                     DropdownMenuItem(value: 'Restauração', child: Text('Restauração')),
@@ -70,34 +70,29 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
             FilledButton(
               onPressed: _isSaving ? null : () async {
-                if (selectedProcedure == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Selecione o procedimento.'), backgroundColor: Colors.orange),
-                  );
-                  return;
-                }
-
-                setDialogState(() => _isSaving = true);
-                try {
-                  final newItem = TreatmentItem(
-                    id: const Uuid().v4(),
-                    procedureId: const Uuid().v4(),
-                    procedureName: selectedProcedure!,
-                    toothNumber: toothNumber,
-                    observation: obsController.text,
-                    status: TreatmentItemStatus.pending,
-                  );
-                  await ref.read(treatmentPlanViewModelProvider(widget.patientId).notifier).addItem(newItem);
-                  if (mounted) Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Procedimento adicionado com sucesso!'), backgroundColor: Colors.green),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Erro ao salvar: ${e.toString()}'), backgroundColor: Colors.red),
-                  );
-                } finally {
-                  setDialogState(() => _isSaving = false);
+                if (selectedProcedure != null) {
+                  setDialogState(() => _isSaving = true);
+                  try {
+                    final newItem = TreatmentItem(
+                      id: const Uuid().v4(),
+                      procedureId: const Uuid().v4(),
+                      procedureName: selectedProcedure!,
+                      toothNumber: toothNumber,
+                      observation: obsController.text,
+                      status: TreatmentItemStatus.pending,
+                    );
+                    await ref.read(treatmentPlanViewModelProvider(widget.patientId).notifier).addItem(newItem);
+                    if (mounted) Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Procedimento salvo com sucesso!'), backgroundColor: Colors.green),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Erro ao salvar: ${e.toString()}'), backgroundColor: Colors.red),
+                    );
+                  } finally {
+                    setDialogState(() => _isSaving = false);
+                  }
                 }
               },
               child: _isSaving 
@@ -124,13 +119,11 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
             children: [
               _buildPlanHeader(plan),
               Expanded(child: _buildItemsList(plan.items)),
-              const Divider(height: 1),
-              _buildPlanSummary(plan),
             ],
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Erro: ${err.toString()}')),
+        error: (err, _) => Center(child: Text('Erro ao carregar: ${err.toString()}')),
       ),
     );
   }
@@ -147,7 +140,7 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
           FilledButton.icon(
             onPressed: _showAddProcedureDialog,
             icon: const Icon(Icons.add),
-            label: const Text('Iniciar Plano de Tratamento'),
+            label: const Text('Adicionar Procedimento'),
             style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20)),
           ),
         ],
@@ -163,6 +156,7 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
       trailing: IconButton(
         icon: const Icon(Icons.add_circle_outline, color: Colors.blue),
         onPressed: _showAddProcedureDialog,
+        tooltip: 'Adicionar',
       ),
     );
   }
@@ -186,19 +180,6 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildPlanSummary(TreatmentPlan plan) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text('Total de Procedimentos:', style: TextStyle(fontWeight: FontWeight.bold)),
-          Text('${plan.items.length}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
-        ],
-      ),
     );
   }
 }

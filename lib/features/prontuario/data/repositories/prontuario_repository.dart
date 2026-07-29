@@ -138,8 +138,8 @@ class ProntuarioRepository implements IProntuarioRepository {
   @override Future<void> syncPendingData() async {}
   @override Future<List<Evolution>> getEvolutionHistory(String id) async => getEvolutions(id);
   @override Future<TreatmentPlan?> getTreatmentPlan(String id) async {
-    final results = await getTreatmentPlans(id);
-    return results.isNotEmpty ? results.first : null;
+    final plans = await getTreatmentPlans(id);
+    return plans.isNotEmpty ? plans.first : null;
   }
   @override Future<void> updateTreatmentItemStatus(String p, String i, String s) async {}
 }
