@@ -31,11 +31,11 @@ Map<String, dynamic> _$$TreatmentPlanImplToJson(_$TreatmentPlanImpl instance) =>
     };
 
 const _$TreatmentPlanStatusEnumMap = {
-  TreatmentPlanStatus.draft: 'draft',
-  TreatmentPlanStatus.approved: 'approved',
-  TreatmentPlanStatus.inProgress: 'inProgress',
-  TreatmentPlanStatus.completed: 'completed',
-  TreatmentPlanStatus.cancelled: 'cancelled',
+  TreatmentPlanStatus.draft: 'Draft',
+  TreatmentPlanStatus.approved: 'Approved',
+  TreatmentPlanStatus.inProgress: 'InProgress',
+  TreatmentPlanStatus.completed: 'Completed',
+  TreatmentPlanStatus.cancelled: 'Cancelled',
 };
 
 _$TreatmentItemImpl _$$TreatmentItemImplFromJson(Map<String, dynamic> json) =>
@@ -59,8 +59,8 @@ Map<String, dynamic> _$$TreatmentItemImplToJson(_$TreatmentItemImpl instance) =>
     };
 
 const _$TreatmentItemStatusEnumMap = {
-  TreatmentItemStatus.pending: 'pending',
-  TreatmentItemStatus.inProgress: 'inProgress',
-  TreatmentItemStatus.completed: 'completed',
-  TreatmentItemStatus.cancelled: 'cancelled',
+  TreatmentItemStatus.pending: 'Pending',
+  TreatmentItemStatus.inProgress: 'InProgress',
+  TreatmentItemStatus.completed: 'Completed',
+  TreatmentItemStatus.cancelled: 'Cancelled',
 };

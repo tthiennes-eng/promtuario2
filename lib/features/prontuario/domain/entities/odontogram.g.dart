@@ -31,23 +31,23 @@ Map<String, dynamic> _$$ToothConditionImplToJson(
     };
 
 const _$ToothSurfaceEnumMap = {
-  ToothSurface.mesial: 'mesial',
-  ToothSurface.distal: 'distal',
-  ToothSurface.occlusal: 'occlusal',
-  ToothSurface.buccal: 'buccal',
-  ToothSurface.lingual: 'lingual',
-  ToothSurface.palatal: 'palatal',
-  ToothSurface.root: 'root',
+  ToothSurface.mesial: 'Mesial',
+  ToothSurface.distal: 'Distal',
+  ToothSurface.occlusal: 'Occlusal',
+  ToothSurface.buccal: 'Buccal',
+  ToothSurface.lingual: 'Lingual',
+  ToothSurface.palatal: 'Palatal',
+  ToothSurface.root: 'Root',
 };
 
 const _$ConditionTypeEnumMap = {
-  ConditionType.healthy: 'healthy',
-  ConditionType.decayed: 'decayed',
-  ConditionType.restored: 'restored',
-  ConditionType.missing: 'missing',
-  ConditionType.implant: 'implant',
-  ConditionType.endodontic: 'endodontic',
-  ConditionType.prosthesis: 'prosthesis',
+  ConditionType.healthy: 'Healthy',
+  ConditionType.decayed: 'Decayed',
+  ConditionType.restored: 'Restored',
+  ConditionType.missing: 'Missing',
+  ConditionType.implant: 'Implant',
+  ConditionType.endodontic: 'Endodontic',
+  ConditionType.prosthesis: 'Prosthesis',
 };
 
 _$OdontogramImpl _$$OdontogramImplFromJson(Map<String, dynamic> json) =>
