@@ -10,6 +10,7 @@ import 'package:promt/features/prontuario/domain/entities/evolution.dart';
 import 'package:promt/features/prontuario/domain/repositories/i_prontuario_repository.dart';
 import 'package:promt/features/auth/domain/entities/user.dart';
 import 'package:uuid/uuid.dart';
+import 'package:dio/dio.dart';
 
 class ProntuarioRepository implements IProntuarioRepository {
   final ApiClient _apiClient;
@@ -23,10 +24,10 @@ class ProntuarioRepository implements IProntuarioRepository {
     try {
       final response = await _apiClient.instance.get('Prontuario/$patientId/odontogram');
       if (response.data == null || response.data == 'null') return _initialOdontogram(patientId);
-      
       final jsonData = response.data is String ? jsonDecode(response.data) : response.data;
       return Odontogram.fromJson(jsonData);
-    } catch (_) {
+    } catch (e) {
+      // Se o paciente não existir no servidor (Erro 404), ou erro 500 por base limpa
       return _initialOdontogram(patientId);
     }
   }
@@ -41,13 +42,26 @@ class ProntuarioRepository implements IProntuarioRepository {
 
   @override
   Future<void> saveOdontogram(Odontogram odontogram) async {
-    // Rota corrigida para bater com o [HttpPost("odontogram")] do ProntuarioController
-    await _apiClient.instance.post('Prontuario/odontogram', data: odontogram.toJson());
+    try {
+      await _apiClient.instance.post('Prontuario/odontogram', data: odontogram.toJson());
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 500) {
+        throw 'Erro de sincronização: Este paciente não existe no servidor. Cadastre-o novamente.';
+      }
+      rethrow;
+    }
   }
 
   @override
   Future<void> saveTreatmentPlan(TreatmentPlan plan) async {
-    await _apiClient.instance.post('TreatmentPlans', data: plan.toJson());
+    try {
+      await _apiClient.instance.post('TreatmentPlans', data: plan.toJson());
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 500) {
+        throw 'Erro: Não foi possível salvar o plano. Verifique se o paciente está cadastrado no servidor.';
+      }
+      rethrow;
+    }
   }
 
   @override
@@ -66,7 +80,6 @@ class ProntuarioRepository implements IProntuarioRepository {
   Future<List<TreatmentPlan>> getTreatmentPlans(String patientId) async {
     try {
       final response = await _apiClient.instance.get('TreatmentPlans/active/$patientId');
-      if (response.data == null) return [];
       return [TreatmentPlan.fromJson(response.data)];
     } catch (_) {
       return [];
@@ -93,7 +106,7 @@ class ProntuarioRepository implements IProntuarioRepository {
   Future<List<Anamnese>> getAnamneses(String patientId) async {
     try {
       final response = await _apiClient.instance.get('Prontuario/$patientId/anamnese');
-      if (response.data == null || response.data == 'null') return [];
+      if (response.data == null) return [];
       return [Anamnese.fromJson(response.data)];
     } catch (_) { return []; }
   }
