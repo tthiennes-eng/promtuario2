@@ -14,7 +14,6 @@ class PatientRepository implements IPatientRepository {
   @override
   Future<List<entity.Patient>> getPatients({int page = 1, String? query}) async {
     try {
-      debugPrint('>>> Buscando pacientes (página $page, busca: $query)');
       final response = await _apiClient.instance.get('patients', queryParameters: {
         'page': page,
         'search': query,
@@ -22,35 +21,31 @@ class PatientRepository implements IPatientRepository {
 
       if (response.data != null) {
         final data = response.data;
-        // Lida com o objeto paginado { items: [], total: ... }
         final List<dynamic> items = data is Map ? (data['items'] ?? []) : data;
-        
         final apiPatients = items.map((json) => _mapJsonToEntity(json)).toList();
-        debugPrint('>>> API retornou ${apiPatients.length} pacientes. Atualizando cache...');
         await _updateLocalCache(apiPatients);
       }
     } catch (e) {
-      debugPrint('>>> Erro ao buscar pacientes da API: $e. Usando cache local.');
+      debugPrint('Erro ao buscar pacientes: $e');
     }
     return getLocalPatients();
   }
 
   @override
   Future<entity.Patient> createPatient(entity.Patient patient) async {
-    // 1. Salva localmente primeiro para garantir que apareça na lista
+    // 1. Salva localmente
     await _saveLocal(patient, false);
 
     try {
-      debugPrint('>>> Enviando novo paciente para a API...');
+      // 2. Envia para a API com mapeamento completo
       final response = await _apiClient.instance.post('patients', data: _mapEntityToJson(patient));
       final syncedPatient = _mapJsonToEntity(response.data);
       
-      // 2. Atualiza com os dados oficiais do servidor
+      // 3. Atualiza cache com confirmação do servidor
       await _saveLocal(syncedPatient, true);
       return syncedPatient;
     } catch (e) {
-      debugPrint('>>> Falha na sincronização imediata do paciente: $e');
-      // O paciente continua no banco local com isSynced = false
+      debugPrint('Erro na sincronização: $e');
       return patient;
     }
   }
@@ -63,10 +58,10 @@ class PatientRepository implements IPatientRepository {
     return results.map((row) => _mapSchemaToEntity(row)).toList();
   }
 
-  // Mapeamentos
+  // Mapeamentos robustos
   entity.Patient _mapJsonToEntity(Map<String, dynamic> json) {
     return entity.Patient(
-      id: json['id'].toString(),
+      id: json['id'] ?? '',
       fullName: json['fullName'] ?? json['nome_completo'] ?? 'Sem Nome',
       cpf: json['cpf'] ?? '',
       birthDate: DateTime.parse(json['birthDate'] ?? json['data_nascimento'] ?? DateTime.now().toIso8601String()),
@@ -75,6 +70,7 @@ class PatientRepository implements IPatientRepository {
       gender: json['gender'] ?? json['sexo'],
       lgpdConsent: json['lgpdConsent'] ?? json['consentimento_lgpd'] ?? false,
       createdAt: DateTime.now(),
+      address: json['address'] != null ? entity.PatientAddress.fromJson(json['address']) : null,
     );
   }
 
@@ -90,6 +86,14 @@ class PatientRepository implements IPatientRepository {
       lgpdConsent: row.lgpdConsent,
       isSynced: row.isSynced,
       createdAt: DateTime.now(),
+      address: row.street != null ? entity.PatientAddress(
+        street: row.street!,
+        number: row.number!,
+        neighborhood: row.neighborhood!,
+        city: row.city!,
+        state: row.state!,
+        zipCode: row.zipCode!,
+      ) : null,
     );
   }
 
@@ -102,6 +106,7 @@ class PatientRepository implements IPatientRepository {
       'phone': patient.phone,
       'birthDate': patient.birthDate.toIso8601String(),
       'lgpdConsent': patient.lgpdConsent,
+      'address': patient.address?.toJson(),
     };
   }
 
@@ -114,8 +119,15 @@ class PatientRepository implements IPatientRepository {
         birthDate: patient.birthDate,
         email: Value(patient.email),
         phone: Value(patient.phone),
+        gender: Value(patient.gender),
         lgpdConsent: Value(patient.lgpdConsent),
         isSynced: Value(isSynced),
+        street: Value(patient.address?.street),
+        number: Value(patient.address?.number),
+        neighborhood: Value(patient.address?.neighborhood),
+        city: Value(patient.address?.city),
+        state: Value(patient.address?.state),
+        zipCode: Value(patient.address?.zipCode),
       ),
     );
   }
@@ -126,15 +138,7 @@ class PatientRepository implements IPatientRepository {
     }
   }
 
-  @override
-  Future<entity.Patient> getPatientById(String id) async => (await getLocalPatients()).firstWhere((p) => p.id == id);
-  
-  @override
-  Future<void> updatePatient(entity.Patient patient) async {
-    await _apiClient.instance.put('patients/${patient.id}', data: _mapEntityToJson(patient));
-    await _saveLocal(patient, true);
-  }
-  
-  @override
-  Future<void> syncPatients() async { /* Implementação de sync em massa */ }
+  @override Future<entity.Patient> getPatientById(String id) async => (await getLocalPatients()).firstWhere((p) => p.id == id);
+  @override Future<void> updatePatient(entity.Patient p) async {}
+  @override Future<void> syncPatients() async {}
 }

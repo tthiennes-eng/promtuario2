@@ -7,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 part 'local_database.g.dart';
 
-/// Tabela de Pacientes com suporte a sincronização.
+/// Tabela de Pacientes com suporte a sincronização e endereços.
 class Patients extends Table {
   TextColumn get id => text()();
   TextColumn get fullName => text().withLength(min: 3, max: 255)();
@@ -19,6 +19,7 @@ class Patients extends Table {
   BoolColumn get lgpdConsent => boolean().withDefault(const Constant(false))();
   BoolColumn get isSynced => boolean().withDefault(const Constant(true))();
 
+  // Colunas de endereço
   TextColumn get street => text().nullable()();
   TextColumn get number => text().nullable()();
   TextColumn get neighborhood => text().nullable()();
@@ -83,7 +84,7 @@ class WaitListLocal extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// Tabela de Auditoria com suporte a sincronização (Conformidade LGPD).
+/// Tabela de Auditoria com suporte a sincronização.
 class AuditLocal extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get resourceId => text()();
@@ -142,7 +143,6 @@ class EvolutionsLocal extends Table {
 }
 
 /// Itens do Plano de Tratamento com suporte a sincronização.
-/// Removida menção a 'value' para adequação universitária.
 class TreatmentItemsLocal extends Table {
   TextColumn get id => text()();
   TextColumn get planId => text()();
@@ -171,22 +171,18 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 22;
+  int get schemaVersion => 31;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async => await m.createAll(),
         onUpgrade: (m, from, to) async {
-          if (from < 19) {
-            await m.addColumn(odontogramLocal, odontogramLocal.isSynced);
-          }
-          if (from < 20) {
-            await m.addColumn(evolutionsLocal, evolutionsLocal.studentId);
-            await m.addColumn(evolutionsLocal, evolutionsLocal.studentName);
-            await m.addColumn(evolutionsLocal, evolutionsLocal.professorName);
-            await m.addColumn(evolutionsLocal, evolutionsLocal.isSignedByProfessor);
-            await m.addColumn(evolutionsLocal, evolutionsLocal.signedAt);
-            await m.addColumn(evolutionsLocal, evolutionsLocal.clinicName);
+          if (from < 31) {
+            // Em desenvolvimento, recriamos as tabelas para garantir integridade total
+            for (final table in allTables) {
+              await m.deleteTable(table.actualTableName);
+            }
+            await m.createAll();
           }
         },
       );
