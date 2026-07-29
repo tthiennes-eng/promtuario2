@@ -15,7 +15,7 @@ class OdontogramWidget extends ConsumerWidget {
     return odontogramAsync.when(
       data: (odontogram) => _buildOdontogramView(context, ref, odontogram),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text('Erro: $err')),
+      error: (err, stack) => Center(child: Text('Erro ao carregar odontograma: $err')),
     );
   }
 
@@ -71,21 +71,16 @@ class OdontogramWidget extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          ...left.map((n) => _ToothTile(number: n, condition: _getCondition(odontogram, n), ref: ref, patientId: patientId, getSurfaceLabel: _getSurfaceLabel, getConditionLabel: _getConditionLabel)),
+          ...left.map((n) => _ToothTile(number: n, toothConditions: _getConditionsForTooth(odontogram, n), ref: ref, patientId: patientId, getSurfaceLabel: _getSurfaceLabel, getConditionLabel: _getConditionLabel)),
           const SizedBox(width: 32),
-          ...right.map((n) => _ToothTile(number: n, condition: _getCondition(odontogram, n), ref: ref, patientId: patientId, getSurfaceLabel: _getSurfaceLabel, getConditionLabel: _getConditionLabel)),
+          ...right.map((n) => _ToothTile(number: n, toothConditions: _getConditionsForTooth(odontogram, n), ref: ref, patientId: patientId, getSurfaceLabel: _getSurfaceLabel, getConditionLabel: _getConditionLabel)),
         ],
       ),
     );
   }
 
-  ToothCondition _getCondition(Odontogram? odontogram, int number) {
-    try {
-      return odontogram?.teeth.firstWhere((t) => t.toothNumber == number) ?? 
-             ToothCondition(toothNumber: number, condition: ConditionType.healthy, surfaces: []);
-    } catch (_) {
-      return ToothCondition(toothNumber: number, condition: ConditionType.healthy, surfaces: []);
-    }
+  List<ToothCondition> _getConditionsForTooth(Odontogram? odontogram, int number) {
+    return odontogram?.teeth.where((t) => t.toothNumber == number).toList() ?? [];
   }
 
   Widget _buildLegend(BuildContext context) {
@@ -135,13 +130,20 @@ class OdontogramWidget extends ConsumerWidget {
 
 class _ToothTile extends StatelessWidget {
   final int number;
-  final ToothCondition condition;
+  final List<ToothCondition> toothConditions;
   final WidgetRef ref;
   final String patientId;
   final String Function(ToothSurface) getSurfaceLabel;
   final String Function(ConditionType) getConditionLabel;
 
-  const _ToothTile({required this.number, required this.condition, required this.ref, required this.patientId, required this.getSurfaceLabel, required this.getConditionLabel});
+  const _ToothTile({
+    required this.number, 
+    required this.toothConditions, 
+    required this.ref, 
+    required this.patientId, 
+    required this.getSurfaceLabel, 
+    required this.getConditionLabel
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -152,10 +154,10 @@ class _ToothTile extends StatelessWidget {
           Text(number.toString(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
           const SizedBox(height: 6),
           GestureDetector(
-            onTap: () => _showEditor(context),
+            onTapDown: (details) => _handleTap(context, details.localPosition),
             child: CustomPaint(
               size: const Size(40, 40),
-              painter: ToothPainter(condition: condition),
+              painter: ToothPainter(conditions: toothConditions),
             ),
           ),
         ],
@@ -163,12 +165,45 @@ class _ToothTile extends StatelessWidget {
     );
   }
 
-  void _showEditor(BuildContext context) {
+  void _handleTap(BuildContext context, Offset localPosition) {
+    const size = 40.0;
+    const padding = size * 0.15;
+    
+    ToothSurface? selectedSurface;
+    
+    // Identifica qual face foi clicada baseando-se na posição
+    if (localPosition.dx > padding && localPosition.dx < size - padding &&
+        localPosition.dy > padding && localPosition.dy < size - padding) {
+      selectedSurface = ToothSurface.occlusal;
+    } else if (localPosition.dy < padding) {
+      selectedSurface = ToothSurface.buccal;
+    } else if (localPosition.dy > size - padding) {
+      selectedSurface = ToothSurface.lingual;
+    } else if (localPosition.dx < padding) {
+      selectedSurface = ToothSurface.mesial;
+    } else if (localPosition.dx > size - padding) {
+      selectedSurface = ToothSurface.distal;
+    }
+
+    if (selectedSurface != null) {
+      _showFaceEditor(context, selectedSurface);
+    }
+  }
+
+  void _showFaceEditor(BuildContext context, ToothSurface surface) {
+    // Busca a condição atual dessa face específica
+    final existingCondition = toothConditions.firstWhere(
+      (c) => c.surfaces.contains(surface),
+      orElse: () => ToothCondition(toothNumber: number, surfaces: [surface], condition: ConditionType.healthy),
+    );
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (context) => _ToothActionSheet(
-        condition: condition,
+        toothNumber: number,
+        surface: surface,
+        condition: existingCondition,
         getSurfaceLabel: getSurfaceLabel,
         getConditionLabel: getConditionLabel,
         onSave: (updated) {
@@ -181,8 +216,8 @@ class _ToothTile extends StatelessWidget {
 }
 
 class ToothPainter extends CustomPainter {
-  final ToothCondition condition;
-  ToothPainter({required this.condition});
+  final List<ToothCondition> conditions;
+  ToothPainter({required this.conditions});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -193,6 +228,7 @@ class ToothPainter extends CustomPainter {
 
     final padding = size.width * 0.15;
     
+    // Desenha cada face com sua respectiva cor de condição
     _drawPolygon(canvas, [
       Offset(padding, padding),
       Offset(size.width - padding, padding),
@@ -228,8 +264,10 @@ class ToothPainter extends CustomPainter {
       Offset(size.width - padding, size.height - padding),
     ], _getSurfaceColor(ToothSurface.distal), borderPaint);
 
-    if (condition.condition == ConditionType.missing) {
-      _drawX(canvas, size);
+    // Verifica se o dente está ausente ou tem implante (afeta o dente todo)
+    final toothWideCondition = conditions.any((c) => c.condition == ConditionType.missing || c.condition == ConditionType.implant);
+    if (toothWideCondition) {
+       _drawX(canvas, size);
     }
   }
 
@@ -246,11 +284,12 @@ class ToothPainter extends CustomPainter {
   }
 
   Color _getSurfaceColor(ToothSurface surface) {
-    if (condition.condition == ConditionType.healthy) return Colors.white;
-    if (condition.surfaces.contains(surface)) {
+    try {
+      final condition = conditions.firstWhere((c) => c.surfaces.contains(surface));
       return OdontogramWidget._getConditionColor(condition.condition);
+    } catch (_) {
+      return Colors.white;
     }
-    return Colors.white;
   }
 
   @override
@@ -258,12 +297,21 @@ class ToothPainter extends CustomPainter {
 }
 
 class _ToothActionSheet extends StatefulWidget {
+  final int toothNumber;
+  final ToothSurface surface;
   final ToothCondition condition;
   final String Function(ToothSurface) getSurfaceLabel;
   final String Function(ConditionType) getConditionLabel;
   final Function(ToothCondition) onSave;
 
-  const _ToothActionSheet({required this.condition, required this.onSave, required this.getSurfaceLabel, required this.getConditionLabel});
+  const _ToothActionSheet({
+    required this.toothNumber, 
+    required this.surface,
+    required this.condition, 
+    required this.onSave, 
+    required this.getSurfaceLabel, 
+    required this.getConditionLabel
+  });
 
   @override
   State<_ToothActionSheet> createState() => _ToothActionSheetState();
@@ -271,14 +319,12 @@ class _ToothActionSheet extends StatefulWidget {
 
 class _ToothActionSheetState extends State<_ToothActionSheet> {
   late ConditionType _selectedType;
-  late List<ToothSurface> _selectedSurfaces;
   final _obsController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _selectedType = widget.condition.condition;
-    _selectedSurfaces = List.from(widget.condition.surfaces);
     _obsController.text = widget.condition.observation ?? '';
   }
 
@@ -296,52 +342,34 @@ class _ToothActionSheetState extends State<_ToothActionSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Dente ${widget.condition.toothNumber}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              Text('Dente ${widget.toothNumber} - Face ${widget.getSurfaceLabel(widget.surface)}', 
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
             ],
           ),
           const SizedBox(height: 24),
-          const Text('Diagnóstico Principal', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('Estado Clínico desta Face', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           DropdownButtonFormField<ConditionType>(
             isExpanded: true,
             value: _selectedType,
             decoration: const InputDecoration(border: OutlineInputBorder()),
-            items: ConditionType.values.map((type) => DropdownMenuItem(value: type, child: Text(widget.getConditionLabel(type).toUpperCase()))).toList(),
+            items: ConditionType.values.map((type) => DropdownMenuItem(
+              value: type, 
+              child: Text(widget.getConditionLabel(type).toUpperCase())
+            )).toList(),
             onChanged: (val) => setState(() => _selectedType = val!),
           ),
-          if (_selectedType != ConditionType.missing && _selectedType != ConditionType.healthy) ...[
-            const SizedBox(height: 24),
-            const Text('Faces Acometidas (Selecione independentemente)', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              children: ToothSurface.values.where((s) => s != ToothSurface.root).map((s) {
-                final isSelected = _selectedSurfaces.contains(s);
-                return FilterChip(
-                  label: Text(widget.getSurfaceLabel(s).toUpperCase()),
-                  selected: isSelected,
-                  selectedColor: Colors.blue.shade100,
-                  onSelected: (val) {
-                    setState(() {
-                      if (val) {
-                        _selectedSurfaces.add(s);
-                      } else {
-                        _selectedSurfaces.remove(s);
-                      }
-                    });
-                  },
-                );
-              }).toList(),
-            ),
-          ],
           const SizedBox(height: 24),
           const Text('Observações', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           TextField(
             controller: _obsController,
             maxLines: 2,
-            decoration: const InputDecoration(hintText: 'Ex: Cárie profunda, necessidade de endo...', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              hintText: 'Detalhes específicos para esta face...', 
+              border: OutlineInputBorder()
+            ),
           ),
           const SizedBox(height: 32),
           SizedBox(
@@ -350,10 +378,9 @@ class _ToothActionSheetState extends State<_ToothActionSheet> {
             child: FilledButton(
               onPressed: () => widget.onSave(widget.condition.copyWith(
                 condition: _selectedType,
-                surfaces: _selectedSurfaces,
                 observation: _obsController.text,
               )),
-              child: const Text('Atualizar Prontuário'),
+              child: const Text('Salvar Alteração na Face'),
             ),
           ),
         ],

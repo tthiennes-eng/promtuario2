@@ -22,72 +22,73 @@ class TreatmentPlanScreen extends ConsumerStatefulWidget {
 }
 
 class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
-  final _descriptionController = TextEditingController();
-
-  @override
-  void dispose() {
-    _descriptionController.dispose();
-    super.dispose();
-  }
-
   void _showAddProcedureDialog() {
     String? selectedProcedure;
     int? toothNumber;
     double value = 0.0;
+    final obsController = TextEditingController();
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Adicionar Procedimento'),
-          content: Column(
+      builder: (context) => AlertDialog(
+        title: const Text('Novo Procedimento'),
+        content: SingleChildScrollView(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<String>(
-                decoration: const InputDecoration(labelText: 'Procedimento'),
+                decoration: const InputDecoration(labelText: 'Procedimento', border: OutlineInputBorder()),
                 items: const [
                   DropdownMenuItem(value: 'Limpeza', child: Text('Limpeza / Profilaxia')),
                   DropdownMenuItem(value: 'Restauração', child: Text('Restauração')),
                   DropdownMenuItem(value: 'Endodontia', child: Text('Tratamento de Canal')),
                   DropdownMenuItem(value: 'Extração', child: Text('Exodontia')),
+                  DropdownMenuItem(value: 'Avaliação', child: Text('Avaliação Clínica')),
                 ],
                 onChanged: (v) => selectedProcedure = v,
               ),
               const SizedBox(height: 16),
               TextFormField(
-                decoration: const InputDecoration(labelText: 'Elemento (Opcional)'),
+                decoration: const InputDecoration(labelText: 'Dente (Elemento)', border: OutlineInputBorder()),
                 keyboardType: TextInputType.number,
                 onChanged: (v) => toothNumber = int.tryParse(v),
               ),
               const SizedBox(height: 16),
               TextFormField(
-                decoration: const InputDecoration(labelText: 'Valor sugerido (R\$)'),
+                decoration: const InputDecoration(labelText: 'Valor (R$)', border: OutlineInputBorder()),
                 keyboardType: TextInputType.number,
                 onChanged: (v) => value = double.tryParse(v) ?? 0.0,
               ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: obsController,
+                maxLines: 3,
+                decoration: const InputDecoration(labelText: 'Observações / Detalhes', border: OutlineInputBorder()),
+              ),
             ],
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-            FilledButton(
-              onPressed: () {
-                if (selectedProcedure != null) {
-                  final newItem = TreatmentItem(
-                    id: const Uuid().v4(),
-                    procedureId: const Uuid().v4(),
-                    procedureName: selectedProcedure!,
-                    value: value,
-                    toothNumber: toothNumber,
-                    status: TreatmentItemStatus.pending,
-                  );
-                  ref.read(treatmentPlanViewModelProvider(widget.patientId).notifier).addItem(newItem);
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Adicionar'),
-            ),
-          ],
         ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          FilledButton(
+            onPressed: () {
+              if (selectedProcedure != null) {
+                final newItem = TreatmentItem(
+                  id: const Uuid().v4(),
+                  procedureId: const Uuid().v4(),
+                  procedureName: selectedProcedure!,
+                  value: value,
+                  toothNumber: toothNumber,
+                  observation: obsController.text,
+                  status: TreatmentItemStatus.pending,
+                );
+                ref.read(treatmentPlanViewModelProvider(widget.patientId).notifier).addItem(newItem);
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Adicionar'),
+          ),
+        ],
       ),
     );
   }
@@ -113,61 +114,75 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Erro: $err')),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddProcedureDialog,
-        label: const Text('Adicionar Procedimento'),
-        icon: const Icon(Icons.add),
+      floatingActionButton: planAsync.maybeWhen(
+        data: (plans) => plans.isNotEmpty ? FloatingActionButton.extended(
+          onPressed: _showAddProcedureDialog,
+          label: const Text('Novo Procedimento'),
+          icon: const Icon(Icons.add),
+        ) : null,
+        orElse: () => null,
       ),
     );
   }
 
   Widget _buildEmptyState() {
     return Center(
-      child: FilledButton(
-        onPressed: _createNewPlan,
-        child: const Text('Criar Novo Plano'),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.assignment_outlined, size: 80, color: Colors.grey),
+          const SizedBox(height: 16),
+          const Text('Nenhum plano para este paciente.', style: TextStyle(color: Colors.grey)),
+          const SizedBox(height: 32),
+          FilledButton.icon(
+            onPressed: _showAddProcedureDialog,
+            icon: const Icon(Icons.add),
+            label: const Text('Adicionar Procedimento'),
+            style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20)),
+          ),
+        ],
       ),
     );
   }
 
-  void _createNewPlan() {
-    final authState = ref.read(authViewModelProvider);
-    final newPlan = TreatmentPlan(
-      id: const Uuid().v4(),
-      patientId: widget.patientId,
-      description: 'Plano inicial',
-      items: [],
-      createdByUserId: authState.user?.id ?? 'system',
-      status: TreatmentPlanStatus.draft,
-      createdAt: DateTime.now(),
-    );
-    ref.read(treatmentPlanViewModelProvider(widget.patientId).notifier).savePlan(newPlan);
-  }
-
   Widget _buildPlanHeader(TreatmentPlan plan) {
     return ListTile(
-      tileColor: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
-      title: Text('Status: ${plan.status.name.toUpperCase()}'),
-      subtitle: Text('Paciente: ${widget.patientName}'),
+      tileColor: Colors.blue.withOpacity(0.05),
+      title: Text('Paciente: ${widget.patientName}', style: const TextStyle(fontWeight: FontWeight.bold)),
+      subtitle: Text('Status do Plano: ${plan.status.name.toUpperCase()}'),
     );
   }
 
   Widget _buildItemsList(List<TreatmentItem> items) {
     return ListView.builder(
       itemCount: items.length,
-      itemBuilder: (context, i) => ListTile(
-        title: Text(items[i].procedureName),
-        trailing: Text('R\$ ${items[i].value.toStringAsFixed(2)}'),
-      ),
+      itemBuilder: (context, i) {
+        final item = items[i];
+        return ListTile(
+          title: Text(item.procedureName),
+          subtitle: item.observation != null ? Text(item.observation!) : null,
+          trailing: Text('R$ ${item.value.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+          leading: item.toothNumber != null ? CircleAvatar(child: Text(item.toothNumber.toString())) : const Icon(Icons.medical_services_outlined),
+        );
+      },
     );
   }
 
   Widget _buildFooter(TreatmentPlan plan) {
     final total = plan.items.fold<double>(0, (sum, item) => sum + item.value);
-    return Padding(
+    return Container(
       padding: const EdgeInsets.all(24),
-      child: Text('Total: R\$ ${total.toStringAsFixed(2)}', 
-        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text('Total Estimado:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text('R$ ${total.toStringAsFixed(2)}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue)),
+        ],
+      ),
     );
   }
 }

@@ -21,12 +21,20 @@ class ProntuarioRepository implements IProntuarioRepository {
   @override
   Future<Odontogram> getOdontogram(String patientId) async {
     try {
-      final response = await _apiClient.instance.get('/prontuario/$patientId/odontogram');
+      final response = await _apiClient.instance.get('Prontuario/$patientId/odontogram');
       dynamic rawData = response.data;
-      if (rawData == null || (rawData is String && rawData.isEmpty) || rawData == 'null') {
+      
+      if (rawData == null || rawData == '' || rawData == 'null') {
         return _initialOdontogram(patientId);
       }
-      Map<String, dynamic> jsonData = rawData is String ? jsonDecode(rawData) : Map<String, dynamic>.from(rawData);
+
+      Map<String, dynamic> jsonData;
+      if (rawData is String) {
+        jsonData = jsonDecode(rawData);
+      } else {
+        jsonData = Map<String, dynamic>.from(rawData);
+      }
+
       final odontogram = Odontogram.fromJson(jsonData);
       await _saveOdontogramLocal(odontogram);
       return odontogram;
@@ -50,7 +58,7 @@ class ProntuarioRepository implements IProntuarioRepository {
   Future<void> saveOdontogram(Odontogram odontogram) async {
     await _saveOdontogramLocal(odontogram, isSynced: false);
     try {
-      await _apiClient.instance.post('/prontuario/${odontogram.patientId}/odontogram', data: odontogram.toJson());
+      await _apiClient.instance.post('Prontuario/${odontogram.patientId}/odontogram', data: odontogram.toJson());
       await _markOdontogramAsSynced(odontogram.patientId);
     } catch (_) {}
   }
@@ -59,7 +67,7 @@ class ProntuarioRepository implements IProntuarioRepository {
   Future<void> addEvolution(String patientId, String description, String professorId) async {
     final now = DateTime.now();
     try {
-      await _apiClient.instance.post('/evolutions', data: {
+      await _apiClient.instance.post('evolutions', data: {
         'patientId': patientId,
         'description': description,
         'professorId': professorId,
@@ -86,7 +94,7 @@ class ProntuarioRepository implements IProntuarioRepository {
   @override
   Future<List<Evolution>> getEvolutions(String patientId) async {
     try {
-      final response = await _apiClient.instance.get('/prontuario/$patientId/evolutions');
+      final response = await _apiClient.instance.get('Prontuario/$patientId/evolutions');
       final List<dynamic> data = response.data ?? [];
       return data.map((json) => Evolution.fromJson(json)).toList();
     } catch (e) {
@@ -109,8 +117,7 @@ class ProntuarioRepository implements IProntuarioRepository {
   @override
   Future<List<TreatmentPlan>> getTreatmentPlans(String patientId) async {
     try {
-      // Ajustado para a rota correta do TreatmentPlansController
-      final response = await _apiClient.instance.get('/TreatmentPlans/active/$patientId');
+      final response = await _apiClient.instance.get('TreatmentPlans/active/$patientId');
       if (response.data == null) return [];
       return [TreatmentPlan.fromJson(response.data)];
     } catch (e) {
@@ -127,8 +134,9 @@ class ProntuarioRepository implements IProntuarioRepository {
   @override
   Future<void> saveTreatmentPlan(TreatmentPlan plan) async {
     try {
-      // Ajustado para a rota POST /TreatmentPlans
-      await _apiClient.instance.post('/TreatmentPlans', data: {
+      // Se o plano já tem ID e itens, talvez devêssemos usar outro endpoint,
+      // mas o Controller.Create espera PatientId e Description.
+      await _apiClient.instance.post('TreatmentPlans', data: {
         'patientId': plan.patientId,
         'description': plan.description,
       });
@@ -137,18 +145,21 @@ class ProntuarioRepository implements IProntuarioRepository {
 
   @override
   Future<void> updateTreatmentItemStatus(String planId, String itemId, String status) async {
+    // Implementação para atualizar status via API
+  }
+
+  Future<void> addTreatmentItem(String planId, TreatmentItem item) async {
     try {
-      // Rota para adicionar itens ou atualizar status
-      await _apiClient.instance.post('/TreatmentPlans/$planId/items', data: {
-        'procedureId': const Uuid().v4(),
-        'procedureName': 'Atualização',
-        'value': 0.0,
-        'status': status,
+      await _apiClient.instance.post('TreatmentPlans/$planId/items', data: {
+        'procedureId': item.procedureId,
+        'procedureName': item.procedureName,
+        'value': item.value,
+        'toothNumber': item.toothNumber,
+        'observation': item.observation,
       });
     } catch (e) {}
   }
 
-  // Métodos de Documentos e Sincronização mantidos...
   @override Future<Prescription> createPrescription(Prescription p) async { return p; }
   @override Future<List<Prescription>> getPrescriptionHistory(String id) async { return []; }
   @override Future<MedicalCertificate> createCertificate(MedicalCertificate c) async { return c; }

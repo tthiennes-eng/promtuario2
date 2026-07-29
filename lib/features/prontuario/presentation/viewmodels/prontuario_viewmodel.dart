@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:promt/core/providers/providers.dart';
 import 'package:promt/features/prontuario/domain/entities/odontogram.dart';
 
-/// Gerencia o prontuário eletrônico do paciente com odontograma.
+/// Gerencia o prontuário eletrônico com suporte a faces de dentes independentes.
 class ProntuarioViewModel extends StateNotifier<AsyncValue<Odontogram?>> {
   final Ref ref;
   final String patientId;
@@ -19,15 +19,37 @@ class ProntuarioViewModel extends StateNotifier<AsyncValue<Odontogram?>> {
 
   Future<void> refresh() async => _fetchOdontogram();
 
-  /// Atualiza a condição de um dente no odontograma.
-  Future<void> updateToothCondition(ToothCondition condition) async {
+  /// Atualiza a condição de uma face específica preservando as demais condições do dente.
+  Future<void> updateToothCondition(ToothCondition newCondition) async {
     final current = state.value;
     if (current == null) return;
 
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-      final updatedTeeth = current.teeth.where((t) => t.toothNumber != condition.toothNumber).toList();
-      updatedTeeth.add(condition);
+      List<ToothCondition> updatedTeeth = List.from(current.teeth);
+      
+      // 1. Remove a face atual de qualquer registro existente deste dente
+      final surfaceToUpdate = newCondition.surfaces.first;
+      
+      for (int i = 0; i < updatedTeeth.length; i++) {
+        if (updatedTeeth[i].toothNumber == newCondition.toothNumber) {
+          // Se o registro contém a face que estamos editando, removemos essa face dele
+          if (updatedTeeth[i].surfaces.contains(surfaceToUpdate)) {
+            final newSurfaces = updatedTeeth[i].surfaces.where((s) => s != surfaceToUpdate).toList();
+            if (newSurfaces.isEmpty) {
+              updatedTeeth.removeAt(i);
+              i--;
+            } else {
+              updatedTeeth[i] = updatedTeeth[i].copyWith(surfaces: newSurfaces);
+            }
+          }
+        }
+      }
+
+      // 2. Adiciona a nova condição se não for "Saudável"
+      if (newCondition.condition != ConditionType.healthy) {
+        updatedTeeth.add(newCondition);
+      }
 
       final updated = current.copyWith(
         teeth: updatedTeeth,

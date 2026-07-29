@@ -27,6 +27,7 @@ class TreatmentItem with _$TreatmentItem {
     required String procedureName,
     required double value,
     int? toothNumber,
+    String? observation,
     required TreatmentItemStatus status,
   }) = _TreatmentItem;
 
