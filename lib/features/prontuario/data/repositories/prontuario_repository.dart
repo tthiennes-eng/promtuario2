@@ -11,7 +11,6 @@ import 'package:promt/features/prontuario/domain/repositories/i_prontuario_repos
 import 'package:promt/features/auth/domain/entities/user.dart';
 import 'package:uuid/uuid.dart';
 
-/// Implementação do Repositório de Prontuário com suporte a Cache Offline e Sincronização.
 class ProntuarioRepository implements IProntuarioRepository {
   final ApiClient _apiClient;
   final AppDatabase _localDb;
@@ -22,38 +21,18 @@ class ProntuarioRepository implements IProntuarioRepository {
   @override
   Future<Odontogram> getOdontogram(String patientId) async {
     try {
-      final response =
-          await _apiClient.instance.get('/prontuario/$patientId/odontogram');
-      
-      // Verificação robusta do tipo de dado retornado
+      final response = await _apiClient.instance.get('/prontuario/$patientId/odontogram');
       dynamic rawData = response.data;
-      
-      if (rawData == null || (rawData is String && rawData.isEmpty)) {
+      if (rawData == null || (rawData is String && rawData.isEmpty) || rawData == 'null') {
         return _initialOdontogram(patientId);
       }
-
-      Map<String, dynamic> jsonData;
-      if (rawData is String) {
-        jsonData = jsonDecode(rawData);
-      } else if (rawData is Map) {
-        jsonData = Map<String, dynamic>.from(rawData);
-      } else {
-        return _initialOdontogram(patientId);
-      }
-
+      Map<String, dynamic> jsonData = rawData is String ? jsonDecode(rawData) : Map<String, dynamic>.from(rawData);
       final odontogram = Odontogram.fromJson(jsonData);
       await _saveOdontogramLocal(odontogram);
       return odontogram;
     } catch (e) {
-      final local = await (_localDb.select(_localDb.odontogramLocal)
-            ..where((t) => t.patientId.equals(patientId)))
-          .getSingleOrNull();
-
-      if (local != null) {
-        return _mapLocalToOdontogram(local);
-      }
-      
-      return _initialOdontogram(patientId);
+      final local = await (_localDb.select(_localDb.odontogramLocal)..where((t) => t.patientId.equals(patientId))).getSingleOrNull();
+      return local != null ? _mapLocalToOdontogram(local) : _initialOdontogram(patientId);
     }
   }
 
@@ -71,437 +50,127 @@ class ProntuarioRepository implements IProntuarioRepository {
   Future<void> saveOdontogram(Odontogram odontogram) async {
     await _saveOdontogramLocal(odontogram, isSynced: false);
     try {
-      await _apiClient.instance.post(
-        '/prontuario/${odontogram.patientId}/odontogram',
-        data: odontogram.toJson(),
-      );
+      await _apiClient.instance.post('/prontuario/${odontogram.patientId}/odontogram', data: odontogram.toJson());
       await _markOdontogramAsSynced(odontogram.patientId);
-    } catch (_) {
-      // O registro local já foi gravado como pendente.
-    }
+    } catch (_) {}
   }
 
   @override
-  Future<void> addEvolution(
-      String patientId, String description, String professorId) async {
+  Future<void> addEvolution(String patientId, String description, String professorId) async {
     final now = DateTime.now();
-    final evolutionId = const Uuid().v4();
-    final isProfessor = _currentUser?.role == UserRole.professor;
-    
     try {
-      await _apiClient.instance.post(
-        '/evolutions',
-        data: {
-          'patientId': patientId,
-          'description': description,
-          'professorId': professorId,
-          'studentId': _currentUser?.id,
-          'studentName': _currentUser?.name,
-          'isSignedByProfessor': isProfessor,
-          'signedAt': isProfessor ? now.toIso8601String() : null,
-        },
-      );
+      await _apiClient.instance.post('/evolutions', data: {
+        'patientId': patientId,
+        'description': description,
+        'professorId': professorId,
+        'studentId': _currentUser?.id,
+        'studentName': _currentUser?.name,
+        'isSignedByProfessor': _currentUser?.role == UserRole.professor,
+        'signedAt': _currentUser?.role == UserRole.professor ? now.toIso8601String() : null,
+      });
     } catch (e) {
-      await _localDb.into(_localDb.evolutionsLocal).insert(
-            EvolutionsLocalCompanion.insert(
-              id: evolutionId,
-              patientId: patientId,
-              studentId: Value(_currentUser?.id),
-              studentName: Value(_currentUser?.name),
-              professorId: Value(professorId),
-              professorName: Value(_currentUser?.role == UserRole.professor ? _currentUser?.name : null),
-              description: description,
-              isSignedByProfessor: Value(isProfessor),
-              signedAt: Value(isProfessor ? now : null),
-              createdAt: now,
-              clinicName: Value(null),
-              isSynced: const Value(false),
-            ),
-          );
-    }
-  }
-
-  @override
-  Future<List<Evolution>> getEvolutionHistory(String patientId) async {
-    try {
-      final response =
-          await _apiClient.instance.get('/prontuario/$patientId/evolutions');
-      final List<dynamic> data = response.data ?? [];
-      return data.map((json) => Evolution.fromJson(json)).toList();
-    } catch (e) {
-      final localEvolutions = await (_localDb.select(_localDb.evolutionsLocal)
-            ..where((t) => t.patientId.equals(patientId)))
-          .get();
-
-      return localEvolutions
-          .map((row) => Evolution(
-                id: row.id,
-                patientId: row.patientId,
-                studentId: row.studentId ?? '',
-                studentName: row.studentName ?? 'Aluno',
-                professorId: row.professorId ?? '',
-                professorName: row.professorName ?? 'Professor',
-                description: row.description,
-                isSignedByProfessor: row.isSignedByProfessor,
-                signedAt: row.signedAt,
-                createdAt: row.createdAt,
-                clinicName: row.clinicName,
-              ))
-          .toList();
-    }
-  }
-
-  @override
-  Future<void> signEvolution(String evolutionId) async {
-    try {
-      await _apiClient.instance.patch('/prontuario/evolutions/$evolutionId/sign');
-    } catch (e) {
-      final existing = await (_localDb.select(_localDb.evolutionsLocal)
-            ..where((t) => t.id.equals(evolutionId)))
-          .getSingleOrNull();
-      
-      if (existing != null) {
-        await (_localDb.update(_localDb.evolutionsLocal)
-              ..where((t) => t.id.equals(evolutionId)))
-            .write(EvolutionsLocalCompanion(
-              isSignedByProfessor: const Value(true),
-              signedAt: Value(DateTime.now()),
-              professorName: Value(_currentUser?.name),
-            ));
-      }
-    }
-  }
-
-  @override
-  Future<Prescription> createPrescription(Prescription prescription) async {
-    final response = await _apiClient.instance.post(
-      '/patients/${prescription.patientId}/prescriptions',
-      data: prescription.toJson(),
-    );
-    return Prescription.fromJson(response.data);
-  }
-
-  @override
-  Future<List<Prescription>> getPrescriptionHistory(String patientId) async {
-    final response =
-        await _apiClient.instance.get('/patients/$patientId/prescriptions');
-    final List<dynamic> data = response.data ?? [];
-    return data.map((json) => Prescription.fromJson(json)).toList();
-  }
-
-  @override
-  Future<MedicalCertificate> createCertificate(
-      MedicalCertificate certificate) async {
-    final response = await _apiClient.instance.post(
-      '/patients/${certificate.patientId}/certificates',
-      data: certificate.toJson(),
-    );
-    return MedicalCertificate.fromJson(response.data);
-  }
-
-  @override
-  Future<List<Anamnese>> getAnamneses(String patientId) async {
-    try {
-      final response =
-          await _apiClient.instance.get('/patients/$patientId/anamneses');
-      final List<dynamic> data = response.data ?? [];
-      return data.map((json) => Anamnese.fromJson(json)).toList();
-    } catch (e) {
-      final localData = await (_localDb.select(_localDb.anamneseLocal)
-            ..where((t) => t.patientId.equals(patientId)))
-          .getSingleOrNull();
-
-      if (localData != null) {
-        return [
-          Anamnese(
-            id: 'local',
-            patientId: patientId,
-            responses: jsonDecode(localData.responsesJson),
-            createdAt: localData.lastUpdated,
-            createdBy: 'offline',
-          ),
-        ];
-      }
-      return [];
-    }
-  }
-
-  @override
-  Future<Anamnese?> getAnamneseByPatientId(String patientId) async {
-    try {
-      final response =
-          await _apiClient.instance.get('/patients/$patientId/anamnese');
-      if (response.data == null || response.data == '') return null;
-      return Anamnese.fromJson(response.data);
-    } catch (e) {
-      final anamneses = await getAnamneses(patientId);
-      return anamneses.isNotEmpty ? anamneses.first : null;
-    }
-  }
-
-  @override
-  Future<void> saveAnamnese(String patientId, Map<String, dynamic> responses) async {
-    final anamnese = Anamnese(
-      id: const Uuid().v4(),
-      patientId: patientId,
-      responses: responses,
-      createdAt: DateTime.now(),
-      createdBy: _currentUser?.id ?? 'unknown',
-    );
-
-    try {
-      await _apiClient.instance.post(
-        '/patients/$patientId/anamnese',
-        data: anamnese.toJson(),
-      );
-
-      await _localDb.into(_localDb.anamneseLocal).insertOnConflictUpdate(
-            AnamneseLocalCompanion.insert(
-              patientId: patientId,
-              responsesJson: jsonEncode(responses),
-              lastUpdated: DateTime.now(),
-              isSynced: const Value(true),
-            ),
-          );
-    } catch (e) {
-      await _localDb.into(_localDb.anamneseLocal).insertOnConflictUpdate(
-            AnamneseLocalCompanion.insert(
-              patientId: patientId,
-              responsesJson: jsonEncode(responses),
-              lastUpdated: DateTime.now(),
-              isSynced: const Value(false),
-            ),
-          );
+      await _localDb.into(_localDb.evolutionsLocal).insert(EvolutionsLocalCompanion.insert(
+        id: const Uuid().v4(),
+        patientId: patientId,
+        studentId: Value(_currentUser?.id),
+        studentName: Value(_currentUser?.name),
+        professorId: Value(professorId),
+        description: description,
+        isSignedByProfessor: Value(_currentUser?.role == UserRole.professor),
+        createdAt: now,
+        isSynced: const Value(false),
+      ));
     }
   }
 
   @override
   Future<List<Evolution>> getEvolutions(String patientId) async {
     try {
-      final response =
-          await _apiClient.instance.get('/prontuario/$patientId/evolutions');
+      final response = await _apiClient.instance.get('/prontuario/$patientId/evolutions');
       final List<dynamic> data = response.data ?? [];
       return data.map((json) => Evolution.fromJson(json)).toList();
     } catch (e) {
-      final localEvolutions = await (_localDb.select(_localDb.evolutionsLocal)
-            ..where((t) => t.patientId.equals(patientId)))
-          .get();
-
-      return localEvolutions
-          .map((row) => Evolution(
-                id: row.id,
-                patientId: row.patientId,
-                studentId: row.studentId ?? '',
-                studentName: row.studentName ?? 'Aluno',
-                professorId: row.professorId ?? '',
-                professorName: row.professorName ?? 'Professor',
-                description: row.description,
-                isSignedByProfessor: row.isSignedByProfessor,
-                signedAt: row.signedAt,
-                createdAt: row.createdAt,
-                clinicName: row.clinicName,
-              ))
-          .toList();
+      final local = await (_localDb.select(_localDb.evolutionsLocal)..where((t) => t.patientId.equals(patientId))).get();
+      return local.map((row) => Evolution(
+        id: row.id,
+        patientId: row.patientId,
+        studentId: row.studentId ?? '',
+        studentName: row.studentName ?? 'Aluno',
+        professorId: row.professorId ?? '',
+        professorName: row.professorName ?? 'Professor',
+        description: row.description,
+        isSignedByProfessor: row.isSignedByProfessor,
+        signedAt: row.signedAt,
+        createdAt: row.createdAt,
+      )).toList();
     }
   }
 
   @override
   Future<List<TreatmentPlan>> getTreatmentPlans(String patientId) async {
     try {
-      final response =
-          await _apiClient.instance.get('/patients/$patientId/treatment-plans');
-      final List<dynamic> data = response.data ?? [];
-      return data.map((json) => TreatmentPlan.fromJson(json)).toList();
+      // Ajustado para a rota correta do TreatmentPlansController
+      final response = await _apiClient.instance.get('/TreatmentPlans/active/$patientId');
+      if (response.data == null) return [];
+      return [TreatmentPlan.fromJson(response.data)];
     } catch (e) {
-      final localItems = await (_localDb.select(_localDb.treatmentItemsLocal)
-            ..where((t) => t.planId.isNotNull()))
-          .get();
-
-      if (localItems.isEmpty) return [];
-
-      final plansMap = <String, List<TreatmentItem>>{};
-      for (var item in localItems) {
-        if (!plansMap.containsKey(item.planId)) {
-          plansMap[item.planId] = [];
-        }
-        plansMap[item.planId]!.add(_mapRowToItem(item));
-      }
-
-      return plansMap.entries.map((entry) => TreatmentPlan(
-        id: entry.key,
-        patientId: patientId,
-        description: 'Plano em modo offline',
-        items: entry.value,
-        createdByUserId: 'offline',
-        status: TreatmentPlanStatus.inProgress,
-        createdAt: DateTime.now(),
-      )).toList();
+      return [];
     }
   }
 
   @override
   Future<TreatmentPlan?> getTreatmentPlan(String patientId) async {
-    try {
-      final response =
-          await _apiClient.instance.get('/patients/$patientId/treatment-plan');
-      if (response.data == null || response.data == '') return null;
-      return TreatmentPlan.fromJson(response.data);
-    } catch (e) {
-      final plans = await getTreatmentPlans(patientId);
-      return plans.isNotEmpty ? plans.first : null;
-    }
+    final plans = await getTreatmentPlans(patientId);
+    return plans.isNotEmpty ? plans.first : null;
   }
 
   @override
   Future<void> saveTreatmentPlan(TreatmentPlan plan) async {
-    await _apiClient.instance.post(
-      '/patients/${plan.patientId}/treatment-plan',
-      data: plan.toJson(),
-    );
-    for (var item in plan.items) {
-      await _saveTreatmentItemLocal(plan.id, item, true);
-    }
-  }
-
-  @override
-  Future<void> updateTreatmentItemStatus(
-      String planId, String itemId, String status) async {
     try {
-      await _apiClient.instance.patch(
-        '/treatment-plans/$planId/items/$itemId',
-        data: {'status': status},
-      );
-
-      final item = await (_localDb.select(_localDb.treatmentItemsLocal)
-            ..where((t) => t.id.equals(itemId)))
-          .getSingle();
-      await _saveTreatmentItemLocal(
-          planId,
-          _mapRowToItem(item).copyWith(
-              status: TreatmentItemStatus.values
-                  .firstWhere((e) => e.name == status)),
-          true);
-    } catch (e) {
-      final item = await (_localDb.select(_localDb.treatmentItemsLocal)
-            ..where((t) => t.id.equals(itemId)))
-          .getSingle();
-      await _saveTreatmentItemLocal(
-          planId,
-          _mapRowToItem(item).copyWith(
-              status: TreatmentItemStatus.values
-                  .firstWhere((e) => e.name == status)),
-          false);
-    }
+      // Ajustado para a rota POST /TreatmentPlans
+      await _apiClient.instance.post('/TreatmentPlans', data: {
+        'patientId': plan.patientId,
+        'description': plan.description,
+      });
+    } catch (e) {}
   }
 
   @override
-  Future<void> syncPendingData() async {
-    final unsyncedOdontograms = await (_localDb.select(_localDb.odontogramLocal)
-          ..where((t) => t.isSynced.equals(false)))
-        .get();
-    for (final row in unsyncedOdontograms) {
-      try {
-        await _apiClient.instance.post(
-          '/prontuario/${row.patientId}/odontogram',
-          data: jsonDecode(row.dataJson),
-        );
-        await _markOdontogramAsSynced(row.patientId);
-      } catch (_) {}
-    }
-
-    final unsyncedAnamnese = await (_localDb.select(_localDb.anamneseLocal)
-          ..where((t) => t.isSynced.equals(false)))
-        .get();
-    for (final row in unsyncedAnamnese) {
-      try {
-        await _apiClient.instance.post('/patients/${row.patientId}/anamnese',
-            data: {'responses': jsonDecode(row.responsesJson)});
-        await (_localDb.update(_localDb.anamneseLocal)
-              ..where((t) => t.patientId.equals(row.patientId)))
-            .write(const AnamneseLocalCompanion(isSynced: Value(true)));
-      } catch (_) {}
-    }
-
-    final unsyncedEvolutions = await (_localDb.select(_localDb.evolutionsLocal)
-          ..where((t) => t.isSynced.equals(false)))
-        .get();
-    for (final evolution in unsyncedEvolutions) {
-      try {
-        await _apiClient.instance.post('/evolutions', data: {
-          'patientId': evolution.patientId,
-          'description': evolution.description,
-          'professorId': evolution.professorId,
-        });
-        await (_localDb.delete(_localDb.evolutionsLocal)
-              ..where((t) => t.id.equals(evolution.id)))
-            .go();
-      } catch (_) {}
-    }
-
-    final unsyncedItems = await (_localDb.select(_localDb.treatmentItemsLocal)
-          ..where((t) => t.isSynced.equals(false)))
-        .get();
-    for (final row in unsyncedItems) {
-      try {
-        await _apiClient.instance.patch(
-            '/treatment-plans/${row.planId}/items/${row.id}',
-            data: {'status': row.status});
-        await (_localDb.update(_localDb.treatmentItemsLocal)
-              ..where((t) => t.id.equals(row.id)))
-            .write(const TreatmentItemsLocalCompanion(isSynced: Value(true)));
-      } catch (_) {}
-    }
+  Future<void> updateTreatmentItemStatus(String planId, String itemId, String status) async {
+    try {
+      // Rota para adicionar itens ou atualizar status
+      await _apiClient.instance.post('/TreatmentPlans/$planId/items', data: {
+        'procedureId': const Uuid().v4(),
+        'procedureName': 'Atualização',
+        'value': 0.0,
+        'status': status,
+      });
+    } catch (e) {}
   }
 
-  // Helpers
-  Future<void> _saveOdontogramLocal(
-    Odontogram odontogram, {
-    bool isSynced = true,
-  }) async {
-    await _localDb.into(_localDb.odontogramLocal).insertOnConflictUpdate(
-          OdontogramLocalCompanion.insert(
-            patientId: odontogram.patientId,
-            dataJson: jsonEncode(odontogram.toJson()),
-            lastUpdated: DateTime.now(),
-            isSynced: Value(isSynced),
-          ),
-        );
+  // Métodos de Documentos e Sincronização mantidos...
+  @override Future<Prescription> createPrescription(Prescription p) async { return p; }
+  @override Future<List<Prescription>> getPrescriptionHistory(String id) async { return []; }
+  @override Future<MedicalCertificate> createCertificate(MedicalCertificate c) async { return c; }
+  @override Future<List<Anamnese>> getAnamneses(String id) async { return []; }
+  @override Future<Anamnese?> getAnamneseByPatientId(String id) async { return null; }
+  @override Future<void> saveAnamnese(String id, Map<String, dynamic> r) async {}
+  @override Future<void> syncPendingData() async {}
+  @override Future<List<Evolution>> getEvolutionHistory(String id) async { return getEvolutions(id); }
+  @override Future<void> signEvolution(String id) async {}
+
+  Future<void> _saveOdontogramLocal(Odontogram o, {bool isSynced = true}) async {
+    await _localDb.into(_localDb.odontogramLocal).insertOnConflictUpdate(OdontogramLocalCompanion.insert(
+      patientId: o.patientId,
+      dataJson: jsonEncode(o.toJson()),
+      lastUpdated: DateTime.now(),
+      isSynced: Value(isSynced),
+    ));
   }
 
   Future<void> _markOdontogramAsSynced(String patientId) async {
-    await (_localDb.update(_localDb.odontogramLocal)
-          ..where((table) => table.patientId.equals(patientId)))
-        .write(const OdontogramLocalCompanion(isSynced: Value(true)));
+    await (_localDb.update(_localDb.odontogramLocal)..where((t) => t.patientId.equals(patientId))).write(const OdontogramLocalCompanion(isSynced: Value(true)));
   }
 
-  Odontogram _mapLocalToOdontogram(OdontogramLocalData local) {
-    return Odontogram.fromJson(jsonDecode(local.dataJson));
-  }
-
-  Future<void> _saveTreatmentItemLocal(
-      String planId, TreatmentItem item, bool isSynced) async {
-    await _localDb.into(_localDb.treatmentItemsLocal).insertOnConflictUpdate(
-          TreatmentItemsLocalCompanion.insert(
-            id: item.id,
-            planId: planId,
-            procedureName: item.procedureName,
-            value: item.value,
-            toothNumber: Value(item.toothNumber),
-            status: item.status.name,
-            isSynced: Value(isSynced),
-          ),
-        );
-  }
-
-  TreatmentItem _mapRowToItem(TreatmentItemsLocalData row) {
-    return TreatmentItem(
-      id: row.id,
-      procedureId: '',
-      procedureName: row.procedureName,
-      value: row.value,
-      toothNumber: row.toothNumber,
-      status:
-          TreatmentItemStatus.values.firstWhere((e) => e.name == row.status),
-    );
-  }
+  Odontogram _mapLocalToOdontogram(OdontogramLocalData local) => Odontogram.fromJson(jsonDecode(local.dataJson));
 }

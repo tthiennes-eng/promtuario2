@@ -230,9 +230,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               spacing: 16,
               runSpacing: 16,
               children: [
-                _buildQuickAction('Novo Paciente', Icons.person_add, Colors.blue, () => context.push('/dashboard/patients/add')),
+                _buildQuickAction('Novo Atendimento', Icons.add_task, Colors.teal, () => context.push('/dashboard/agenda/add')),
                 _buildQuickAction('Lista de Pacientes', Icons.format_list_bulleted, Colors.indigo, () => context.push('/dashboard/patients')),
-                _buildQuickAction('Nova Consulta', Icons.add_alarm, Colors.green, () => context.push('/dashboard/agenda/add')),
                 if (user?.role == UserRole.admin)
                   _buildQuickAction('Auditoria', Icons.security, Colors.blueGrey, () => context.push('/dashboard/audit-logs')),
               ],

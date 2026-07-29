@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../viewmodels/prontuario_viewmodel.dart';
 import '../../domain/entities/odontogram.dart';
 
-/// Widget de produção para o Odontograma Interativo.
-/// Renderiza anatomicamente as faces dos dentes e gerencia estados clínicos.
 class OdontogramWidget extends ConsumerWidget {
   final String patientId;
 
@@ -19,6 +17,30 @@ class OdontogramWidget extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, stack) => Center(child: Text('Erro: $err')),
     );
+  }
+
+  String _getConditionLabel(ConditionType type) {
+    return switch (type) {
+      ConditionType.healthy => 'Saudável',
+      ConditionType.decayed => 'Cárie',
+      ConditionType.restored => 'Restaurado',
+      ConditionType.missing => 'Ausente',
+      ConditionType.implant => 'Implante',
+      ConditionType.endodontic => 'Endodontia',
+      ConditionType.prosthesis => 'Prótese',
+    };
+  }
+
+  String _getSurfaceLabel(ToothSurface surface) {
+    return switch (surface) {
+      ToothSurface.mesial => 'Mesial',
+      ToothSurface.distal => 'Distal',
+      ToothSurface.occlusal => 'Oclusal',
+      ToothSurface.buccal => 'Vestibular',
+      ToothSurface.lingual => 'Lingual',
+      ToothSurface.palatal => 'Palatina',
+      ToothSurface.root => 'Radicular',
+    };
   }
 
   Widget _buildOdontogramView(BuildContext context, WidgetRef ref, Odontogram? odontogram) {
@@ -49,9 +71,9 @@ class OdontogramWidget extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          ...left.map((n) => _ToothTile(number: n, condition: _getCondition(odontogram, n), ref: ref, patientId: patientId)),
+          ...left.map((n) => _ToothTile(number: n, condition: _getCondition(odontogram, n), ref: ref, patientId: patientId, getSurfaceLabel: _getSurfaceLabel, getConditionLabel: _getConditionLabel)),
           const SizedBox(width: 32),
-          ...right.map((n) => _ToothTile(number: n, condition: _getCondition(odontogram, n), ref: ref, patientId: patientId)),
+          ...right.map((n) => _ToothTile(number: n, condition: _getCondition(odontogram, n), ref: ref, patientId: patientId, getSurfaceLabel: _getSurfaceLabel, getConditionLabel: _getConditionLabel)),
         ],
       ),
     );
@@ -89,7 +111,7 @@ class OdontogramWidget extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 10),
-                Text(type.name.toUpperCase(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                Text(_getConditionLabel(type).toUpperCase(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
               ],
             );
           }).toList(),
@@ -116,8 +138,10 @@ class _ToothTile extends StatelessWidget {
   final ToothCondition condition;
   final WidgetRef ref;
   final String patientId;
+  final String Function(ToothSurface) getSurfaceLabel;
+  final String Function(ConditionType) getConditionLabel;
 
-  const _ToothTile({required this.number, required this.condition, required this.ref, required this.patientId});
+  const _ToothTile({required this.number, required this.condition, required this.ref, required this.patientId, required this.getSurfaceLabel, required this.getConditionLabel});
 
   @override
   Widget build(BuildContext context) {
@@ -145,6 +169,8 @@ class _ToothTile extends StatelessWidget {
       isScrollControlled: true,
       builder: (context) => _ToothActionSheet(
         condition: condition,
+        getSurfaceLabel: getSurfaceLabel,
+        getConditionLabel: getConditionLabel,
         onSave: (updated) {
           ref.read(prontuarioViewModelProvider(patientId).notifier).updateToothCondition(updated);
           Navigator.pop(context);
@@ -160,19 +186,13 @@ class ToothPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..style = PaintingStyle.fill;
     final borderPaint = Paint()
       ..color = Colors.black87
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
 
-    final centerX = size.width / 2;
-    final centerY = size.height / 2;
     final padding = size.width * 0.15;
-
-    // Desenha as 5 faces (Oclusal, Vestibular, Lingual, Mesial, Distal)
     
-    // 1. Centro (Oclusal/Incisal)
     _drawPolygon(canvas, [
       Offset(padding, padding),
       Offset(size.width - padding, padding),
@@ -180,7 +200,6 @@ class ToothPainter extends CustomPainter {
       Offset(padding, size.height - padding),
     ], _getSurfaceColor(ToothSurface.occlusal), borderPaint);
 
-    // 2. Superior (Vestibular)
     _drawPolygon(canvas, [
       const Offset(0, 0),
       Offset(size.width, 0),
@@ -188,7 +207,6 @@ class ToothPainter extends CustomPainter {
       Offset(padding, padding),
     ], _getSurfaceColor(ToothSurface.buccal), borderPaint);
 
-    // 3. Inferior (Lingual/Palatal)
     _drawPolygon(canvas, [
       Offset(padding, size.height - padding),
       Offset(size.width - padding, size.height - padding),
@@ -196,7 +214,6 @@ class ToothPainter extends CustomPainter {
       Offset(0, size.height),
     ], _getSurfaceColor(ToothSurface.lingual), borderPaint);
 
-    // 4. Esquerda (Mesial/Distal conforme o dente)
     _drawPolygon(canvas, [
       const Offset(0, 0),
       Offset(padding, padding),
@@ -204,7 +221,6 @@ class ToothPainter extends CustomPainter {
       Offset(0, size.height),
     ], _getSurfaceColor(ToothSurface.mesial), borderPaint);
 
-    // 5. Direita (Mesial/Distal conforme o dente)
     _drawPolygon(canvas, [
       Offset(size.width - padding, padding),
       Offset(size.width, 0),
@@ -212,7 +228,6 @@ class ToothPainter extends CustomPainter {
       Offset(size.width - padding, size.height - padding),
     ], _getSurfaceColor(ToothSurface.distal), borderPaint);
 
-    // Se o dente estiver ausente ou com implante, desenha um ícone sobreposto
     if (condition.condition == ConditionType.missing) {
       _drawX(canvas, size);
     }
@@ -220,7 +235,7 @@ class ToothPainter extends CustomPainter {
 
   void _drawPolygon(Canvas canvas, List<Offset> points, Color color, Paint borderPaint) {
     final path = Path()..addPolygon(points, true);
-    canvas.drawPath(path, Paint()..color = color);
+    canvas.drawPath(path, Paint()..color = color..style = PaintingStyle.fill);
     canvas.drawPath(path, borderPaint);
   }
 
@@ -244,9 +259,11 @@ class ToothPainter extends CustomPainter {
 
 class _ToothActionSheet extends StatefulWidget {
   final ToothCondition condition;
+  final String Function(ToothSurface) getSurfaceLabel;
+  final String Function(ConditionType) getConditionLabel;
   final Function(ToothCondition) onSave;
 
-  const _ToothActionSheet({required this.condition, required this.onSave});
+  const _ToothActionSheet({required this.condition, required this.onSave, required this.getSurfaceLabel, required this.getConditionLabel});
 
   @override
   State<_ToothActionSheet> createState() => _ToothActionSheetState();
@@ -290,24 +307,28 @@ class _ToothActionSheetState extends State<_ToothActionSheet> {
             isExpanded: true,
             value: _selectedType,
             decoration: const InputDecoration(border: OutlineInputBorder()),
-            items: ConditionType.values.map((type) => DropdownMenuItem(value: type, child: Text(type.name.toUpperCase()))).toList(),
+            items: ConditionType.values.map((type) => DropdownMenuItem(value: type, child: Text(widget.getConditionLabel(type).toUpperCase()))).toList(),
             onChanged: (val) => setState(() => _selectedType = val!),
           ),
           if (_selectedType != ConditionType.missing && _selectedType != ConditionType.healthy) ...[
             const SizedBox(height: 24),
-            const Text('Faces Acometidas', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('Faces Acometidas (Selecione independentemente)', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               children: ToothSurface.values.where((s) => s != ToothSurface.root).map((s) {
                 final isSelected = _selectedSurfaces.contains(s);
                 return FilterChip(
-                  label: Text(s.name.toUpperCase()),
+                  label: Text(widget.getSurfaceLabel(s).toUpperCase()),
                   selected: isSelected,
                   selectedColor: Colors.blue.shade100,
                   onSelected: (val) {
                     setState(() {
-                      val ? _selectedSurfaces.add(s) : _selectedSurfaces.remove(s);
+                      if (val) {
+                        _selectedSurfaces.add(s);
+                      } else {
+                        _selectedSurfaces.remove(s);
+                      }
                     });
                   },
                 );
