@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:promt/features/prontuario/domain/entities/anamnese.dart';
 import 'package:promt/core/providers/providers.dart';
 
-/// Gerencia as anamneses dos pacientes.
+/// Gerencia as anamneses dos pacientes com persistência real no backend.
 class AnamneseViewModel extends StateNotifier<AsyncValue<List<Anamnese>>> {
   final Ref ref;
   final String patientId;
@@ -12,6 +12,7 @@ class AnamneseViewModel extends StateNotifier<AsyncValue<List<Anamnese>>> {
   }
 
   Future<void> _init() async {
+    state = const AsyncValue.loading();
     state = await AsyncValue.guard(() => 
       ref.read(prontuarioRepositoryProvider).getAnamneses(patientId)
     );

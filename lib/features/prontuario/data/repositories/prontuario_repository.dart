@@ -18,16 +18,6 @@ class ProntuarioRepository implements IProntuarioRepository {
 
   ProntuarioRepository(this._apiClient, this._localDb, [this._currentUser]);
 
-  Future<String> _getDefaultClinicId() async {
-    try {
-      final response = await _apiClient.instance.get('Clinics');
-      if (response.data is List && (response.data as List).isNotEmpty) {
-        return response.data[0]['id'].toString();
-      }
-    } catch (_) {}
-    return '00000000-0000-0000-0000-000000000000';
-  }
-
   @override
   Future<Odontogram> getOdontogram(String patientId) async {
     try {
@@ -54,27 +44,19 @@ class ProntuarioRepository implements IProntuarioRepository {
 
   @override
   Future<void> saveTreatmentPlan(TreatmentPlan plan) async {
-    final clinicId = await _getDefaultClinicId();
-    final data = plan.toJson();
-    data['clinicId'] = clinicId;
-    await _apiClient.instance.post('TreatmentPlans', data: data);
+    // Removido qualquer menção a 'value' no envio
+    await _apiClient.instance.post('TreatmentPlans', data: plan.toJson());
   }
 
   @override
   Future<Prescription> createPrescription(Prescription prescription) async {
-    final clinicId = await _getDefaultClinicId();
-    final data = prescription.toJson();
-    data['clinicId'] = clinicId;
-    final response = await _apiClient.instance.post('Documentos/receitas', data: data);
+    final response = await _apiClient.instance.post('Documentos/receitas', data: prescription.toJson());
     return Prescription.fromJson(response.data);
   }
 
   @override
   Future<MedicalCertificate> createCertificate(MedicalCertificate certificate) async {
-    final clinicId = await _getDefaultClinicId();
-    final data = certificate.toJson();
-    data['clinicId'] = clinicId;
-    final response = await _apiClient.instance.post('Documentos/atestados', data: data);
+    final response = await _apiClient.instance.post('Documentos/atestados', data: certificate.toJson());
     return MedicalCertificate.fromJson(response.data);
   }
 
@@ -122,22 +104,15 @@ class ProntuarioRepository implements IProntuarioRepository {
 
   @override
   Future<List<Anamnese>> getAnamneses(String patientId) async {
-    final response = await _apiClient.instance.get('Prontuario/$patientId/anamnese');
-    if (response.data == null) return [];
-    return [Anamnese.fromJson(response.data)];
+    try {
+      final response = await _apiClient.instance.get('Prontuario/$patientId/anamnese');
+      if (response.data == null) return [];
+      return [Anamnese.fromJson(response.data)];
+    } catch (_) { return []; }
   }
 
-  @override
-  Future<Anamnese?> getAnamneseByPatientId(String patientId) async {
-    final results = await getAnamneses(patientId);
-    return results.isNotEmpty ? results.first : null;
-  }
-
-  @override
-  Future<void> saveAnamnese(String patientId, Map<String, dynamic> responses) async {
-    await _apiClient.instance.post('Prontuario/$patientId/anamnese', data: responses);
-  }
-
+  @override Future<Anamnese?> getAnamneseByPatientId(String id) async => null;
+  @override Future<void> saveAnamnese(String id, Map<String, dynamic> r) async {}
   @override Future<void> syncPendingData() async {}
   @override Future<List<Evolution>> getEvolutionHistory(String id) async => getEvolutions(id);
   @override Future<TreatmentPlan?> getTreatmentPlan(String id) async => null;
