@@ -4,14 +4,12 @@ import 'package:promt/features/prontuario/domain/entities/anamnese.dart';
 import 'package:promt/features/prontuario/domain/entities/treatment_plan.dart';
 import 'package:promt/features/prontuario/domain/entities/evolution.dart';
 
-/// Contrato para o Repositório de Prontuário.
 abstract class IProntuarioRepository {
   Future<Odontogram> getOdontogram(String patientId);
   Future<void> saveOdontogram(Odontogram odontogram);
   
   Future<void> addEvolution(String patientId, String description, String professorId);
   Future<List<Evolution>> getEvolutions(String patientId);
-  Future<List<Evolution>> getEvolutionHistory(String patientId);
   Future<void> signEvolution(String evolutionId);
 
   Future<Prescription> createPrescription(Prescription prescription);
