@@ -4,7 +4,6 @@
     "package:flutter/material.dart",
     "package:flutter_riverpod/flutter_riverpod.dart",
     "package:go_router/go_router.dart",
-    "package:intl/intl.dart",
     "package:uuid/uuid.dart",
     "package:promt/features/prontuario/domain/entities/prescription.dart",
     "package:promt/features/prontuario/presentation/viewmodels/documents_viewmodel.dart",

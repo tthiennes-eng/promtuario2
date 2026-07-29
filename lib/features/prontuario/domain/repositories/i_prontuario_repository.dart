@@ -20,6 +20,7 @@ abstract class IProntuarioRepository {
   Future<MedicalCertificate> createCertificate(MedicalCertificate certificate);
   Future<List<MedicalCertificate>> getCertificateHistory(String patientId);
 
+  Future<List<Anamnese>> getAnamneses(String patientId);
   Future<Anamnese?> getAnamneseByPatientId(String patientId);
   Future<void> saveAnamnese(String patientId, Map<String, dynamic> responses);
   

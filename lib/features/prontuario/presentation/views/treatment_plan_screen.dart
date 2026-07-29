@@ -88,7 +88,7 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
                     );
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Erro ao salvar: $e'), backgroundColor: Colors.red),
+                      SnackBar(content: Text('Erro ao salvar: ${e.toString()}'), backgroundColor: Colors.red),
                     );
                   } finally {
                     setDialogState(() => _isSaving = false);
@@ -123,7 +123,7 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Erro: $err')),
+        error: (err, _) => Center(child: Text('Erro ao carregar plano: ${err.toString()}')),
       ),
     );
   }
@@ -152,10 +152,11 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
     return ListTile(
       tileColor: Colors.blue.withOpacity(0.05),
       title: Text('Paciente: ${widget.patientName}', style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle: Text('Status: ${plan.status.name.toUpperCase()}'),
+      subtitle: Text('Status do Plano: ${plan.status.name.toUpperCase()}'),
       trailing: IconButton(
         icon: const Icon(Icons.add_circle_outline, color: Colors.blue),
         onPressed: _showAddProcedureDialog,
+        tooltip: 'Adicionar',
       ),
     );
   }
@@ -167,15 +168,28 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
       itemBuilder: (context, i) {
         final item = items[i];
         return Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
+          margin: const EdgeInsets.only(bottom: 8),
           child: ListTile(
             leading: item.toothNumber != null ? CircleAvatar(child: Text(item.toothNumber.toString())) : const Icon(Icons.medical_services),
             title: Text(item.procedureName, style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: (item.observation != null && item.observation!.isNotEmpty) 
                 ? Text(item.observation!) 
                 : const Text('Sem observações registradas.'),
+            trailing: _buildStatusIcon(item.status),
           ),
         );
       },
     );
+  }
+
+  Widget _buildStatusIcon(TreatmentItemStatus status) {
+    return switch (status) {
+      TreatmentItemStatus.pending => const Icon(Icons.hourglass_empty, color: Colors.orange),
+      TreatmentItemStatus.inProgress => const Icon(Icons.pending, color: Colors.blue),
+      TreatmentItemStatus.completed => const Icon(Icons.check_circle, color: Colors.green),
+      TreatmentItemStatus.cancelled => const Icon(Icons.cancel, color: Colors.red),
+    };
   }
 }

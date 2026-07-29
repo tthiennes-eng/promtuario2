@@ -63,7 +63,7 @@ class _PrescriptionScreenState extends ConsumerState<PrescriptionScreen> {
         date: DateTime.now(),
         items: List.from(_items),
         observations: _observationsController.text,
-        clinicId: Guid.empty.toString(), // O backend atribuirá a clínica padrão
+        clinicId: '00000000-0000-0000-0000-000000000000', // Backend atribuirá a clínica padrão
       );
 
       await ref.read(documentsViewModelProvider(widget.patientId).notifier)
@@ -78,7 +78,7 @@ class _PrescriptionScreenState extends ConsumerState<PrescriptionScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('Erro ao salvar: ${e.toString()}'), backgroundColor: Colors.red),
         );
       }
     } finally {
