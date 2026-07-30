@@ -9,8 +9,11 @@ part of 'clinic.dart';
 _$ClinicImpl _$$ClinicImplFromJson(Map<String, dynamic> json) => _$ClinicImpl(
       id: json['id'] as String,
       name: json['name'] as String,
-      description: json['description'] as String,
+      description: json['description'] as String? ?? '',
+      location: json['location'] as String?,
+      capacity: (json['capacity'] as num?)?.toInt() ?? 1,
       isActive: json['isActive'] as bool? ?? true,
+      metadata: json['metadata'] as Map<String, dynamic>? ?? const {},
     );
 
 Map<String, dynamic> _$$ClinicImplToJson(_$ClinicImpl instance) =>
@@ -18,5 +21,8 @@ Map<String, dynamic> _$$ClinicImplToJson(_$ClinicImpl instance) =>
       'id': instance.id,
       'name': instance.name,
       'description': instance.description,
+      'location': instance.location,
+      'capacity': instance.capacity,
       'isActive': instance.isActive,
+      'metadata': instance.metadata,
     };

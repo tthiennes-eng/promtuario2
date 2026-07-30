@@ -3,6 +3,404 @@
 part of 'local_database.dart';
 
 // ignore_for_file: type=lint
+class $ClinicsLocalTable extends ClinicsLocal
+    with TableInfo<$ClinicsLocalTable, ClinicsLocalData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ClinicsLocalTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 255),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _descriptionMeta =
+      const VerificationMeta('description');
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+      'description', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _locationMeta =
+      const VerificationMeta('location');
+  @override
+  late final GeneratedColumn<String> location = GeneratedColumn<String>(
+      'location', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _capacityMeta =
+      const VerificationMeta('capacity');
+  @override
+  late final GeneratedColumn<int> capacity = GeneratedColumn<int>(
+      'capacity', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  static const VerificationMeta _isActiveMeta =
+      const VerificationMeta('isActive');
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+      'is_active', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_active" IN (0, 1))'),
+      defaultValue: const Constant(true));
+  static const VerificationMeta _metadataJsonMeta =
+      const VerificationMeta('metadataJson');
+  @override
+  late final GeneratedColumn<String> metadataJson = GeneratedColumn<String>(
+      'metadata_json', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, name, description, location, capacity, isActive, metadataJson];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'clinics_local';
+  @override
+  VerificationContext validateIntegrity(Insertable<ClinicsLocalData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+          _descriptionMeta,
+          description.isAcceptableOrUnknown(
+              data['description']!, _descriptionMeta));
+    }
+    if (data.containsKey('location')) {
+      context.handle(_locationMeta,
+          location.isAcceptableOrUnknown(data['location']!, _locationMeta));
+    }
+    if (data.containsKey('capacity')) {
+      context.handle(_capacityMeta,
+          capacity.isAcceptableOrUnknown(data['capacity']!, _capacityMeta));
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(_isActiveMeta,
+          isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
+    }
+    if (data.containsKey('metadata_json')) {
+      context.handle(
+          _metadataJsonMeta,
+          metadataJson.isAcceptableOrUnknown(
+              data['metadata_json']!, _metadataJsonMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ClinicsLocalData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ClinicsLocalData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      description: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}description']),
+      location: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}location']),
+      capacity: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}capacity'])!,
+      isActive: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
+      metadataJson: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}metadata_json']),
+    );
+  }
+
+  @override
+  $ClinicsLocalTable createAlias(String alias) {
+    return $ClinicsLocalTable(attachedDatabase, alias);
+  }
+}
+
+class ClinicsLocalData extends DataClass
+    implements Insertable<ClinicsLocalData> {
+  final String id;
+  final String name;
+  final String? description;
+  final String? location;
+  final int capacity;
+  final bool isActive;
+  final String? metadataJson;
+  const ClinicsLocalData(
+      {required this.id,
+      required this.name,
+      this.description,
+      this.location,
+      required this.capacity,
+      required this.isActive,
+      this.metadataJson});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    if (!nullToAbsent || location != null) {
+      map['location'] = Variable<String>(location);
+    }
+    map['capacity'] = Variable<int>(capacity);
+    map['is_active'] = Variable<bool>(isActive);
+    if (!nullToAbsent || metadataJson != null) {
+      map['metadata_json'] = Variable<String>(metadataJson);
+    }
+    return map;
+  }
+
+  ClinicsLocalCompanion toCompanion(bool nullToAbsent) {
+    return ClinicsLocalCompanion(
+      id: Value(id),
+      name: Value(name),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      location: location == null && nullToAbsent
+          ? const Value.absent()
+          : Value(location),
+      capacity: Value(capacity),
+      isActive: Value(isActive),
+      metadataJson: metadataJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(metadataJson),
+    );
+  }
+
+  factory ClinicsLocalData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ClinicsLocalData(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      description: serializer.fromJson<String?>(json['description']),
+      location: serializer.fromJson<String?>(json['location']),
+      capacity: serializer.fromJson<int>(json['capacity']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      metadataJson: serializer.fromJson<String?>(json['metadataJson']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'description': serializer.toJson<String?>(description),
+      'location': serializer.toJson<String?>(location),
+      'capacity': serializer.toJson<int>(capacity),
+      'isActive': serializer.toJson<bool>(isActive),
+      'metadataJson': serializer.toJson<String?>(metadataJson),
+    };
+  }
+
+  ClinicsLocalData copyWith(
+          {String? id,
+          String? name,
+          Value<String?> description = const Value.absent(),
+          Value<String?> location = const Value.absent(),
+          int? capacity,
+          bool? isActive,
+          Value<String?> metadataJson = const Value.absent()}) =>
+      ClinicsLocalData(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        description: description.present ? description.value : this.description,
+        location: location.present ? location.value : this.location,
+        capacity: capacity ?? this.capacity,
+        isActive: isActive ?? this.isActive,
+        metadataJson:
+            metadataJson.present ? metadataJson.value : this.metadataJson,
+      );
+  ClinicsLocalData copyWithCompanion(ClinicsLocalCompanion data) {
+    return ClinicsLocalData(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      description:
+          data.description.present ? data.description.value : this.description,
+      location: data.location.present ? data.location.value : this.location,
+      capacity: data.capacity.present ? data.capacity.value : this.capacity,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      metadataJson: data.metadataJson.present
+          ? data.metadataJson.value
+          : this.metadataJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ClinicsLocalData(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('location: $location, ')
+          ..write('capacity: $capacity, ')
+          ..write('isActive: $isActive, ')
+          ..write('metadataJson: $metadataJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id, name, description, location, capacity, isActive, metadataJson);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ClinicsLocalData &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.description == this.description &&
+          other.location == this.location &&
+          other.capacity == this.capacity &&
+          other.isActive == this.isActive &&
+          other.metadataJson == this.metadataJson);
+}
+
+class ClinicsLocalCompanion extends UpdateCompanion<ClinicsLocalData> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String?> description;
+  final Value<String?> location;
+  final Value<int> capacity;
+  final Value<bool> isActive;
+  final Value<String?> metadataJson;
+  final Value<int> rowid;
+  const ClinicsLocalCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.description = const Value.absent(),
+    this.location = const Value.absent(),
+    this.capacity = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.metadataJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ClinicsLocalCompanion.insert({
+    required String id,
+    required String name,
+    this.description = const Value.absent(),
+    this.location = const Value.absent(),
+    this.capacity = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.metadataJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        name = Value(name);
+  static Insertable<ClinicsLocalData> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? description,
+    Expression<String>? location,
+    Expression<int>? capacity,
+    Expression<bool>? isActive,
+    Expression<String>? metadataJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (location != null) 'location': location,
+      if (capacity != null) 'capacity': capacity,
+      if (isActive != null) 'is_active': isActive,
+      if (metadataJson != null) 'metadata_json': metadataJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ClinicsLocalCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? name,
+      Value<String?>? description,
+      Value<String?>? location,
+      Value<int>? capacity,
+      Value<bool>? isActive,
+      Value<String?>? metadataJson,
+      Value<int>? rowid}) {
+    return ClinicsLocalCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      location: location ?? this.location,
+      capacity: capacity ?? this.capacity,
+      isActive: isActive ?? this.isActive,
+      metadataJson: metadataJson ?? this.metadataJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (location.present) {
+      map['location'] = Variable<String>(location.value);
+    }
+    if (capacity.present) {
+      map['capacity'] = Variable<int>(capacity.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (metadataJson.present) {
+      map['metadata_json'] = Variable<String>(metadataJson.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ClinicsLocalCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('location: $location, ')
+          ..write('capacity: $capacity, ')
+          ..write('isActive: $isActive, ')
+          ..write('metadataJson: $metadataJson, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $PatientsTable extends Patients with TableInfo<$PatientsTable, Patient> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -4385,6 +4783,7 @@ class TreatmentItemsLocalCompanion
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
+  late final $ClinicsLocalTable clinicsLocal = $ClinicsLocalTable(this);
   late final $PatientsTable patients = $PatientsTable(this);
   late final $UsersLocalTable usersLocal = $UsersLocalTable(this);
   late final $AttachmentsLocalTable attachmentsLocal =
@@ -4405,6 +4804,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
+        clinicsLocal,
         patients,
         usersLocal,
         attachmentsLocal,
@@ -4418,6 +4818,210 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       ];
 }
 
+typedef $$ClinicsLocalTableCreateCompanionBuilder = ClinicsLocalCompanion
+    Function({
+  required String id,
+  required String name,
+  Value<String?> description,
+  Value<String?> location,
+  Value<int> capacity,
+  Value<bool> isActive,
+  Value<String?> metadataJson,
+  Value<int> rowid,
+});
+typedef $$ClinicsLocalTableUpdateCompanionBuilder = ClinicsLocalCompanion
+    Function({
+  Value<String> id,
+  Value<String> name,
+  Value<String?> description,
+  Value<String?> location,
+  Value<int> capacity,
+  Value<bool> isActive,
+  Value<String?> metadataJson,
+  Value<int> rowid,
+});
+
+class $$ClinicsLocalTableFilterComposer
+    extends Composer<_$AppDatabase, $ClinicsLocalTable> {
+  $$ClinicsLocalTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get location => $composableBuilder(
+      column: $table.location, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get capacity => $composableBuilder(
+      column: $table.capacity, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get metadataJson => $composableBuilder(
+      column: $table.metadataJson, builder: (column) => ColumnFilters(column));
+}
+
+class $$ClinicsLocalTableOrderingComposer
+    extends Composer<_$AppDatabase, $ClinicsLocalTable> {
+  $$ClinicsLocalTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get location => $composableBuilder(
+      column: $table.location, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get capacity => $composableBuilder(
+      column: $table.capacity, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get metadataJson => $composableBuilder(
+      column: $table.metadataJson,
+      builder: (column) => ColumnOrderings(column));
+}
+
+class $$ClinicsLocalTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ClinicsLocalTable> {
+  $$ClinicsLocalTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => column);
+
+  GeneratedColumn<String> get location =>
+      $composableBuilder(column: $table.location, builder: (column) => column);
+
+  GeneratedColumn<int> get capacity =>
+      $composableBuilder(column: $table.capacity, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<String> get metadataJson => $composableBuilder(
+      column: $table.metadataJson, builder: (column) => column);
+}
+
+class $$ClinicsLocalTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $ClinicsLocalTable,
+    ClinicsLocalData,
+    $$ClinicsLocalTableFilterComposer,
+    $$ClinicsLocalTableOrderingComposer,
+    $$ClinicsLocalTableAnnotationComposer,
+    $$ClinicsLocalTableCreateCompanionBuilder,
+    $$ClinicsLocalTableUpdateCompanionBuilder,
+    (
+      ClinicsLocalData,
+      BaseReferences<_$AppDatabase, $ClinicsLocalTable, ClinicsLocalData>
+    ),
+    ClinicsLocalData,
+    PrefetchHooks Function()> {
+  $$ClinicsLocalTableTableManager(_$AppDatabase db, $ClinicsLocalTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ClinicsLocalTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ClinicsLocalTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ClinicsLocalTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String?> description = const Value.absent(),
+            Value<String?> location = const Value.absent(),
+            Value<int> capacity = const Value.absent(),
+            Value<bool> isActive = const Value.absent(),
+            Value<String?> metadataJson = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ClinicsLocalCompanion(
+            id: id,
+            name: name,
+            description: description,
+            location: location,
+            capacity: capacity,
+            isActive: isActive,
+            metadataJson: metadataJson,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String name,
+            Value<String?> description = const Value.absent(),
+            Value<String?> location = const Value.absent(),
+            Value<int> capacity = const Value.absent(),
+            Value<bool> isActive = const Value.absent(),
+            Value<String?> metadataJson = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ClinicsLocalCompanion.insert(
+            id: id,
+            name: name,
+            description: description,
+            location: location,
+            capacity: capacity,
+            isActive: isActive,
+            metadataJson: metadataJson,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$ClinicsLocalTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $ClinicsLocalTable,
+    ClinicsLocalData,
+    $$ClinicsLocalTableFilterComposer,
+    $$ClinicsLocalTableOrderingComposer,
+    $$ClinicsLocalTableAnnotationComposer,
+    $$ClinicsLocalTableCreateCompanionBuilder,
+    $$ClinicsLocalTableUpdateCompanionBuilder,
+    (
+      ClinicsLocalData,
+      BaseReferences<_$AppDatabase, $ClinicsLocalTable, ClinicsLocalData>
+    ),
+    ClinicsLocalData,
+    PrefetchHooks Function()>;
 typedef $$PatientsTableCreateCompanionBuilder = PatientsCompanion Function({
   required String id,
   required String fullName,
@@ -6605,6 +7209,8 @@ typedef $$TreatmentItemsLocalTableProcessedTableManager = ProcessedTableManager<
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
+  $$ClinicsLocalTableTableManager get clinicsLocal =>
+      $$ClinicsLocalTableTableManager(_db, _db.clinicsLocal);
   $$PatientsTableTableManager get patients =>
       $$PatientsTableTableManager(_db, _db.patients);
   $$UsersLocalTableTableManager get usersLocal =>

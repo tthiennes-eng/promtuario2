@@ -3,6 +3,7 @@
   "imports": [
     "package:flutter_riverpod/flutter_riverpod.dart",
     "package:promt/features/procedures/domain/entities/clinic.dart",
-    "package:promt/core/providers/providers.dart"
+    "package:promt/core/providers/providers.dart",
+    "package:uuid/uuid.dart"
   ]
 }

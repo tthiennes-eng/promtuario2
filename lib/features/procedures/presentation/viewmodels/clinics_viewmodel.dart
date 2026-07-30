@@ -19,13 +19,9 @@ class ClinicsViewModel extends StateNotifier<AsyncValue<List<Clinic>>> {
   }
 
   Future<void> saveClinic(Clinic clinic) async {
-    // Mantém o estado atual enquanto salva para evitar flickers, ou usa loading se preferir
-    final result = await AsyncValue.guard(() async {
-      final repository = ref.read(proceduresRepositoryProvider);
-      await repository.saveClinic(clinic);
-      return await repository.getClinics(onlyActive: false);
-    });
-    state = result;
+    final repository = ref.read(proceduresRepositoryProvider);
+    await repository.saveClinic(clinic);
+    await refresh();
   }
 
   Future<void> toggleClinicStatus(Clinic clinic) async {

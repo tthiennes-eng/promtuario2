@@ -23,7 +23,10 @@ mixin _$Clinic {
   String get id => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
   String get description => throw _privateConstructorUsedError;
+  String? get location => throw _privateConstructorUsedError;
+  int get capacity => throw _privateConstructorUsedError;
   bool get isActive => throw _privateConstructorUsedError;
+  Map<String, dynamic> get metadata => throw _privateConstructorUsedError;
 
   /// Serializes this Clinic to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -39,7 +42,14 @@ abstract class $ClinicCopyWith<$Res> {
   factory $ClinicCopyWith(Clinic value, $Res Function(Clinic) then) =
       _$ClinicCopyWithImpl<$Res, Clinic>;
   @useResult
-  $Res call({String id, String name, String description, bool isActive});
+  $Res call(
+      {String id,
+      String name,
+      String description,
+      String? location,
+      int capacity,
+      bool isActive,
+      Map<String, dynamic> metadata});
 }
 
 /// @nodoc
@@ -60,7 +70,10 @@ class _$ClinicCopyWithImpl<$Res, $Val extends Clinic>
     Object? id = null,
     Object? name = null,
     Object? description = null,
+    Object? location = freezed,
+    Object? capacity = null,
     Object? isActive = null,
+    Object? metadata = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -75,10 +88,22 @@ class _$ClinicCopyWithImpl<$Res, $Val extends Clinic>
           ? _value.description
           : description // ignore: cast_nullable_to_non_nullable
               as String,
+      location: freezed == location
+          ? _value.location
+          : location // ignore: cast_nullable_to_non_nullable
+              as String?,
+      capacity: null == capacity
+          ? _value.capacity
+          : capacity // ignore: cast_nullable_to_non_nullable
+              as int,
       isActive: null == isActive
           ? _value.isActive
           : isActive // ignore: cast_nullable_to_non_nullable
               as bool,
+      metadata: null == metadata
+          ? _value.metadata
+          : metadata // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>,
     ) as $Val);
   }
 }
@@ -90,7 +115,14 @@ abstract class _$$ClinicImplCopyWith<$Res> implements $ClinicCopyWith<$Res> {
       __$$ClinicImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String id, String name, String description, bool isActive});
+  $Res call(
+      {String id,
+      String name,
+      String description,
+      String? location,
+      int capacity,
+      bool isActive,
+      Map<String, dynamic> metadata});
 }
 
 /// @nodoc
@@ -109,7 +141,10 @@ class __$$ClinicImplCopyWithImpl<$Res>
     Object? id = null,
     Object? name = null,
     Object? description = null,
+    Object? location = freezed,
+    Object? capacity = null,
     Object? isActive = null,
+    Object? metadata = null,
   }) {
     return _then(_$ClinicImpl(
       id: null == id
@@ -124,10 +159,22 @@ class __$$ClinicImplCopyWithImpl<$Res>
           ? _value.description
           : description // ignore: cast_nullable_to_non_nullable
               as String,
+      location: freezed == location
+          ? _value.location
+          : location // ignore: cast_nullable_to_non_nullable
+              as String?,
+      capacity: null == capacity
+          ? _value.capacity
+          : capacity // ignore: cast_nullable_to_non_nullable
+              as int,
       isActive: null == isActive
           ? _value.isActive
           : isActive // ignore: cast_nullable_to_non_nullable
               as bool,
+      metadata: null == metadata
+          ? _value._metadata
+          : metadata // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>,
     ));
   }
 }
@@ -138,8 +185,12 @@ class _$ClinicImpl implements _Clinic {
   const _$ClinicImpl(
       {required this.id,
       required this.name,
-      required this.description,
-      this.isActive = true});
+      this.description = '',
+      this.location,
+      this.capacity = 1,
+      this.isActive = true,
+      final Map<String, dynamic> metadata = const {}})
+      : _metadata = metadata;
 
   factory _$ClinicImpl.fromJson(Map<String, dynamic> json) =>
       _$$ClinicImplFromJson(json);
@@ -149,14 +200,28 @@ class _$ClinicImpl implements _Clinic {
   @override
   final String name;
   @override
+  @JsonKey()
   final String description;
+  @override
+  final String? location;
+  @override
+  @JsonKey()
+  final int capacity;
   @override
   @JsonKey()
   final bool isActive;
+  final Map<String, dynamic> _metadata;
+  @override
+  @JsonKey()
+  Map<String, dynamic> get metadata {
+    if (_metadata is EqualUnmodifiableMapView) return _metadata;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(_metadata);
+  }
 
   @override
   String toString() {
-    return 'Clinic(id: $id, name: $name, description: $description, isActive: $isActive)';
+    return 'Clinic(id: $id, name: $name, description: $description, location: $location, capacity: $capacity, isActive: $isActive, metadata: $metadata)';
   }
 
   @override
@@ -168,13 +233,19 @@ class _$ClinicImpl implements _Clinic {
             (identical(other.name, name) || other.name == name) &&
             (identical(other.description, description) ||
                 other.description == description) &&
+            (identical(other.location, location) ||
+                other.location == location) &&
+            (identical(other.capacity, capacity) ||
+                other.capacity == capacity) &&
             (identical(other.isActive, isActive) ||
-                other.isActive == isActive));
+                other.isActive == isActive) &&
+            const DeepCollectionEquality().equals(other._metadata, _metadata));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, name, description, isActive);
+  int get hashCode => Object.hash(runtimeType, id, name, description, location,
+      capacity, isActive, const DeepCollectionEquality().hash(_metadata));
 
   /// Create a copy of Clinic
   /// with the given fields replaced by the non-null parameter values.
@@ -196,8 +267,11 @@ abstract class _Clinic implements Clinic {
   const factory _Clinic(
       {required final String id,
       required final String name,
-      required final String description,
-      final bool isActive}) = _$ClinicImpl;
+      final String description,
+      final String? location,
+      final int capacity,
+      final bool isActive,
+      final Map<String, dynamic> metadata}) = _$ClinicImpl;
 
   factory _Clinic.fromJson(Map<String, dynamic> json) = _$ClinicImpl.fromJson;
 
@@ -208,7 +282,13 @@ abstract class _Clinic implements Clinic {
   @override
   String get description;
   @override
+  String? get location;
+  @override
+  int get capacity;
+  @override
   bool get isActive;
+  @override
+  Map<String, dynamic> get metadata;
 
   /// Create a copy of Clinic
   /// with the given fields replaced by the non-null parameter values.

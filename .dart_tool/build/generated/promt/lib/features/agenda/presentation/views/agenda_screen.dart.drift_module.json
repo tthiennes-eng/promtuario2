@@ -6,6 +6,7 @@
     "package:go_router/go_router.dart",
     "package:promt/features/agenda/presentation/viewmodels/appointment_viewmodel.dart",
     "package:promt/features/agenda/domain/entities/appointment.dart",
+    "package:promt/features/procedures/domain/entities/clinic.dart",
     "package:intl/intl.dart"
   ]
 }

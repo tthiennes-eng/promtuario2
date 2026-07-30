@@ -8,7 +8,7 @@ class Clinic with _$Clinic {
   const factory Clinic({
     required String id,
     required String name,
-    String? description,
+    @Default('') String description,
     String? location,
     @Default(1) int capacity,
     @Default(true) bool isActive,
