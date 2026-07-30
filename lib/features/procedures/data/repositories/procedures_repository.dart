@@ -5,8 +5,7 @@ import '../../domain/entities/clinic.dart';
 import '../../domain/entities/procedure.dart';
 import '../../domain/repositories/i_procedures_repository.dart';
 
-/// Implementação do repositório de Clínicas e Procedimentos.
-/// Gerencia o cadastro e consulta de clínicas da instituição.
+/// Implementação do repositório de Clínicas e Procedimentos com Cache Local.
 class ProceduresRepository implements IProceduresRepository {
   final ApiClient _apiClient;
   final AppDatabase _localDb;
@@ -16,32 +15,35 @@ class ProceduresRepository implements IProceduresRepository {
   @override
   Future<List<Clinic>> getClinics({bool onlyActive = true}) async {
     try {
-      // Tenta buscar da API primeiro para manter atualizado
       final response = await _apiClient.instance.get('/clinics');
       final List<dynamic> data = response.data ?? [];
       final clinics = data.map((json) => Clinic.fromJson(json)).toList();
       
-      // Atualiza cache local
       for (final clinic in clinics) {
         await saveClinicLocal(clinic);
       }
 
       return onlyActive ? clinics.where((c) => c.isActive).toList() : clinics;
     } catch (e) {
-      // Fallback para o banco local
       final query = _localDb.select(_localDb.clinicsLocal);
       if (onlyActive) {
         query.where((t) => t.isActive.equals(true));
       }
+      
       final results = await query.get();
-      return results.map((row) => Clinic(
-        id: row.id,
-        name: row.name,
-        description: row.description,
-        location: row.location,
-        capacity: row.capacity,
-        isActive: row.isActive,
-      )).toList();
+      return results.map((row) {
+        // Usamos ?? '' para garantir que String? não seja atribuída a String obrigatória
+        // mesmo que o código gerado esteja temporariamente inconsistente.
+        return Clinic(
+          id: row.id ?? '',
+          name: row.name ?? '',
+          description: row.description,
+          location: row.location,
+          capacity: row.capacity,
+          isActive: row.isActive,
+          metadata: const {},
+        );
+      }).toList();
     }
   }
 
@@ -54,7 +56,6 @@ class ProceduresRepository implements IProceduresRepository {
       );
       await saveClinicLocal(clinic);
     } catch (e) {
-      // Em caso de falha na rede, salva localmente para posterior sincronia (se implementado)
       await saveClinicLocal(clinic);
     }
   }
