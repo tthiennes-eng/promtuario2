@@ -1,38 +1,79 @@
+import 'package:drift/drift.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/database/local_database.dart';
 import '../../domain/entities/clinic.dart';
 import '../../domain/entities/procedure.dart';
 import '../../domain/repositories/i_procedures_repository.dart';
 
 /// Implementação do repositório de Clínicas e Procedimentos.
-/// Centraliza a definição das clínicas escola autorizadas na instituição.
+/// Gerencia o cadastro e consulta de clínicas da instituição.
 class ProceduresRepository implements IProceduresRepository {
   final ApiClient _apiClient;
+  final AppDatabase _localDb;
 
-  ProceduresRepository(this._apiClient);
-
-  /// Lista oficial e exclusiva de clínicas conforme requisitos institucionais.
-  /// Nota: "Clinica I" mantido sem acento conforme solicitado.
-  final List<Clinic> _fixedClinics = [
-    const Clinic(id: 'c1', name: 'Clinica I', description: 'Atendimento Clínico I'),
-    const Clinic(id: 'c2', name: 'Clínica II', description: 'Atendimento Clínico II'),
-    const Clinic(id: 'c3', name: 'Clínica III', description: 'Atendimento Clínico III'),
-    const Clinic(id: 'c4', name: 'Clínica IV', description: 'Atendimento Clínico IV'),
-    const Clinic(id: 'c5', name: 'Clínica V', description: 'Atendimento Clínico V'),
-    const Clinic(id: 'ia1', name: 'Integrada Adulto I', description: 'Clínica Integrada Adulto I'),
-    const Clinic(id: 'ia2', name: 'Integrada Adulto II', description: 'Clínica Integrada Adulto II'),
-    const Clinic(id: 'ii', name: 'Integrada Infantil', description: 'Clínica Integrada Infantil'),
-    const Clinic(id: 'dtm', name: 'DTM', description: 'Disfunção Temporomandibular'),
-  ];
+  ProceduresRepository(this._apiClient, this._localDb);
 
   @override
-  Future<List<Clinic>> getClinics() async {
-    // Retorna a lista fixa oficial.
-    return Future.value(_fixedClinics);
+  Future<List<Clinic>> getClinics({bool onlyActive = true}) async {
+    try {
+      // Tenta buscar da API primeiro para manter atualizado
+      final response = await _apiClient.instance.get('/clinics');
+      final List<dynamic> data = response.data ?? [];
+      final clinics = data.map((json) => Clinic.fromJson(json)).toList();
+      
+      // Atualiza cache local
+      for (final clinic in clinics) {
+        await saveClinicLocal(clinic);
+      }
+
+      return onlyActive ? clinics.where((c) => c.isActive).toList() : clinics;
+    } catch (e) {
+      // Fallback para o banco local
+      final query = _localDb.select(_localDb.clinicsLocal);
+      if (onlyActive) {
+        query.where((t) => t.isActive.equals(true));
+      }
+      final results = await query.get();
+      return results.map((row) => Clinic(
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        location: row.location,
+        capacity: row.capacity,
+        isActive: row.isActive,
+      )).toList();
+    }
+  }
+
+  @override
+  Future<void> saveClinic(Clinic clinic) async {
+    try {
+      await _apiClient.instance.put(
+        '/clinics/${clinic.id}',
+        data: clinic.toJson(),
+      );
+      await saveClinicLocal(clinic);
+    } catch (e) {
+      // Em caso de falha na rede, salva localmente para posterior sincronia (se implementado)
+      await saveClinicLocal(clinic);
+    }
+  }
+
+  Future<void> saveClinicLocal(Clinic clinic) async {
+    await _localDb.into(_localDb.clinicsLocal).insertOnConflictUpdate(
+      ClinicsLocalCompanion.insert(
+        id: clinic.id,
+        name: clinic.name,
+        description: Value(clinic.description),
+        location: Value(clinic.location),
+        capacity: Value(clinic.capacity),
+        isActive: Value(clinic.isActive),
+      ),
+    );
   }
 
   @override
   Future<List<Procedure>> getProceduresByClinic(String clinicId) async {
-    // Busca procedimentos na API filtrando pela clínica.
     try {
       final response = await _apiClient.instance.get('/clinics/$clinicId/procedures');
       final List<dynamic> data = response.data ?? [];

@@ -10,10 +10,12 @@ import 'package:promt/features/procedures/presentation/viewmodels/clinics_viewmo
 import 'package:promt/features/procedures/presentation/viewmodels/procedures_viewmodel.dart';
 import 'package:promt/features/agenda/domain/entities/appointment.dart';
 import 'package:promt/features/auth/domain/entities/user.dart';
+import 'package:promt/features/procedures/domain/entities/clinic.dart';
 
-/// Tela unificada para "Novo Atendimento" (Cadastra paciente e agenda consulta se necessário).
+/// Tela unificada para "Novo Atendimento".
 class AddAppointmentScreen extends ConsumerStatefulWidget {
-  const AddAppointmentScreen({super.key});
+  final Clinic? initialClinic;
+  const AddAppointmentScreen({super.key, this.initialClinic});
 
   @override
   ConsumerState<AddAppointmentScreen> createState() => _AddAppointmentScreenState();
@@ -34,6 +36,14 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
   final _notesController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.initialClinic != null) {
+      _selectedClinicId = widget.initialClinic!.id;
+    }
+  }
+
+  @override
   void dispose() {
     _notesController.dispose();
     super.dispose();
@@ -48,7 +58,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Novo Atendimento'),
+        title: const Text('Novo Agendamento'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -62,10 +72,18 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
               
               clinicsAsync.when(
                 data: (clinics) => DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(labelText: 'Clínica / Especialidade', border: OutlineInputBorder()),
-                  items: clinics.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
+                  value: _selectedClinicId,
+                  decoration: const InputDecoration(
+                    labelText: 'Clínica de Atendimento',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.local_hospital),
+                  ),
+                  items: clinics.map((c) => DropdownMenuItem(
+                    value: c.id, 
+                    child: Text(c.name + (c.location != null ? ' (${c.location})' : ''))
+                  )).toList(),
                   onChanged: (val) => setState(() => _selectedClinicId = val),
-                  validator: (v) => v == null ? 'Obrigatório' : null,
+                  validator: (v) => v == null ? 'Selecione uma clínica' : null,
                 ),
                 loading: () => const LinearProgressIndicator(),
                 error: (_, __) => const Text('Erro ao carregar clínicas'),
@@ -149,7 +167,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                         final picked = await showDatePicker(
                           context: context,
                           initialDate: _selectedDate,
-                          firstDate: DateTime.now(),
+                          firstDate: DateTime.now().subtract(const Duration(days: 30)),
                           lastDate: DateTime.now().add(const Duration(days: 365)),
                         );
                         if (picked != null) setState(() => _selectedDate = picked);
@@ -199,7 +217,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
     );
   }
 
-  void _saveAppointment() {
+  void _saveAppointment() async {
     if (_formKey.currentState!.validate()) {
       final start = DateTime(
         _selectedDate.year,
@@ -209,6 +227,24 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
         _startTime.minute,
       );
       final end = start.add(const Duration(hours: 1));
+
+      // Verificação de conflitos local (opcional, já que o backend deve validar)
+      final existing = ref.read(appointmentViewModelProvider).appointments.value ?? [];
+      final hasConflict = existing.any((a) => 
+        a.clinicId == _selectedClinicId && 
+        ((start.isAfter(a.startTime) && start.isBefore(a.endTime)) ||
+         (end.isAfter(a.startTime) && end.isBefore(a.endTime)) ||
+         (start.isAtSameMomentAs(a.startTime))));
+
+      if (hasConflict) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Já existe um paciente agendado para este horário nesta clínica.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
 
       final appointment = Appointment(
         id: const Uuid().v4(),
@@ -224,12 +260,14 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
         clinicId: _selectedClinicId!,
       );
 
-      ref.read(appointmentViewModelProvider.notifier).schedule(appointment).then((_) {
+      await ref.read(appointmentViewModelProvider.notifier).schedule(appointment);
+      
+      if (mounted) {
         context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Atendimento agendado com sucesso!'), behavior: SnackBarBehavior.floating),
         );
-      });
+      }
     }
   }
 }

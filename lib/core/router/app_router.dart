@@ -14,6 +14,9 @@ import '../../features/users/presentation/views/add_user_screen.dart';
 import '../../features/agenda/presentation/views/agenda_screen.dart';
 import '../../features/agenda/presentation/views/add_appointment_screen.dart';
 import '../../features/agenda/presentation/views/wait_list_screen.dart';
+import '../../features/agenda/presentation/views/institutional_agenda_screen.dart';
+import '../../features/procedures/presentation/views/clinic_management_screen.dart';
+import '../../features/procedures/domain/entities/clinic.dart';
 import '../../features/prontuario/presentation/views/prescription_screen.dart';
 import '../../features/prontuario/presentation/views/certificate_screen.dart';
 import '../../features/prontuario/presentation/views/anamnese_screen.dart';
@@ -35,22 +38,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLoggedIn = authState.user != null;
       final isInitialized = authState.isInitialized;
 
-      // Se ainda não foi inicializado, permanece na splash
       if (!isInitialized) {
         return null;
       }
 
-      // Se está na splash e já foi inicializado, redireciona
       if (isSplash) {
         return isLoggedIn ? '/dashboard' : '/login';
       }
 
-      // Se não está logado e tenta acessar outra rota, vai para login
       if (!isLoggedIn && !isLoggingIn) {
         return '/login';
       }
 
-      // Se está logado e tenta acessar login, vai para dashboard
       if (isLoggedIn && isLoggingIn) {
         return '/dashboard';
       }
@@ -136,7 +135,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: 'add',
-                builder: (context, state) => const AddAppointmentScreen(),
+                builder: (context, state) {
+                  final initialClinic = state.extra as Clinic?;
+                  return AddAppointmentScreen(initialClinic: initialClinic);
+                },
+              ),
+              GoRoute(
+                path: 'institutional',
+                builder: (context, state) => const InstitutionalAgendaScreen(),
               ),
               GoRoute(
                 path: 'wait-list',
@@ -147,6 +153,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                 },
               ),
             ],
+          ),
+          GoRoute(
+            path: 'clinics',
+            builder: (context, state) => const ClinicManagementScreen(),
           ),
           GoRoute(
             path: 'reports',

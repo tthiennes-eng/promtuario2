@@ -1,17 +1,50 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:promt/features/agenda/domain/entities/appointment.dart';
+import 'package:promt/features/procedures/domain/entities/clinic.dart';
 import 'package:promt/core/providers/providers.dart';
 import 'package:promt/core/network/realtime_service.dart';
 
-/// Gerencia o estado da agenda de atendimentos.
-class AppointmentViewModel extends StateNotifier<AsyncValue<List<Appointment>>> {
-  AppointmentViewModel(this.ref) : super(const AsyncValue.loading()) {
+/// Estado do ViewModel de Agenda.
+class AppointmentState {
+  final AsyncValue<List<Appointment>> appointments;
+  final DateTime selectedDate;
+  final Clinic? selectedClinic;
+  final List<Clinic> clinics;
+
+  AppointmentState({
+    required this.appointments,
+    required this.selectedDate,
+    this.selectedClinic,
+    this.clinics = const [],
+  });
+
+  AppointmentState copyWith({
+    AsyncValue<List<Appointment>>? appointments,
+    DateTime? selectedDate,
+    Clinic? selectedClinic,
+    List<Clinic>? clinics,
+  }) {
+    return AppointmentState(
+      appointments: appointments ?? this.appointments,
+      selectedDate: selectedDate ?? this.selectedDate,
+      selectedClinic: selectedClinic ?? this.selectedClinic,
+      clinics: clinics ?? this.clinics,
+    );
+  }
+}
+
+/// Gerencia o estado da agenda de atendimentos organizada por clínica.
+class AppointmentViewModel extends StateNotifier<AppointmentState> {
+  AppointmentViewModel(this.ref)
+      : super(AppointmentState(
+          appointments: const AsyncValue.loading(),
+          selectedDate: DateTime.now(),
+        )) {
     _initRealtime();
-    _init();
+    _loadInitialData();
   }
 
   final Ref ref;
-  DateTime _currentDate = DateTime.now();
 
   void _initRealtime() {
     final realtime = ref.read(realtimeServiceProvider);
@@ -20,51 +53,74 @@ class AppointmentViewModel extends StateNotifier<AsyncValue<List<Appointment>>> 
     });
   }
 
-  Future<void> _init() async {
-    state = await AsyncValue.guard(() => _fetchDailyAppointments(_currentDate));
+  Future<void> _loadInitialData() async {
+    try {
+      final proceduresRepo = ref.read(proceduresRepositoryProvider);
+      final clinics = await proceduresRepo.getClinics(onlyActive: true);
+      
+      state = state.copyWith(clinics: clinics);
+      
+      if (clinics.isNotEmpty) {
+        selectClinic(clinics.first);
+      } else {
+        state = state.copyWith(appointments: const AsyncValue.data([]));
+      }
+    } catch (e, stack) {
+      state = state.copyWith(appointments: AsyncValue.error(e, stack));
+    }
   }
 
-  Future<List<Appointment>> _fetchDailyAppointments(DateTime date) async {
-    _currentDate = date;
-    final repository = ref.read(appointmentRepositoryProvider);
-    final start = DateTime(date.year, date.month, date.day, 0, 0);
-    final end = DateTime(date.year, date.month, date.day, 23, 59, 59);
-
-    return await repository.getAppointments(start: start, end: end);
+  Future<void> selectClinic(Clinic clinic) async {
+    state = state.copyWith(selectedClinic: clinic, appointments: const AsyncValue.loading());
+    await refresh();
   }
 
-  /// Navega para uma data específica e recarrega a agenda.
-  Future<void> fetchByDate(DateTime date) async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() => _fetchDailyAppointments(date));
+  Future<void> selectDate(DateTime date) async {
+    state = state.copyWith(selectedDate: date, appointments: const AsyncValue.loading());
+    await refresh();
   }
 
   Future<void> refresh() async {
-    state = await AsyncValue.guard(() => _fetchDailyAppointments(_currentDate));
+    if (state.selectedClinic == null) return;
+
+    state = state.copyWith(appointments: const AsyncValue.loading());
+    
+    final result = await AsyncValue.guard(() async {
+      final repository = ref.read(appointmentRepositoryProvider);
+      final date = state.selectedDate;
+      final start = DateTime(date.year, date.month, date.day, 0, 0);
+      final end = DateTime(date.year, date.month, date.day, 23, 59, 59);
+
+      return await repository.getAppointments(
+        start: start,
+        end: end,
+        clinicId: state.selectedClinic!.id,
+      );
+    });
+
+    state = state.copyWith(appointments: result);
   }
 
   /// Agenda um novo atendimento.
   Future<void> schedule(Appointment appointment) async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
+    await AsyncValue.guard(() async {
       final repository = ref.read(appointmentRepositoryProvider);
       await repository.scheduleAppointment(appointment);
-      return _fetchDailyAppointments(appointment.startTime);
+      await refresh();
     });
   }
 
   /// Atualiza o status (Confirmado, Faltou, Atendido, etc).
   Future<void> updateStatus(String id, AppointmentStatus status) async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
+    await AsyncValue.guard(() async {
       final repository = ref.read(appointmentRepositoryProvider);
       await repository.updateAppointmentStatus(id, status);
-      return _fetchDailyAppointments(_currentDate);
+      await refresh();
     });
   }
 }
 
 /// Provider para criar a instância do AppointmentViewModel.
-final appointmentViewModelProvider = StateNotifierProvider<AppointmentViewModel, AsyncValue<List<Appointment>>>((ref) {
+final appointmentViewModelProvider = StateNotifierProvider<AppointmentViewModel, AppointmentState>((ref) {
   return AppointmentViewModel(ref);
 });

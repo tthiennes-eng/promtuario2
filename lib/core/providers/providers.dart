@@ -92,7 +92,8 @@ final waitListRepositoryProvider = Provider<IWaitListRepository>((ref) {
 
 final proceduresRepositoryProvider = Provider<IProceduresRepository>((ref) {
   final apiClient = ref.watch(apiClientProvider);
-  return ProceduresRepository(apiClient);
+  final localDb = ref.watch(databaseProvider);
+  return ProceduresRepository(apiClient, localDb);
 });
 
 final reportsRepositoryProvider = Provider<IReportsRepository>((ref) {

@@ -7,6 +7,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 part 'local_database.g.dart';
 
+/// Tabela de Clínicas.
+class ClinicsLocal extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text().withLength(min: 1, max: 255)();
+  TextColumn get description => text().nullable()();
+  TextColumn get location => text().nullable()();
+  IntColumn get capacity => integer().withDefault(const Constant(1))();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  TextColumn get metadataJson => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// Tabela de Pacientes com suporte a endereços e sincronização.
 class Patients extends Table {
   TextColumn get id => text()();
@@ -157,6 +171,7 @@ class TreatmentItemsLocal extends Table {
 }
 
 @DriftDatabase(tables: [
+  ClinicsLocal,
   Patients,
   UsersLocal,
   AttachmentsLocal,
@@ -172,18 +187,31 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1000; 
+  int get schemaVersion => 1001; 
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async => await m.createAll(),
         onUpgrade: (m, from, to) async {
           if (from < 1000) {
-            // Limpeza total garantida para sincronia com o servidor
             for (final table in allTables) {
               await m.deleteTable(table.actualTableName);
             }
             await m.createAll();
+          } else if (from < 1001) {
+            await m.createTable(clinicsLocal);
+            // Garantir que a clínica padrão exista para agendamentos antigos
+            await into(clinicsLocal).insert(ClinicsLocalCompanion.insert(
+              id: 'default-clinic',
+              name: 'Clínica Principal',
+              isActive: const Value(true),
+            ));
+            
+            // Atualizar agendamentos sem clínica para a clínica padrão
+            await customUpdate(
+              "UPDATE appointments_local SET clinic_id = 'default-clinic' WHERE clinic_id = '' OR clinic_id IS NULL",
+              updates: {appointmentsLocal},
+            );
           }
         },
       );
