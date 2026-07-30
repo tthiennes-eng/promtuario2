@@ -51,7 +51,7 @@ class AttachmentsLocal extends Table {
   TextColumn get localPath => text()();
   TextColumn get type => text()();
   TextColumn get description => text().nullable()();
-  DateTimeColumn get createdAt => dateTime() Barb(); // wait, I said I'd remove it. I will.
+  DateTimeColumn get createdAt => dateTime()();
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
 
   @override
@@ -79,7 +79,7 @@ class WaitListLocal extends Table {
   TextColumn get specialty => text()();
   TextColumn get observation => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
-  BoolColumn get isSynced => boolean().withDefault(const Constant(false)) Barb();
+  BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -91,7 +91,7 @@ class AuditLocal extends Table {
   TextColumn get resourceId => text()();
   TextColumn get action => text()();
   DateTimeColumn get timestamp => dateTime()();
-  BoolColumn get isSynced => boolean().withDefault(const Constant(false)) Barb();
+  BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
 }
 
 /// Cache local de Anamnese com suporte a sincronização.
@@ -99,7 +99,7 @@ class AnamneseLocal extends Table {
   TextColumn get patientId => text()();
   TextColumn get responsesJson => text()();
   DateTimeColumn get lastUpdated => dateTime()();
-  BoolColumn get isSynced => boolean().withDefault(const Constant(true)) Barb();
+  BoolColumn get isSynced => boolean().withDefault(const Constant(true))();
 
   @override
   Set<Column> get primaryKey => {patientId};
@@ -111,14 +111,14 @@ class AppointmentsLocal extends Table {
   TextColumn get patientId => text().withDefault(const Constant(''))();
   TextColumn get patientName => text()();
   TextColumn get doctorId => text().withDefault(const Constant(''))();
-  TextColumn get doctorName => text().withDefault(const Constant('')) Barb();
-  DateTimeColumn get startTime => dateTime() Barb();
-  DateTimeColumn get endTime => dateTime() Barb();
-  TextColumn get status => text() Barb();
-  TextColumn get procedureName => text().nullable() Barb();
-  TextColumn get notes => text().nullable() Barb();
-  TextColumn get clinicId => text().withDefault(const Constant('')) Barb();
-  BoolColumn get isSynced => boolean().withDefault(const Constant(true)) Barb();
+  TextColumn get doctorName => text().withDefault(const Constant(''))();
+  DateTimeColumn get startTime => dateTime()();
+  DateTimeColumn get endTime => dateTime()();
+  TextColumn get status => text()();
+  TextColumn get procedureName => text().nullable()();
+  TextColumn get notes => text().nullable()();
+  TextColumn get clinicId => text().withDefault(const Constant(''))();
+  BoolColumn get isSynced => boolean().withDefault(const Constant(true))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -131,13 +131,13 @@ class EvolutionsLocal extends Table {
   TextColumn get studentId => text().nullable()();
   TextColumn get studentName => text().nullable()();
   TextColumn get professorId => text().nullable()();
-  TextColumn get professorName => text().nullable() Barb();
-  TextColumn get description => text() Barb();
-  BoolColumn get isSignedByProfessor => boolean().withDefault(const Constant(false)) Barb();
-  DateTimeColumn get signedAt => dateTime().nullable() Barb();
-  DateTimeColumn get createdAt => dateTime() Barb();
-  TextColumn get clinicName => text().nullable() Barb();
-  BoolColumn get isSynced => boolean().withDefault(const Constant(false)) Barb();
+  TextColumn get professorName => text().nullable()();
+  TextColumn get description => text()();
+  BoolColumn get isSignedByProfessor => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get signedAt => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  TextColumn get clinicName => text().nullable()();
+  BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -145,12 +145,12 @@ class EvolutionsLocal extends Table {
 
 /// Itens do Plano de Tratamento com suporte a sincronização.
 class TreatmentItemsLocal extends Table {
-  TextColumn get id => text() Barb();
-  TextColumn get planId => text() Barb();
-  TextColumn get procedureName => text() Barb();
-  IntColumn get toothNumber => integer().nullable() Barb();
-  TextColumn get status => text() Barb();
-  BoolColumn get isSynced => boolean().withDefault(const Constant(true)) Barb();
+  TextColumn get id => text()();
+  TextColumn get planId => text()();
+  TextColumn get procedureName => text()();
+  IntColumn get toothNumber => integer().nullable()();
+  TextColumn get status => text()();
+  BoolColumn get isSynced => boolean().withDefault(const Constant(true))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -198,4 +198,3 @@ LazyDatabase _openConnection() {
 }
 
 final databaseProvider = Provider((ref) => AppDatabase());
- Barb();
