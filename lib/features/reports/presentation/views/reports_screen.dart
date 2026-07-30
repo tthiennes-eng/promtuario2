@@ -31,7 +31,7 @@ class ReportsScreen extends ConsumerWidget {
               children: [
                 _buildSummaryGrid(metrics),
                 const SizedBox(height: 32),
-                const Text('Produção por Especialidade', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text('Atendimentos por Especialidade', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
                 _buildDetailedTable(context, metrics),
               ],
@@ -53,9 +53,9 @@ class ReportsScreen extends ConsumerWidget {
       mainAxisSpacing: 16,
       childAspectRatio: 2,
       children: [
-        _reportStat('Atendimentos', '${metrics.totalProceduresThisMonth}', Icons.check_circle, Colors.blue),
-        _reportStat('Ocupação', '${(metrics.occupancyRate * 100).toStringAsFixed(1)}%', Icons.pie_chart, Colors.orange),
-        _reportStat('Faltas', '${(metrics.absenceRate * 100).toStringAsFixed(1)}%', Icons.person_off, Colors.red),
+        _reportStat('Total Atendimentos', '${metrics.totalProceduresThisMonth}', Icons.check_circle, Colors.blue),
+        _reportStat('Taxa de Ocupação', '${(metrics.occupancyRate * 100).toStringAsFixed(1)}%', Icons.pie_chart, Colors.orange),
+        _reportStat('Índice de Assiduidade', '${((1 - metrics.absenceRate) * 100).toStringAsFixed(1)}%', Icons.person, Colors.green),
       ],
     );
   }
@@ -70,7 +70,7 @@ class ReportsScreen extends ConsumerWidget {
             Icon(icon, color: color),
             const SizedBox(height: 8),
             Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            Text(title, style: const TextStyle(fontSize: 11, color: Colors.grey)),
           ],
         ),
       ),
@@ -78,20 +78,19 @@ class ReportsScreen extends ConsumerWidget {
   }
 
   Widget _buildDetailedTable(BuildContext context, ClinicPerformanceMetrics metrics) {
-    // Uso dinâmico para evitar erro de compilação caso o Freezed esteja desatualizado
-    final List<dynamic> productions = (metrics as dynamic).specialtyProduction ?? [];
+    final List<SpecialtyProduction> productions = metrics.specialtyProduction;
 
     return Card(
       child: DataTable(
         columns: const [
           DataColumn(label: Text('Especialidade')),
-          DataColumn(label: Text('Atendimentos')),
-          DataColumn(label: Text('Eficiência')),
+          DataColumn(label: Text('Qtd Atendimentos')),
+          DataColumn(label: Text('Eficiência Acadêmica')),
         ],
         rows: productions.map((p) => DataRow(cells: [
-          DataCell(Text(p.specialty.toString())),
+          DataCell(Text(p.specialty)),
           DataCell(Text(p.appointmentCount.toString())),
-          DataCell(Text('${((p.efficiencyRate ?? 0) * 100).toStringAsFixed(0)}%')),
+          DataCell(Text('${(p.efficiencyRate * 100).toStringAsFixed(0)}%')),
         ])).toList(),
       ),
     );

@@ -63,7 +63,7 @@ class _PrescriptionScreenState extends ConsumerState<PrescriptionScreen> {
         date: DateTime.now(),
         items: List.from(_items),
         observations: _observationsController.text,
-        clinicId: '00000000-0000-0000-0000-000000000000', // ID zerado compatível com Guid
+        clinicId: '00000000-0000-0000-0000-000000000000', // Valor compatível com GUID vazio no C#
       );
 
       await ref.read(documentsViewModelProvider(widget.patientId).notifier)

@@ -7,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 part 'local_database.g.dart';
 
-/// Tabela de Pacientes com suporte a sincronização e endereços.
+/// Tabela de Pacientes com suporte a endereços e sincronização.
 class Patients extends Table {
   TextColumn get id => text()();
   TextColumn get fullName => text().withLength(min: 3, max: 255)();
@@ -16,6 +16,7 @@ class Patients extends Table {
   TextColumn get email => text().nullable()();
   TextColumn get phone => text().nullable()();
   TextColumn get gender => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
   BoolColumn get lgpdConsent => boolean().withDefault(const Constant(false))();
   BoolColumn get isSynced => boolean().withDefault(const Constant(true))();
 
@@ -171,14 +172,14 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 31;
+  int get schemaVersion => 1000; 
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async => await m.createAll(),
         onUpgrade: (m, from, to) async {
-          if (from < 31) {
-            // Em desenvolvimento, recriamos as tabelas para garantir integridade total
+          if (from < 1000) {
+            // Em desenvolvimento, recriamos as tabelas para garantir integridade acadêmica e remover erros de sintaxe
             for (final table in allTables) {
               await m.deleteTable(table.actualTableName);
             }
@@ -191,7 +192,7 @@ class AppDatabase extends _$AppDatabase {
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'odonto_clinic_v1.sqlite'));
+    final file = File(p.join(dbFolder.path, 'odonto_clinic_v10.sqlite'));
     return NativeDatabase.createInBackground(file);
   });
 }

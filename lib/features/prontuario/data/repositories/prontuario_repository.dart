@@ -10,7 +10,6 @@ import 'package:promt/features/prontuario/domain/entities/evolution.dart';
 import 'package:promt/features/prontuario/domain/repositories/i_prontuario_repository.dart';
 import 'package:promt/features/auth/domain/entities/user.dart';
 import 'package:uuid/uuid.dart';
-import 'package:dio/dio.dart';
 
 class ProntuarioRepository implements IProntuarioRepository {
   final ApiClient _apiClient;
@@ -19,6 +18,16 @@ class ProntuarioRepository implements IProntuarioRepository {
 
   ProntuarioRepository(this._apiClient, this._localDb, [this._currentUser]);
 
+  Future<String> _getDefaultClinicId() async {
+    try {
+      final response = await _apiClient.instance.get('Clinics');
+      if (response.data is List && (response.data as List).isNotEmpty) {
+        return response.data[0]['id'].toString();
+      }
+    } catch (_) {}
+    return '00000000-0000-0000-0000-000000000000';
+  }
+
   @override
   Future<Odontogram> getOdontogram(String patientId) async {
     try {
@@ -26,8 +35,7 @@ class ProntuarioRepository implements IProntuarioRepository {
       if (response.data == null || response.data == 'null') return _initialOdontogram(patientId);
       final jsonData = response.data is String ? jsonDecode(response.data) : response.data;
       return Odontogram.fromJson(jsonData);
-    } catch (e) {
-      // Se o paciente não existir no servidor (Erro 404), ou erro 500 por base limpa
+    } catch (_) {
       return _initialOdontogram(patientId);
     }
   }
@@ -42,37 +50,33 @@ class ProntuarioRepository implements IProntuarioRepository {
 
   @override
   Future<void> saveOdontogram(Odontogram odontogram) async {
-    try {
-      await _apiClient.instance.post('Prontuario/odontogram', data: odontogram.toJson());
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 500) {
-        throw 'Erro de sincronização: Este paciente não existe no servidor. Cadastre-o novamente.';
-      }
-      rethrow;
-    }
+    // Envia para a rota POST api/Prontuario/odontogram
+    await _apiClient.instance.post('Prontuario/odontogram', data: odontogram.toJson());
   }
 
   @override
   Future<void> saveTreatmentPlan(TreatmentPlan plan) async {
-    try {
-      await _apiClient.instance.post('TreatmentPlans', data: plan.toJson());
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 500) {
-        throw 'Erro: Não foi possível salvar o plano. Verifique se o paciente está cadastrado no servidor.';
-      }
-      rethrow;
-    }
+    final clinicId = await _getDefaultClinicId();
+    final data = plan.toJson();
+    data['clinicId'] = clinicId;
+    await _apiClient.instance.post('TreatmentPlans', data: data);
   }
 
   @override
   Future<Prescription> createPrescription(Prescription prescription) async {
-    final response = await _apiClient.instance.post('Documentos/receitas', data: prescription.toJson());
+    final clinicId = await _getDefaultClinicId();
+    final data = prescription.toJson();
+    data['clinicId'] = clinicId;
+    final response = await _apiClient.instance.post('Documentos/receitas', data: data);
     return Prescription.fromJson(response.data);
   }
 
   @override
   Future<MedicalCertificate> createCertificate(MedicalCertificate certificate) async {
-    final response = await _apiClient.instance.post('Documentos/atestados', data: certificate.toJson());
+    final clinicId = await _getDefaultClinicId();
+    final data = certificate.toJson();
+    data['clinicId'] = clinicId;
+    final response = await _apiClient.instance.post('Documentos/atestados', data: data);
     return MedicalCertificate.fromJson(response.data);
   }
 
@@ -80,6 +84,7 @@ class ProntuarioRepository implements IProntuarioRepository {
   Future<List<TreatmentPlan>> getTreatmentPlans(String patientId) async {
     try {
       final response = await _apiClient.instance.get('TreatmentPlans/active/$patientId');
+      if (response.data == null) return [];
       return [TreatmentPlan.fromJson(response.data)];
     } catch (_) {
       return [];
@@ -90,6 +95,7 @@ class ProntuarioRepository implements IProntuarioRepository {
   Future<List<Prescription>> getPrescriptionHistory(String patientId) async {
     try {
       final response = await _apiClient.instance.get('Documentos/receitas/$patientId');
+      if (response.data == null) return [];
       return (response.data as List).map((json) => Prescription.fromJson(json)).toList();
     } catch (_) { return []; }
   }
@@ -98,6 +104,7 @@ class ProntuarioRepository implements IProntuarioRepository {
   Future<List<MedicalCertificate>> getCertificateHistory(String patientId) async {
     try {
       final response = await _apiClient.instance.get('Documentos/atestados/$patientId');
+      if (response.data == null) return [];
       return (response.data as List).map((json) => MedicalCertificate.fromJson(json)).toList();
     } catch (_) { return []; }
   }
@@ -106,8 +113,21 @@ class ProntuarioRepository implements IProntuarioRepository {
   Future<List<Anamnese>> getAnamneses(String patientId) async {
     try {
       final response = await _apiClient.instance.get('Prontuario/$patientId/anamnese');
-      if (response.data == null) return [];
-      return [Anamnese.fromJson(response.data)];
+      if (response.data == null || response.data == 'null') return [];
+      
+      // Mapeamento manual para garantir compatibilidade com as propriedades do C#
+      final data = response.data;
+      return [
+        Anamnese(
+          id: data['id'] ?? '',
+          patientId: data['patientId'] ?? patientId,
+          responses: data['respostasJson'] is String 
+              ? jsonDecode(data['respostasJson']) 
+              : (data['respostasJson'] ?? {}),
+          createdAt: DateTime.parse(data['createdAt'] ?? DateTime.now().toIso8601String()),
+          createdBy: data['criadoPorId'] ?? 'system',
+        )
+      ];
     } catch (_) { return []; }
   }
 
@@ -124,6 +144,7 @@ class ProntuarioRepository implements IProntuarioRepository {
   Future<List<Evolution>> getEvolutions(String patientId) async {
     try {
       final response = await _apiClient.instance.get('Prontuario/$patientId/evolutions');
+      if (response.data == null) return [];
       return (response.data as List).map((json) => Evolution.fromJson(json)).toList();
     } catch (_) { return []; }
   }

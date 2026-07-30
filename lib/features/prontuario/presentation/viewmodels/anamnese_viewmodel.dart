@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:promt/features/prontuario/domain/entities/anamnese.dart';
 import 'package:promt/core/providers/providers.dart';
 
+/// Gerencia as anamneses dos pacientes.
 class AnamneseViewModel extends StateNotifier<AsyncValue<List<Anamnese>>> {
   final Ref ref;
   final String patientId;
@@ -13,6 +14,7 @@ class AnamneseViewModel extends StateNotifier<AsyncValue<List<Anamnese>>> {
   Future<void> _init() async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
+      // Método sincronizado com a interface IProntuarioRepository
       return await ref.read(prontuarioRepositoryProvider).getAnamneses(patientId);
     });
   }
@@ -20,20 +22,11 @@ class AnamneseViewModel extends StateNotifier<AsyncValue<List<Anamnese>>> {
   Future<void> refresh() async => _init();
 
   Future<void> saveAnamnese(Map<String, dynamic> responses) async {
-    final previousState = state;
     state = const AsyncValue.loading();
-    
-    final result = await AsyncValue.guard(() async {
+    state = await AsyncValue.guard(() async {
       await ref.read(prontuarioRepositoryProvider).saveAnamnese(patientId, responses);
       return await ref.read(prontuarioRepositoryProvider).getAnamneses(patientId);
     });
-
-    if (result is AsyncError) {
-      state = previousState;
-      throw result.error!;
-    } else {
-      state = result;
-    }
   }
 }
 
