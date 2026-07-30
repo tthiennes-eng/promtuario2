@@ -8,7 +8,6 @@ class ClinicsViewModel extends StateNotifier<AsyncValue<List<Clinic>>> {
     refresh();
   }
 
-  final Ref rootRef; // Changed name to avoid confusion with Ref ref in build
   final Ref ref;
 
   Future<void> refresh() async {
@@ -20,12 +19,13 @@ class ClinicsViewModel extends StateNotifier<AsyncValue<List<Clinic>>> {
   }
 
   Future<void> saveClinic(Clinic clinic) async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
+    // Mantém o estado atual enquanto salva para evitar flickers, ou usa loading se preferir
+    final result = await AsyncValue.guard(() async {
       final repository = ref.read(proceduresRepositoryProvider);
       await repository.saveClinic(clinic);
       return await repository.getClinics(onlyActive: false);
     });
+    state = result;
   }
 
   Future<void> toggleClinicStatus(Clinic clinic) async {
@@ -42,10 +42,11 @@ class ClinicsViewModel extends StateNotifier<AsyncValue<List<Clinic>>> {
     final clinic = Clinic(
       id: const Uuid().v4(),
       name: name,
-      description: description,
+      description: description ?? '',
       location: location,
       capacity: capacity,
       isActive: true,
+      metadata: {},
     );
     await saveClinic(clinic);
   }
