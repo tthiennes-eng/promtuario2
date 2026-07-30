@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:promt/core/network/api_client.dart';
-import 'package:promt/core/database/local_database.dart';
+import 'package:promt/core/database/local_database.dart' as drift_db;
 import 'package:promt/features/prontuario/domain/entities/odontogram.dart';
 import 'package:promt/features/prontuario/domain/entities/prescription.dart';
 import 'package:promt/features/prontuario/domain/entities/anamnese.dart';
@@ -13,7 +14,7 @@ import 'package:uuid/uuid.dart';
 
 class ProntuarioRepository implements IProntuarioRepository {
   final ApiClient _apiClient;
-  final AppDatabase _localDb;
+  final drift_db.AppDatabase _localDb;
   final User? _currentUser;
 
   ProntuarioRepository(this._apiClient, this._localDb, [this._currentUser]);
@@ -30,11 +31,26 @@ class ProntuarioRepository implements IProntuarioRepository {
 
   @override
   Future<Odontogram> getOdontogram(String patientId) async {
+    // 1. Tenta buscar localmente primeiro (cache offline)
+    final local = await (_localDb.select(_localDb.odontogramLocal)
+          ..where((t) => t.patientId.equals(patientId)))
+        .getSingleOrNull();
+
+    if (local != null) {
+      return Odontogram.fromJson(jsonDecode(local.dataJson));
+    }
+
+    // 2. Se não houver local, busca na API
     try {
       final response = await _apiClient.instance.get('Prontuario/$patientId/odontogram');
       if (response.data == null || response.data == 'null') return _initialOdontogram(patientId);
+      
       final jsonData = response.data is String ? jsonDecode(response.data) : response.data;
-      return Odontogram.fromJson(jsonData);
+      final odontogram = Odontogram.fromJson(jsonData);
+      
+      // Cacheia localmente
+      await _saveLocalOdontogram(odontogram, true);
+      return odontogram;
     } catch (_) {
       return _initialOdontogram(patientId);
     }
@@ -50,7 +66,27 @@ class ProntuarioRepository implements IProntuarioRepository {
 
   @override
   Future<void> saveOdontogram(Odontogram odontogram) async {
-    // Mapeia para o DTO do Backend (SaveOdontogramRequest)
+    // 1. Salva localmente marcando como não sincronizado
+    await _saveLocalOdontogram(odontogram, false);
+
+    // 2. Tenta enviar para a API se o paciente estiver sincronizado
+    try {
+      final patient = await (_localDb.select(_localDb.patients)
+            ..where((t) => t.id.equals(odontogram.patientId)))
+          .getSingleOrNull();
+
+      if (patient != null && patient.isSynced) {
+        await _sendOdontogramToApi(odontogram);
+        await _saveLocalOdontogram(odontogram, true);
+      } else {
+        debugPrint('Odontograma salvo localmente. Aguardando sincronização do paciente.');
+      }
+    } catch (e) {
+      debugPrint('Erro ao sincronizar odontograma: $e');
+    }
+  }
+
+  Future<void> _sendOdontogramToApi(Odontogram odontogram) async {
     final data = {
       'patientId': odontogram.patientId,
       'teeth': odontogram.teeth.map((t) => {
@@ -61,6 +97,47 @@ class ProntuarioRepository implements IProntuarioRepository {
       }).toList(),
     };
     await _apiClient.instance.post('Prontuario/odontogram', data: data);
+  }
+
+  Future<void> _saveLocalOdontogram(Odontogram odontogram, bool isSynced) async {
+    await _localDb.into(_localDb.odontogramLocal).insertOnConflictUpdate(
+      drift_db.OdontogramLocalCompanion.insert(
+        patientId: odontogram.patientId,
+        dataJson: jsonEncode(odontogram.toJson()),
+        lastUpdated: DateTime.now(),
+        isSynced: Value(isSynced),
+      ),
+    );
+  }
+
+  @override
+  Future<void> syncPendingData() async {
+    // 1. Sincroniza Odontogramas pendentes
+    final pendingOdontograms = await (_localDb.select(_localDb.odontogramLocal)
+          ..where((t) => t.isSynced.equals(false)))
+        .get();
+
+    for (final row in pendingOdontograms) {
+      try {
+        // Verifica se o paciente já foi sincronizado primeiro
+        final patient = await (_localDb.select(_localDb.patients)
+              ..where((t) => t.id.equals(row.patientId)))
+            .getSingleOrNull();
+
+        if (patient != null && patient.isSynced) {
+          final odontogram = Odontogram.fromJson(jsonDecode(row.dataJson));
+          await _sendOdontogramToApi(odontogram);
+          
+          await (_localDb.update(_localDb.odontogramLocal)
+                ..where((t) => t.patientId.equals(row.patientId)))
+              .write(const drift_db.OdontogramLocalCompanion(isSynced: Value(true)));
+        }
+      } catch (e) {
+        debugPrint('Falha ao sincronizar odontograma pendente do paciente ${row.patientId}: $e');
+      }
+    }
+    
+    // TODO: Implementar sincronização de Evoluções, Receitas etc.
   }
 
   @override
@@ -163,7 +240,6 @@ class ProntuarioRepository implements IProntuarioRepository {
   @override Future<void> saveAnamnese(String id, Map<String, dynamic> r) async {
     await _apiClient.instance.post('Prontuario/$id/anamnese', data: r);
   }
-  @override Future<void> syncPendingData() async {}
   @override Future<List<Evolution>> getEvolutionHistory(String id) async => getEvolutions(id);
   @override Future<List<TreatmentPlan>> getTreatmentPlans(String id) async {
     try {

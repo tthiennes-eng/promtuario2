@@ -33,21 +33,22 @@ class PatientRepository implements IPatientRepository {
 
   @override
   Future<entity.Patient> createPatient(entity.Patient patient) async {
-    // 1. Salva localmente
+    // 1. Salva localmente como não sincronizado primeiro
     await _saveLocal(patient, false);
 
     try {
-      // 2. Envia para a API com mapeamento completo
+      // 2. Tenta enviar para a API
       final response = await _apiClient.instance.post('patients', data: _mapEntityToJson(patient));
-      final syncedPatient = _mapJsonToEntity(response.data);
-      
-      // 3. Atualiza cache com confirmação do servidor
-      await _saveLocal(syncedPatient, true);
-      return syncedPatient;
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final syncedPatient = _mapJsonToEntity(response.data);
+        // 3. Atualiza cache com confirmação do servidor e marca como sincronizado
+        await _saveLocal(syncedPatient, true);
+        return syncedPatient;
+      }
     } catch (e) {
-      debugPrint('Erro na sincronização: $e');
-      return patient;
+      debugPrint('Erro na sincronização imediata do paciente: $e');
     }
+    return patient;
   }
 
   @override
@@ -56,6 +57,31 @@ class PatientRepository implements IPatientRepository {
       ..orderBy([(t) => OrderingTerm(expression: t.fullName)]);
     final results = await query.get();
     return results.map((row) => _mapSchemaToEntity(row)).toList();
+  }
+
+  @override
+  Future<void> syncPatients() async {
+    // Busca pacientes locais que não estão sincronizados
+    final pendingPatients = await (_localDb.select(_localDb.patients)
+          ..where((t) => t.isSynced.equals(false)))
+        .get();
+
+    for (final row in pendingPatients) {
+      try {
+        final patientEntity = _mapSchemaToEntity(row);
+        final response = await _apiClient.instance.post('patients', data: _mapEntityToJson(patientEntity));
+        
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          // Marca como sincronizado no banco local
+          await (_localDb.update(_localDb.patients)
+                ..where((t) => t.id.equals(row.id)))
+              .write(const drift_db.PatientsCompanion(isSynced: Value(true)));
+          debugPrint('Paciente ${row.fullName} sincronizado com sucesso.');
+        }
+      } catch (e) {
+        debugPrint('Falha ao sincronizar paciente ${row.fullName}: $e');
+      }
+    }
   }
 
   // Mapeamentos robustos
@@ -142,5 +168,4 @@ class PatientRepository implements IPatientRepository {
 
   @override Future<entity.Patient> getPatientById(String id) async => (await getLocalPatients()).firstWhere((p) => p.id == id);
   @override Future<void> updatePatient(entity.Patient p) async {}
-  @override Future<void> syncPatients() async {}
 }
