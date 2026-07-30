@@ -51,6 +51,12 @@ class $PatientsTable extends Patients with TableInfo<$PatientsTable, Patient> {
   late final GeneratedColumn<String> gender = GeneratedColumn<String>(
       'gender', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
   static const VerificationMeta _lgpdConsentMeta =
       const VerificationMeta('lgpdConsent');
   @override
@@ -112,6 +118,7 @@ class $PatientsTable extends Patients with TableInfo<$PatientsTable, Patient> {
         email,
         phone,
         gender,
+        createdAt,
         lgpdConsent,
         isSynced,
         street,
@@ -165,6 +172,12 @@ class $PatientsTable extends Patients with TableInfo<$PatientsTable, Patient> {
     if (data.containsKey('gender')) {
       context.handle(_genderMeta,
           gender.isAcceptableOrUnknown(data['gender']!, _genderMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
     }
     if (data.containsKey('lgpd_consent')) {
       context.handle(
@@ -225,6 +238,8 @@ class $PatientsTable extends Patients with TableInfo<$PatientsTable, Patient> {
           .read(DriftSqlType.string, data['${effectivePrefix}phone']),
       gender: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}gender']),
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
       lgpdConsent: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}lgpd_consent'])!,
       isSynced: attachedDatabase.typeMapping
@@ -258,6 +273,7 @@ class Patient extends DataClass implements Insertable<Patient> {
   final String? email;
   final String? phone;
   final String? gender;
+  final DateTime createdAt;
   final bool lgpdConsent;
   final bool isSynced;
   final String? street;
@@ -274,6 +290,7 @@ class Patient extends DataClass implements Insertable<Patient> {
       this.email,
       this.phone,
       this.gender,
+      required this.createdAt,
       required this.lgpdConsent,
       required this.isSynced,
       this.street,
@@ -298,6 +315,7 @@ class Patient extends DataClass implements Insertable<Patient> {
     if (!nullToAbsent || gender != null) {
       map['gender'] = Variable<String>(gender);
     }
+    map['created_at'] = Variable<DateTime>(createdAt);
     map['lgpd_consent'] = Variable<bool>(lgpdConsent);
     map['is_synced'] = Variable<bool>(isSynced);
     if (!nullToAbsent || street != null) {
@@ -333,6 +351,7 @@ class Patient extends DataClass implements Insertable<Patient> {
           phone == null && nullToAbsent ? const Value.absent() : Value(phone),
       gender:
           gender == null && nullToAbsent ? const Value.absent() : Value(gender),
+      createdAt: Value(createdAt),
       lgpdConsent: Value(lgpdConsent),
       isSynced: Value(isSynced),
       street:
@@ -362,6 +381,7 @@ class Patient extends DataClass implements Insertable<Patient> {
       email: serializer.fromJson<String?>(json['email']),
       phone: serializer.fromJson<String?>(json['phone']),
       gender: serializer.fromJson<String?>(json['gender']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       lgpdConsent: serializer.fromJson<bool>(json['lgpdConsent']),
       isSynced: serializer.fromJson<bool>(json['isSynced']),
       street: serializer.fromJson<String?>(json['street']),
@@ -383,6 +403,7 @@ class Patient extends DataClass implements Insertable<Patient> {
       'email': serializer.toJson<String?>(email),
       'phone': serializer.toJson<String?>(phone),
       'gender': serializer.toJson<String?>(gender),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
       'lgpdConsent': serializer.toJson<bool>(lgpdConsent),
       'isSynced': serializer.toJson<bool>(isSynced),
       'street': serializer.toJson<String?>(street),
@@ -402,6 +423,7 @@ class Patient extends DataClass implements Insertable<Patient> {
           Value<String?> email = const Value.absent(),
           Value<String?> phone = const Value.absent(),
           Value<String?> gender = const Value.absent(),
+          DateTime? createdAt,
           bool? lgpdConsent,
           bool? isSynced,
           Value<String?> street = const Value.absent(),
@@ -418,6 +440,7 @@ class Patient extends DataClass implements Insertable<Patient> {
         email: email.present ? email.value : this.email,
         phone: phone.present ? phone.value : this.phone,
         gender: gender.present ? gender.value : this.gender,
+        createdAt: createdAt ?? this.createdAt,
         lgpdConsent: lgpdConsent ?? this.lgpdConsent,
         isSynced: isSynced ?? this.isSynced,
         street: street.present ? street.value : this.street,
@@ -437,6 +460,7 @@ class Patient extends DataClass implements Insertable<Patient> {
       email: data.email.present ? data.email.value : this.email,
       phone: data.phone.present ? data.phone.value : this.phone,
       gender: data.gender.present ? data.gender.value : this.gender,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       lgpdConsent:
           data.lgpdConsent.present ? data.lgpdConsent.value : this.lgpdConsent,
       isSynced: data.isSynced.present ? data.isSynced.value : this.isSynced,
@@ -461,6 +485,7 @@ class Patient extends DataClass implements Insertable<Patient> {
           ..write('email: $email, ')
           ..write('phone: $phone, ')
           ..write('gender: $gender, ')
+          ..write('createdAt: $createdAt, ')
           ..write('lgpdConsent: $lgpdConsent, ')
           ..write('isSynced: $isSynced, ')
           ..write('street: $street, ')
@@ -482,6 +507,7 @@ class Patient extends DataClass implements Insertable<Patient> {
       email,
       phone,
       gender,
+      createdAt,
       lgpdConsent,
       isSynced,
       street,
@@ -501,6 +527,7 @@ class Patient extends DataClass implements Insertable<Patient> {
           other.email == this.email &&
           other.phone == this.phone &&
           other.gender == this.gender &&
+          other.createdAt == this.createdAt &&
           other.lgpdConsent == this.lgpdConsent &&
           other.isSynced == this.isSynced &&
           other.street == this.street &&
@@ -519,6 +546,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
   final Value<String?> email;
   final Value<String?> phone;
   final Value<String?> gender;
+  final Value<DateTime> createdAt;
   final Value<bool> lgpdConsent;
   final Value<bool> isSynced;
   final Value<String?> street;
@@ -536,6 +564,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
     this.email = const Value.absent(),
     this.phone = const Value.absent(),
     this.gender = const Value.absent(),
+    this.createdAt = const Value.absent(),
     this.lgpdConsent = const Value.absent(),
     this.isSynced = const Value.absent(),
     this.street = const Value.absent(),
@@ -554,6 +583,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
     this.email = const Value.absent(),
     this.phone = const Value.absent(),
     this.gender = const Value.absent(),
+    required DateTime createdAt,
     this.lgpdConsent = const Value.absent(),
     this.isSynced = const Value.absent(),
     this.street = const Value.absent(),
@@ -566,7 +596,8 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
   })  : id = Value(id),
         fullName = Value(fullName),
         cpf = Value(cpf),
-        birthDate = Value(birthDate);
+        birthDate = Value(birthDate),
+        createdAt = Value(createdAt);
   static Insertable<Patient> custom({
     Expression<String>? id,
     Expression<String>? fullName,
@@ -575,6 +606,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
     Expression<String>? email,
     Expression<String>? phone,
     Expression<String>? gender,
+    Expression<DateTime>? createdAt,
     Expression<bool>? lgpdConsent,
     Expression<bool>? isSynced,
     Expression<String>? street,
@@ -593,6 +625,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
       if (email != null) 'email': email,
       if (phone != null) 'phone': phone,
       if (gender != null) 'gender': gender,
+      if (createdAt != null) 'created_at': createdAt,
       if (lgpdConsent != null) 'lgpd_consent': lgpdConsent,
       if (isSynced != null) 'is_synced': isSynced,
       if (street != null) 'street': street,
@@ -613,6 +646,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
       Value<String?>? email,
       Value<String?>? phone,
       Value<String?>? gender,
+      Value<DateTime>? createdAt,
       Value<bool>? lgpdConsent,
       Value<bool>? isSynced,
       Value<String?>? street,
@@ -630,6 +664,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
       email: email ?? this.email,
       phone: phone ?? this.phone,
       gender: gender ?? this.gender,
+      createdAt: createdAt ?? this.createdAt,
       lgpdConsent: lgpdConsent ?? this.lgpdConsent,
       isSynced: isSynced ?? this.isSynced,
       street: street ?? this.street,
@@ -665,6 +700,9 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
     }
     if (gender.present) {
       map['gender'] = Variable<String>(gender.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
     }
     if (lgpdConsent.present) {
       map['lgpd_consent'] = Variable<bool>(lgpdConsent.value);
@@ -706,6 +744,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
           ..write('email: $email, ')
           ..write('phone: $phone, ')
           ..write('gender: $gender, ')
+          ..write('createdAt: $createdAt, ')
           ..write('lgpdConsent: $lgpdConsent, ')
           ..write('isSynced: $isSynced, ')
           ..write('street: $street, ')
@@ -4387,6 +4426,7 @@ typedef $$PatientsTableCreateCompanionBuilder = PatientsCompanion Function({
   Value<String?> email,
   Value<String?> phone,
   Value<String?> gender,
+  required DateTime createdAt,
   Value<bool> lgpdConsent,
   Value<bool> isSynced,
   Value<String?> street,
@@ -4405,6 +4445,7 @@ typedef $$PatientsTableUpdateCompanionBuilder = PatientsCompanion Function({
   Value<String?> email,
   Value<String?> phone,
   Value<String?> gender,
+  Value<DateTime> createdAt,
   Value<bool> lgpdConsent,
   Value<bool> isSynced,
   Value<String?> street,
@@ -4445,6 +4486,9 @@ class $$PatientsTableFilterComposer
 
   ColumnFilters<String> get gender => $composableBuilder(
       column: $table.gender, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<bool> get lgpdConsent => $composableBuilder(
       column: $table.lgpdConsent, builder: (column) => ColumnFilters(column));
@@ -4500,6 +4544,9 @@ class $$PatientsTableOrderingComposer
 
   ColumnOrderings<String> get gender => $composableBuilder(
       column: $table.gender, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<bool> get lgpdConsent => $composableBuilder(
       column: $table.lgpdConsent, builder: (column) => ColumnOrderings(column));
@@ -4557,6 +4604,9 @@ class $$PatientsTableAnnotationComposer
   GeneratedColumn<String> get gender =>
       $composableBuilder(column: $table.gender, builder: (column) => column);
 
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
   GeneratedColumn<bool> get lgpdConsent => $composableBuilder(
       column: $table.lgpdConsent, builder: (column) => column);
 
@@ -4612,6 +4662,7 @@ class $$PatientsTableTableManager extends RootTableManager<
             Value<String?> email = const Value.absent(),
             Value<String?> phone = const Value.absent(),
             Value<String?> gender = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
             Value<bool> lgpdConsent = const Value.absent(),
             Value<bool> isSynced = const Value.absent(),
             Value<String?> street = const Value.absent(),
@@ -4630,6 +4681,7 @@ class $$PatientsTableTableManager extends RootTableManager<
             email: email,
             phone: phone,
             gender: gender,
+            createdAt: createdAt,
             lgpdConsent: lgpdConsent,
             isSynced: isSynced,
             street: street,
@@ -4648,6 +4700,7 @@ class $$PatientsTableTableManager extends RootTableManager<
             Value<String?> email = const Value.absent(),
             Value<String?> phone = const Value.absent(),
             Value<String?> gender = const Value.absent(),
+            required DateTime createdAt,
             Value<bool> lgpdConsent = const Value.absent(),
             Value<bool> isSynced = const Value.absent(),
             Value<String?> street = const Value.absent(),
@@ -4666,6 +4719,7 @@ class $$PatientsTableTableManager extends RootTableManager<
             email: email,
             phone: phone,
             gender: gender,
+            createdAt: createdAt,
             lgpdConsent: lgpdConsent,
             isSynced: isSynced,
             street: street,
