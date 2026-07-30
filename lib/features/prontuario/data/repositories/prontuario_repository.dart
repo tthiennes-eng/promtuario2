@@ -50,23 +50,47 @@ class ProntuarioRepository implements IProntuarioRepository {
 
   @override
   Future<void> saveOdontogram(Odontogram odontogram) async {
-    // Envia para a rota POST api/Prontuario/odontogram
-    await _apiClient.instance.post('Prontuario/odontogram', data: odontogram.toJson());
+    // Mapeia para o DTO do Backend (SaveOdontogramRequest)
+    final data = {
+      'patientId': odontogram.patientId,
+      'teeth': odontogram.teeth.map((t) => {
+        'toothNumber': t.toothNumber,
+        'surfaces': t.surfaces.map((s) => s.name.substring(0, 1).toUpperCase() + s.name.substring(1)).toList(),
+        'condition': t.condition.name.substring(0, 1).toUpperCase() + t.condition.name.substring(1),
+        'observation': t.observation
+      }).toList(),
+    };
+    await _apiClient.instance.post('Prontuario/odontogram', data: data);
   }
 
   @override
   Future<void> saveTreatmentPlan(TreatmentPlan plan) async {
-    final clinicId = await _getDefaultClinicId();
-    final data = plan.toJson();
-    data['clinicId'] = clinicId;
+    final data = {
+      'patientId': plan.patientId,
+      'description': plan.description,
+      'items': plan.items.map((i) => {
+        'procedureId': i.procedureId,
+        'procedureName': i.procedureName,
+        'toothNumber': i.toothNumber,
+        'observation': i.observation
+      }).toList(),
+    };
     await _apiClient.instance.post('TreatmentPlans', data: data);
   }
 
   @override
   Future<Prescription> createPrescription(Prescription prescription) async {
     final clinicId = await _getDefaultClinicId();
-    final data = prescription.toJson();
-    data['clinicId'] = clinicId;
+    final data = {
+      'patientId': prescription.patientId,
+      'clinicId': clinicId,
+      'observations': prescription.observations,
+      'items': prescription.items.map((i) => {
+        'medicineName': i.medicineName,
+        'dosage': i.dosage,
+        'instructions': i.instructions
+      }).toList(),
+    };
     final response = await _apiClient.instance.post('Documentos/receitas', data: data);
     return Prescription.fromJson(response.data);
   }
@@ -74,28 +98,21 @@ class ProntuarioRepository implements IProntuarioRepository {
   @override
   Future<MedicalCertificate> createCertificate(MedicalCertificate certificate) async {
     final clinicId = await _getDefaultClinicId();
-    final data = certificate.toJson();
-    data['clinicId'] = clinicId;
+    final data = {
+      'patientId': certificate.patientId,
+      'clinicId': clinicId,
+      'content': certificate.content,
+      'daysOfRest': certificate.daysOfRest,
+      'cid': certificate.cid
+    };
     final response = await _apiClient.instance.post('Documentos/atestados', data: data);
     return MedicalCertificate.fromJson(response.data);
-  }
-
-  @override
-  Future<List<TreatmentPlan>> getTreatmentPlans(String patientId) async {
-    try {
-      final response = await _apiClient.instance.get('TreatmentPlans/active/$patientId');
-      if (response.data == null) return [];
-      return [TreatmentPlan.fromJson(response.data)];
-    } catch (_) {
-      return [];
-    }
   }
 
   @override
   Future<List<Prescription>> getPrescriptionHistory(String patientId) async {
     try {
       final response = await _apiClient.instance.get('Documentos/receitas/$patientId');
-      if (response.data == null) return [];
       return (response.data as List).map((json) => Prescription.fromJson(json)).toList();
     } catch (_) { return []; }
   }
@@ -104,7 +121,6 @@ class ProntuarioRepository implements IProntuarioRepository {
   Future<List<MedicalCertificate>> getCertificateHistory(String patientId) async {
     try {
       final response = await _apiClient.instance.get('Documentos/atestados/$patientId');
-      if (response.data == null) return [];
       return (response.data as List).map((json) => MedicalCertificate.fromJson(json)).toList();
     } catch (_) { return []; }
   }
@@ -113,21 +129,8 @@ class ProntuarioRepository implements IProntuarioRepository {
   Future<List<Anamnese>> getAnamneses(String patientId) async {
     try {
       final response = await _apiClient.instance.get('Prontuario/$patientId/anamnese');
-      if (response.data == null || response.data == 'null') return [];
-      
-      // Mapeamento manual para garantir compatibilidade com as propriedades do C#
-      final data = response.data;
-      return [
-        Anamnese(
-          id: data['id'] ?? '',
-          patientId: data['patientId'] ?? patientId,
-          responses: data['respostasJson'] is String 
-              ? jsonDecode(data['respostasJson']) 
-              : (data['respostasJson'] ?? {}),
-          createdAt: DateTime.parse(data['createdAt'] ?? DateTime.now().toIso8601String()),
-          createdBy: data['criadoPorId'] ?? 'system',
-        )
-      ];
+      if (response.data == null) return [];
+      return [Anamnese.fromJson(response.data)];
     } catch (_) { return []; }
   }
 
@@ -144,7 +147,6 @@ class ProntuarioRepository implements IProntuarioRepository {
   Future<List<Evolution>> getEvolutions(String patientId) async {
     try {
       final response = await _apiClient.instance.get('Prontuario/$patientId/evolutions');
-      if (response.data == null) return [];
       return (response.data as List).map((json) => Evolution.fromJson(json)).toList();
     } catch (_) { return []; }
   }
@@ -163,9 +165,15 @@ class ProntuarioRepository implements IProntuarioRepository {
   }
   @override Future<void> syncPendingData() async {}
   @override Future<List<Evolution>> getEvolutionHistory(String id) async => getEvolutions(id);
+  @override Future<List<TreatmentPlan>> getTreatmentPlans(String id) async {
+    try {
+      final response = await _apiClient.instance.get('TreatmentPlans/active/$id');
+      return [TreatmentPlan.fromJson(response.data)];
+    } catch (_) { return []; }
+  }
   @override Future<TreatmentPlan?> getTreatmentPlan(String id) async {
-    final plans = await getTreatmentPlans(id);
-    return plans.isNotEmpty ? plans.first : null;
+    final results = await getTreatmentPlans(id);
+    return results.isNotEmpty ? results.first : null;
   }
   @override Future<void> updateTreatmentItemStatus(String p, String i, String s) async {}
 }

@@ -69,7 +69,7 @@ class PatientRepository implements IPatientRepository {
       phone: json['phone'] ?? json['telefone'],
       gender: json['gender'] ?? json['sexo'],
       lgpdConsent: json['lgpdConsent'] ?? json['consentimento_lgpd'] ?? false,
-      createdAt: DateTime.now(),
+      createdAt: DateTime.parse(json['createdAt'] ?? json['criado_em'] ?? DateTime.now().toIso8601String()),
       address: json['address'] != null ? entity.PatientAddress.fromJson(json['address']) : null,
     );
   }
@@ -85,7 +85,7 @@ class PatientRepository implements IPatientRepository {
       gender: row.gender,
       lgpdConsent: row.lgpdConsent,
       isSynced: row.isSynced,
-      createdAt: DateTime.now(),
+      createdAt: row.createdAt,
       address: row.street != null ? entity.PatientAddress(
         street: row.street!,
         number: row.number!,
@@ -106,6 +106,7 @@ class PatientRepository implements IPatientRepository {
       'phone': patient.phone,
       'birthDate': patient.birthDate.toIso8601String(),
       'lgpdConsent': patient.lgpdConsent,
+      'createdAt': patient.createdAt.toIso8601String(),
       'address': patient.address?.toJson(),
     };
   }
@@ -117,6 +118,7 @@ class PatientRepository implements IPatientRepository {
         fullName: patient.fullName,
         cpf: patient.cpf,
         birthDate: patient.birthDate,
+        createdAt: patient.createdAt,
         email: Value(patient.email),
         phone: Value(patient.phone),
         gender: Value(patient.gender),
