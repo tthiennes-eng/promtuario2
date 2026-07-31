@@ -8,6 +8,7 @@
     "package:logging/logging.dart",
     "package:promt/core/router/app_router.dart",
     "package:promt/core/theme/app_theme.dart",
-    "package:promt/core/theme/theme_viewmodel.dart"
+    "package:promt/core/theme/theme_viewmodel.dart",
+    "package:promt/core/network/sync_service.dart"
   ]
 }

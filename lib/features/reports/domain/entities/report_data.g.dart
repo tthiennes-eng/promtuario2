@@ -29,6 +29,11 @@ _$ClinicPerformanceMetricsImpl _$$ClinicPerformanceMetricsImplFromJson(
       absenceRate: (json['absenceRate'] as num).toDouble(),
       totalProceduresThisMonth:
           (json['totalProceduresThisMonth'] as num).toInt(),
+      totalScheduled: (json['totalScheduled'] as num?)?.toInt() ?? 0,
+      totalCompleted: (json['totalCompleted'] as num?)?.toInt() ?? 0,
+      totalCancelled: (json['totalCancelled'] as num?)?.toInt() ?? 0,
+      totalMissed: (json['totalMissed'] as num?)?.toInt() ?? 0,
+      usageRate: (json['usageRate'] as num?)?.toDouble() ?? 0.0,
       growthHistory: (json['growthHistory'] as List<dynamic>)
           .map((e) => MonthlyGrowth.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -45,6 +50,11 @@ Map<String, dynamic> _$$ClinicPerformanceMetricsImplToJson(
       'occupancyRate': instance.occupancyRate,
       'absenceRate': instance.absenceRate,
       'totalProceduresThisMonth': instance.totalProceduresThisMonth,
+      'totalScheduled': instance.totalScheduled,
+      'totalCompleted': instance.totalCompleted,
+      'totalCancelled': instance.totalCancelled,
+      'totalMissed': instance.totalMissed,
+      'usageRate': instance.usageRate,
       'growthHistory': instance.growthHistory,
       'specialtyProduction': instance.specialtyProduction,
       'startDate': instance.startDate.toIso8601String(),

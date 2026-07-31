@@ -22,10 +22,13 @@ Clinic _$ClinicFromJson(Map<String, dynamic> json) {
 mixin _$Clinic {
   String get id => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
-  String get description => throw _privateConstructorUsedError;
+  String? get description => throw _privateConstructorUsedError;
   String? get location => throw _privateConstructorUsedError;
   int get capacity => throw _privateConstructorUsedError;
   bool get isActive => throw _privateConstructorUsedError;
+  int get startHour => throw _privateConstructorUsedError;
+  int get endHour => throw _privateConstructorUsedError;
+  int get slotDurationMinutes => throw _privateConstructorUsedError;
   Map<String, dynamic> get metadata => throw _privateConstructorUsedError;
 
   /// Serializes this Clinic to a JSON map.
@@ -45,10 +48,13 @@ abstract class $ClinicCopyWith<$Res> {
   $Res call(
       {String id,
       String name,
-      String description,
+      String? description,
       String? location,
       int capacity,
       bool isActive,
+      int startHour,
+      int endHour,
+      int slotDurationMinutes,
       Map<String, dynamic> metadata});
 }
 
@@ -69,10 +75,13 @@ class _$ClinicCopyWithImpl<$Res, $Val extends Clinic>
   $Res call({
     Object? id = null,
     Object? name = null,
-    Object? description = null,
+    Object? description = freezed,
     Object? location = freezed,
     Object? capacity = null,
     Object? isActive = null,
+    Object? startHour = null,
+    Object? endHour = null,
+    Object? slotDurationMinutes = null,
     Object? metadata = null,
   }) {
     return _then(_value.copyWith(
@@ -84,10 +93,10 @@ class _$ClinicCopyWithImpl<$Res, $Val extends Clinic>
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
               as String,
-      description: null == description
+      description: freezed == description
           ? _value.description
           : description // ignore: cast_nullable_to_non_nullable
-              as String,
+              as String?,
       location: freezed == location
           ? _value.location
           : location // ignore: cast_nullable_to_non_nullable
@@ -100,6 +109,18 @@ class _$ClinicCopyWithImpl<$Res, $Val extends Clinic>
           ? _value.isActive
           : isActive // ignore: cast_nullable_to_non_nullable
               as bool,
+      startHour: null == startHour
+          ? _value.startHour
+          : startHour // ignore: cast_nullable_to_non_nullable
+              as int,
+      endHour: null == endHour
+          ? _value.endHour
+          : endHour // ignore: cast_nullable_to_non_nullable
+              as int,
+      slotDurationMinutes: null == slotDurationMinutes
+          ? _value.slotDurationMinutes
+          : slotDurationMinutes // ignore: cast_nullable_to_non_nullable
+              as int,
       metadata: null == metadata
           ? _value.metadata
           : metadata // ignore: cast_nullable_to_non_nullable
@@ -118,10 +139,13 @@ abstract class _$$ClinicImplCopyWith<$Res> implements $ClinicCopyWith<$Res> {
   $Res call(
       {String id,
       String name,
-      String description,
+      String? description,
       String? location,
       int capacity,
       bool isActive,
+      int startHour,
+      int endHour,
+      int slotDurationMinutes,
       Map<String, dynamic> metadata});
 }
 
@@ -140,10 +164,13 @@ class __$$ClinicImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? name = null,
-    Object? description = null,
+    Object? description = freezed,
     Object? location = freezed,
     Object? capacity = null,
     Object? isActive = null,
+    Object? startHour = null,
+    Object? endHour = null,
+    Object? slotDurationMinutes = null,
     Object? metadata = null,
   }) {
     return _then(_$ClinicImpl(
@@ -155,10 +182,10 @@ class __$$ClinicImplCopyWithImpl<$Res>
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
               as String,
-      description: null == description
+      description: freezed == description
           ? _value.description
           : description // ignore: cast_nullable_to_non_nullable
-              as String,
+              as String?,
       location: freezed == location
           ? _value.location
           : location // ignore: cast_nullable_to_non_nullable
@@ -171,6 +198,18 @@ class __$$ClinicImplCopyWithImpl<$Res>
           ? _value.isActive
           : isActive // ignore: cast_nullable_to_non_nullable
               as bool,
+      startHour: null == startHour
+          ? _value.startHour
+          : startHour // ignore: cast_nullable_to_non_nullable
+              as int,
+      endHour: null == endHour
+          ? _value.endHour
+          : endHour // ignore: cast_nullable_to_non_nullable
+              as int,
+      slotDurationMinutes: null == slotDurationMinutes
+          ? _value.slotDurationMinutes
+          : slotDurationMinutes // ignore: cast_nullable_to_non_nullable
+              as int,
       metadata: null == metadata
           ? _value._metadata
           : metadata // ignore: cast_nullable_to_non_nullable
@@ -185,10 +224,13 @@ class _$ClinicImpl implements _Clinic {
   const _$ClinicImpl(
       {required this.id,
       required this.name,
-      this.description = '',
+      this.description,
       this.location,
       this.capacity = 1,
       this.isActive = true,
+      this.startHour = 8,
+      this.endHour = 18,
+      this.slotDurationMinutes = 60,
       final Map<String, dynamic> metadata = const {}})
       : _metadata = metadata;
 
@@ -200,8 +242,7 @@ class _$ClinicImpl implements _Clinic {
   @override
   final String name;
   @override
-  @JsonKey()
-  final String description;
+  final String? description;
   @override
   final String? location;
   @override
@@ -210,6 +251,15 @@ class _$ClinicImpl implements _Clinic {
   @override
   @JsonKey()
   final bool isActive;
+  @override
+  @JsonKey()
+  final int startHour;
+  @override
+  @JsonKey()
+  final int endHour;
+  @override
+  @JsonKey()
+  final int slotDurationMinutes;
   final Map<String, dynamic> _metadata;
   @override
   @JsonKey()
@@ -221,7 +271,7 @@ class _$ClinicImpl implements _Clinic {
 
   @override
   String toString() {
-    return 'Clinic(id: $id, name: $name, description: $description, location: $location, capacity: $capacity, isActive: $isActive, metadata: $metadata)';
+    return 'Clinic(id: $id, name: $name, description: $description, location: $location, capacity: $capacity, isActive: $isActive, startHour: $startHour, endHour: $endHour, slotDurationMinutes: $slotDurationMinutes, metadata: $metadata)';
   }
 
   @override
@@ -239,13 +289,28 @@ class _$ClinicImpl implements _Clinic {
                 other.capacity == capacity) &&
             (identical(other.isActive, isActive) ||
                 other.isActive == isActive) &&
+            (identical(other.startHour, startHour) ||
+                other.startHour == startHour) &&
+            (identical(other.endHour, endHour) || other.endHour == endHour) &&
+            (identical(other.slotDurationMinutes, slotDurationMinutes) ||
+                other.slotDurationMinutes == slotDurationMinutes) &&
             const DeepCollectionEquality().equals(other._metadata, _metadata));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, name, description, location,
-      capacity, isActive, const DeepCollectionEquality().hash(_metadata));
+  int get hashCode => Object.hash(
+      runtimeType,
+      id,
+      name,
+      description,
+      location,
+      capacity,
+      isActive,
+      startHour,
+      endHour,
+      slotDurationMinutes,
+      const DeepCollectionEquality().hash(_metadata));
 
   /// Create a copy of Clinic
   /// with the given fields replaced by the non-null parameter values.
@@ -267,10 +332,13 @@ abstract class _Clinic implements Clinic {
   const factory _Clinic(
       {required final String id,
       required final String name,
-      final String description,
+      final String? description,
       final String? location,
       final int capacity,
       final bool isActive,
+      final int startHour,
+      final int endHour,
+      final int slotDurationMinutes,
       final Map<String, dynamic> metadata}) = _$ClinicImpl;
 
   factory _Clinic.fromJson(Map<String, dynamic> json) = _$ClinicImpl.fromJson;
@@ -280,13 +348,19 @@ abstract class _Clinic implements Clinic {
   @override
   String get name;
   @override
-  String get description;
+  String? get description;
   @override
   String? get location;
   @override
   int get capacity;
   @override
   bool get isActive;
+  @override
+  int get startHour;
+  @override
+  int get endHour;
+  @override
+  int get slotDurationMinutes;
   @override
   Map<String, dynamic> get metadata;
 

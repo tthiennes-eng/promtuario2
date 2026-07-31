@@ -216,6 +216,11 @@ mixin _$ClinicPerformanceMetrics {
   double get occupancyRate => throw _privateConstructorUsedError;
   double get absenceRate => throw _privateConstructorUsedError;
   int get totalProceduresThisMonth => throw _privateConstructorUsedError;
+  int get totalScheduled => throw _privateConstructorUsedError;
+  int get totalCompleted => throw _privateConstructorUsedError;
+  int get totalCancelled => throw _privateConstructorUsedError;
+  int get totalMissed => throw _privateConstructorUsedError;
+  double get usageRate => throw _privateConstructorUsedError;
   List<MonthlyGrowth> get growthHistory => throw _privateConstructorUsedError;
   List<SpecialtyProduction> get specialtyProduction =>
       throw _privateConstructorUsedError;
@@ -242,6 +247,11 @@ abstract class $ClinicPerformanceMetricsCopyWith<$Res> {
       {double occupancyRate,
       double absenceRate,
       int totalProceduresThisMonth,
+      int totalScheduled,
+      int totalCompleted,
+      int totalCancelled,
+      int totalMissed,
+      double usageRate,
       List<MonthlyGrowth> growthHistory,
       List<SpecialtyProduction> specialtyProduction,
       DateTime startDate,
@@ -267,6 +277,11 @@ class _$ClinicPerformanceMetricsCopyWithImpl<$Res,
     Object? occupancyRate = null,
     Object? absenceRate = null,
     Object? totalProceduresThisMonth = null,
+    Object? totalScheduled = null,
+    Object? totalCompleted = null,
+    Object? totalCancelled = null,
+    Object? totalMissed = null,
+    Object? usageRate = null,
     Object? growthHistory = null,
     Object? specialtyProduction = null,
     Object? startDate = null,
@@ -285,6 +300,26 @@ class _$ClinicPerformanceMetricsCopyWithImpl<$Res,
           ? _value.totalProceduresThisMonth
           : totalProceduresThisMonth // ignore: cast_nullable_to_non_nullable
               as int,
+      totalScheduled: null == totalScheduled
+          ? _value.totalScheduled
+          : totalScheduled // ignore: cast_nullable_to_non_nullable
+              as int,
+      totalCompleted: null == totalCompleted
+          ? _value.totalCompleted
+          : totalCompleted // ignore: cast_nullable_to_non_nullable
+              as int,
+      totalCancelled: null == totalCancelled
+          ? _value.totalCancelled
+          : totalCancelled // ignore: cast_nullable_to_non_nullable
+              as int,
+      totalMissed: null == totalMissed
+          ? _value.totalMissed
+          : totalMissed // ignore: cast_nullable_to_non_nullable
+              as int,
+      usageRate: null == usageRate
+          ? _value.usageRate
+          : usageRate // ignore: cast_nullable_to_non_nullable
+              as double,
       growthHistory: null == growthHistory
           ? _value.growthHistory
           : growthHistory // ignore: cast_nullable_to_non_nullable
@@ -318,6 +353,11 @@ abstract class _$$ClinicPerformanceMetricsImplCopyWith<$Res>
       {double occupancyRate,
       double absenceRate,
       int totalProceduresThisMonth,
+      int totalScheduled,
+      int totalCompleted,
+      int totalCancelled,
+      int totalMissed,
+      double usageRate,
       List<MonthlyGrowth> growthHistory,
       List<SpecialtyProduction> specialtyProduction,
       DateTime startDate,
@@ -342,6 +382,11 @@ class __$$ClinicPerformanceMetricsImplCopyWithImpl<$Res>
     Object? occupancyRate = null,
     Object? absenceRate = null,
     Object? totalProceduresThisMonth = null,
+    Object? totalScheduled = null,
+    Object? totalCompleted = null,
+    Object? totalCancelled = null,
+    Object? totalMissed = null,
+    Object? usageRate = null,
     Object? growthHistory = null,
     Object? specialtyProduction = null,
     Object? startDate = null,
@@ -360,6 +405,26 @@ class __$$ClinicPerformanceMetricsImplCopyWithImpl<$Res>
           ? _value.totalProceduresThisMonth
           : totalProceduresThisMonth // ignore: cast_nullable_to_non_nullable
               as int,
+      totalScheduled: null == totalScheduled
+          ? _value.totalScheduled
+          : totalScheduled // ignore: cast_nullable_to_non_nullable
+              as int,
+      totalCompleted: null == totalCompleted
+          ? _value.totalCompleted
+          : totalCompleted // ignore: cast_nullable_to_non_nullable
+              as int,
+      totalCancelled: null == totalCancelled
+          ? _value.totalCancelled
+          : totalCancelled // ignore: cast_nullable_to_non_nullable
+              as int,
+      totalMissed: null == totalMissed
+          ? _value.totalMissed
+          : totalMissed // ignore: cast_nullable_to_non_nullable
+              as int,
+      usageRate: null == usageRate
+          ? _value.usageRate
+          : usageRate // ignore: cast_nullable_to_non_nullable
+              as double,
       growthHistory: null == growthHistory
           ? _value._growthHistory
           : growthHistory // ignore: cast_nullable_to_non_nullable
@@ -387,6 +452,11 @@ class _$ClinicPerformanceMetricsImpl implements _ClinicPerformanceMetrics {
       {required this.occupancyRate,
       required this.absenceRate,
       required this.totalProceduresThisMonth,
+      this.totalScheduled = 0,
+      this.totalCompleted = 0,
+      this.totalCancelled = 0,
+      this.totalMissed = 0,
+      this.usageRate = 0.0,
       required final List<MonthlyGrowth> growthHistory,
       required final List<SpecialtyProduction> specialtyProduction,
       required this.startDate,
@@ -403,6 +473,21 @@ class _$ClinicPerformanceMetricsImpl implements _ClinicPerformanceMetrics {
   final double absenceRate;
   @override
   final int totalProceduresThisMonth;
+  @override
+  @JsonKey()
+  final int totalScheduled;
+  @override
+  @JsonKey()
+  final int totalCompleted;
+  @override
+  @JsonKey()
+  final int totalCancelled;
+  @override
+  @JsonKey()
+  final int totalMissed;
+  @override
+  @JsonKey()
+  final double usageRate;
   final List<MonthlyGrowth> _growthHistory;
   @override
   List<MonthlyGrowth> get growthHistory {
@@ -427,7 +512,7 @@ class _$ClinicPerformanceMetricsImpl implements _ClinicPerformanceMetrics {
 
   @override
   String toString() {
-    return 'ClinicPerformanceMetrics(occupancyRate: $occupancyRate, absenceRate: $absenceRate, totalProceduresThisMonth: $totalProceduresThisMonth, growthHistory: $growthHistory, specialtyProduction: $specialtyProduction, startDate: $startDate, endDate: $endDate)';
+    return 'ClinicPerformanceMetrics(occupancyRate: $occupancyRate, absenceRate: $absenceRate, totalProceduresThisMonth: $totalProceduresThisMonth, totalScheduled: $totalScheduled, totalCompleted: $totalCompleted, totalCancelled: $totalCancelled, totalMissed: $totalMissed, usageRate: $usageRate, growthHistory: $growthHistory, specialtyProduction: $specialtyProduction, startDate: $startDate, endDate: $endDate)';
   }
 
   @override
@@ -442,6 +527,16 @@ class _$ClinicPerformanceMetricsImpl implements _ClinicPerformanceMetrics {
             (identical(
                     other.totalProceduresThisMonth, totalProceduresThisMonth) ||
                 other.totalProceduresThisMonth == totalProceduresThisMonth) &&
+            (identical(other.totalScheduled, totalScheduled) ||
+                other.totalScheduled == totalScheduled) &&
+            (identical(other.totalCompleted, totalCompleted) ||
+                other.totalCompleted == totalCompleted) &&
+            (identical(other.totalCancelled, totalCancelled) ||
+                other.totalCancelled == totalCancelled) &&
+            (identical(other.totalMissed, totalMissed) ||
+                other.totalMissed == totalMissed) &&
+            (identical(other.usageRate, usageRate) ||
+                other.usageRate == usageRate) &&
             const DeepCollectionEquality()
                 .equals(other._growthHistory, _growthHistory) &&
             const DeepCollectionEquality()
@@ -458,6 +553,11 @@ class _$ClinicPerformanceMetricsImpl implements _ClinicPerformanceMetrics {
       occupancyRate,
       absenceRate,
       totalProceduresThisMonth,
+      totalScheduled,
+      totalCompleted,
+      totalCancelled,
+      totalMissed,
+      usageRate,
       const DeepCollectionEquality().hash(_growthHistory),
       const DeepCollectionEquality().hash(_specialtyProduction),
       startDate,
@@ -485,6 +585,11 @@ abstract class _ClinicPerformanceMetrics implements ClinicPerformanceMetrics {
       {required final double occupancyRate,
       required final double absenceRate,
       required final int totalProceduresThisMonth,
+      final int totalScheduled,
+      final int totalCompleted,
+      final int totalCancelled,
+      final int totalMissed,
+      final double usageRate,
       required final List<MonthlyGrowth> growthHistory,
       required final List<SpecialtyProduction> specialtyProduction,
       required final DateTime startDate,
@@ -499,6 +604,16 @@ abstract class _ClinicPerformanceMetrics implements ClinicPerformanceMetrics {
   double get absenceRate;
   @override
   int get totalProceduresThisMonth;
+  @override
+  int get totalScheduled;
+  @override
+  int get totalCompleted;
+  @override
+  int get totalCancelled;
+  @override
+  int get totalMissed;
+  @override
+  double get usageRate;
   @override
   List<MonthlyGrowth> get growthHistory;
   @override

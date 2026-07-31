@@ -25,6 +25,10 @@ mixin _$Appointment {
   String get patientName => throw _privateConstructorUsedError;
   String get doctorId => throw _privateConstructorUsedError;
   String get doctorName => throw _privateConstructorUsedError;
+  String? get studentId => throw _privateConstructorUsedError;
+  String? get studentName => throw _privateConstructorUsedError;
+  String? get professorId => throw _privateConstructorUsedError;
+  String? get professorName => throw _privateConstructorUsedError;
   DateTime get startTime => throw _privateConstructorUsedError;
   DateTime get endTime => throw _privateConstructorUsedError;
   AppointmentStatus get status => throw _privateConstructorUsedError;
@@ -54,6 +58,10 @@ abstract class $AppointmentCopyWith<$Res> {
       String patientName,
       String doctorId,
       String doctorName,
+      String? studentId,
+      String? studentName,
+      String? professorId,
+      String? professorName,
       DateTime startTime,
       DateTime endTime,
       AppointmentStatus status,
@@ -82,6 +90,10 @@ class _$AppointmentCopyWithImpl<$Res, $Val extends Appointment>
     Object? patientName = null,
     Object? doctorId = null,
     Object? doctorName = null,
+    Object? studentId = freezed,
+    Object? studentName = freezed,
+    Object? professorId = freezed,
+    Object? professorName = freezed,
     Object? startTime = null,
     Object? endTime = null,
     Object? status = null,
@@ -110,6 +122,22 @@ class _$AppointmentCopyWithImpl<$Res, $Val extends Appointment>
           ? _value.doctorName
           : doctorName // ignore: cast_nullable_to_non_nullable
               as String,
+      studentId: freezed == studentId
+          ? _value.studentId
+          : studentId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      studentName: freezed == studentName
+          ? _value.studentName
+          : studentName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      professorId: freezed == professorId
+          ? _value.professorId
+          : professorId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      professorName: freezed == professorName
+          ? _value.professorName
+          : professorName // ignore: cast_nullable_to_non_nullable
+              as String?,
       startTime: null == startTime
           ? _value.startTime
           : startTime // ignore: cast_nullable_to_non_nullable
@@ -152,6 +180,10 @@ abstract class _$$AppointmentImplCopyWith<$Res>
       String patientName,
       String doctorId,
       String doctorName,
+      String? studentId,
+      String? studentName,
+      String? professorId,
+      String? professorName,
       DateTime startTime,
       DateTime endTime,
       AppointmentStatus status,
@@ -178,6 +210,10 @@ class __$$AppointmentImplCopyWithImpl<$Res>
     Object? patientName = null,
     Object? doctorId = null,
     Object? doctorName = null,
+    Object? studentId = freezed,
+    Object? studentName = freezed,
+    Object? professorId = freezed,
+    Object? professorName = freezed,
     Object? startTime = null,
     Object? endTime = null,
     Object? status = null,
@@ -206,6 +242,22 @@ class __$$AppointmentImplCopyWithImpl<$Res>
           ? _value.doctorName
           : doctorName // ignore: cast_nullable_to_non_nullable
               as String,
+      studentId: freezed == studentId
+          ? _value.studentId
+          : studentId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      studentName: freezed == studentName
+          ? _value.studentName
+          : studentName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      professorId: freezed == professorId
+          ? _value.professorId
+          : professorId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      professorName: freezed == professorName
+          ? _value.professorName
+          : professorName // ignore: cast_nullable_to_non_nullable
+              as String?,
       startTime: null == startTime
           ? _value.startTime
           : startTime // ignore: cast_nullable_to_non_nullable
@@ -243,6 +295,10 @@ class _$AppointmentImpl implements _Appointment {
       required this.patientName,
       required this.doctorId,
       required this.doctorName,
+      this.studentId,
+      this.studentName,
+      this.professorId,
+      this.professorName,
       required this.startTime,
       required this.endTime,
       required this.status,
@@ -264,6 +320,14 @@ class _$AppointmentImpl implements _Appointment {
   @override
   final String doctorName;
   @override
+  final String? studentId;
+  @override
+  final String? studentName;
+  @override
+  final String? professorId;
+  @override
+  final String? professorName;
+  @override
   final DateTime startTime;
   @override
   final DateTime endTime;
@@ -278,7 +342,7 @@ class _$AppointmentImpl implements _Appointment {
 
   @override
   String toString() {
-    return 'Appointment(id: $id, patientId: $patientId, patientName: $patientName, doctorId: $doctorId, doctorName: $doctorName, startTime: $startTime, endTime: $endTime, status: $status, procedureName: $procedureName, notes: $notes, clinicId: $clinicId)';
+    return 'Appointment(id: $id, patientId: $patientId, patientName: $patientName, doctorId: $doctorId, doctorName: $doctorName, studentId: $studentId, studentName: $studentName, professorId: $professorId, professorName: $professorName, startTime: $startTime, endTime: $endTime, status: $status, procedureName: $procedureName, notes: $notes, clinicId: $clinicId)';
   }
 
   @override
@@ -295,6 +359,14 @@ class _$AppointmentImpl implements _Appointment {
                 other.doctorId == doctorId) &&
             (identical(other.doctorName, doctorName) ||
                 other.doctorName == doctorName) &&
+            (identical(other.studentId, studentId) ||
+                other.studentId == studentId) &&
+            (identical(other.studentName, studentName) ||
+                other.studentName == studentName) &&
+            (identical(other.professorId, professorId) ||
+                other.professorId == professorId) &&
+            (identical(other.professorName, professorName) ||
+                other.professorName == professorName) &&
             (identical(other.startTime, startTime) ||
                 other.startTime == startTime) &&
             (identical(other.endTime, endTime) || other.endTime == endTime) &&
@@ -315,6 +387,10 @@ class _$AppointmentImpl implements _Appointment {
       patientName,
       doctorId,
       doctorName,
+      studentId,
+      studentName,
+      professorId,
+      professorName,
       startTime,
       endTime,
       status,
@@ -345,6 +421,10 @@ abstract class _Appointment implements Appointment {
       required final String patientName,
       required final String doctorId,
       required final String doctorName,
+      final String? studentId,
+      final String? studentName,
+      final String? professorId,
+      final String? professorName,
       required final DateTime startTime,
       required final DateTime endTime,
       required final AppointmentStatus status,
@@ -365,6 +445,14 @@ abstract class _Appointment implements Appointment {
   String get doctorId;
   @override
   String get doctorName;
+  @override
+  String? get studentId;
+  @override
+  String? get studentName;
+  @override
+  String? get professorId;
+  @override
+  String? get professorName;
   @override
   DateTime get startTime;
   @override
