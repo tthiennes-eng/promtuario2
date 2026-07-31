@@ -12,6 +12,9 @@ class Clinic with _$Clinic {
     String? location,
     @Default(1) int capacity,
     @Default(true) bool isActive,
+    @Default(8) int startHour,
+    @Default(18) int endHour,
+    @Default(60) int slotDurationMinutes,
     @Default({}) Map<String, dynamic> metadata,
   }) = _Clinic;
 

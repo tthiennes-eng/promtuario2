@@ -62,7 +62,7 @@ class AppointmentRepository implements IAppointmentRepository {
       return newAppointment;
     } catch (e) {
       _logger.severe('Erro no agendamento, salvando para sincronização offline: $e');
-      // Falha na rede: Salva localmente marcado como NÃO sincronizado para o SyncService
+      // Falha na rede: Salva localmente marcado como NÃO sincronizado
       await _saveLocal(appointment, false);
       return appointment;
     }
@@ -76,11 +76,9 @@ class AppointmentRepository implements IAppointmentRepository {
         data: {'status': status.name},
       );
       
-      // Atualiza localmente e marca como sincronizado
       await _updateLocalStatus(id, status, true);
     } catch (e) {
       _logger.warning('Falha ao atualizar status remotamente, marcando para sincronização: $e');
-      // Falha na rede: Atualiza localmente mas marca como PENDENTE de sincronização
       await _updateLocalStatus(id, status, false);
     }
   }
@@ -94,7 +92,6 @@ class AppointmentRepository implements IAppointmentRepository {
     for (final row in unsynced) {
       try {
         final appointment = _mapSchemaToEntity(row);
-        // Usa PUT para garantir que o registro seja criado ou atualizado (Idempotência)
         await _apiClient.instance.put(
           '/appointments/${appointment.id}',
           data: appointment.toJson(),
@@ -145,6 +142,10 @@ class AppointmentRepository implements IAppointmentRepository {
         patientId: Value(app.patientId),
         doctorId: Value(app.doctorId),
         doctorName: Value(app.doctorName),
+        studentId: Value(app.studentId),
+        studentName: Value(app.studentName),
+        professorId: Value(app.professorId),
+        professorName: Value(app.professorName),
         procedureName: Value(app.procedureName),
         notes: Value(app.notes),
         clinicId: Value(app.clinicId),
@@ -166,6 +167,10 @@ class AppointmentRepository implements IAppointmentRepository {
       patientName: row.patientName,
       doctorId: row.doctorId,
       doctorName: row.doctorName,
+      studentId: row.studentId,
+      studentName: row.studentName,
+      professorId: row.professorId,
+      professorName: row.professorName,
       startTime: row.startTime,
       endTime: row.endTime,
       status: AppointmentStatus.values.firstWhere(

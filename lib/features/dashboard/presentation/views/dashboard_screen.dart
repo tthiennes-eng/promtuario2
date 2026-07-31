@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:promt/core/theme/app_theme.dart';
 import 'package:promt/features/auth/domain/entities/user.dart';
 import 'package:promt/features/auth/presentation/viewmodels/auth_viewmodel.dart';
 import 'package:promt/features/dashboard/presentation/viewmodels/dashboard_viewmodel.dart';
@@ -117,6 +116,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         'route': '/dashboard/reports',
       });
       items.add({
+        'label': 'Clínicas',
+        'icon': Icons.local_hospital_outlined,
+        'selectedIcon': Icons.local_hospital,
+        'route': '/dashboard/clinics',
+      });
+      items.add({
         'label': 'Usuários',
         'icon': Icons.manage_accounts_outlined,
         'selectedIcon': Icons.manage_accounts,
@@ -230,8 +235,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               spacing: 16,
               runSpacing: 16,
               children: [
-                _buildQuickAction('Novo Atendimento', Icons.add_task, Colors.teal, () => context.push('/dashboard/agenda/add')),
+                _buildQuickAction('Agenda Clínica', Icons.calendar_month, Colors.blue, () => context.push('/dashboard/agenda')),
+                _buildQuickAction('Visão Institucional', Icons.grid_view, Colors.purple, () => context.push('/dashboard/agenda/institutional')),
                 _buildQuickAction('Lista de Pacientes', Icons.format_list_bulleted, Colors.indigo, () => context.push('/dashboard/patients')),
+                if (user?.role == UserRole.admin || user?.role == UserRole.coordenador)
+                  _buildQuickAction('Gestão de Clínicas', Icons.business, Colors.orange, () => context.push('/dashboard/clinics')),
                 if (user?.role == UserRole.admin)
                   _buildQuickAction('Auditoria', Icons.security, Colors.blueGrey, () => context.push('/dashboard/audit-logs')),
               ],

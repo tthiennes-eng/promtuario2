@@ -126,6 +126,12 @@ class AppointmentsLocal extends Table {
   TextColumn get patientName => text()();
   TextColumn get doctorId => text().withDefault(const Constant(''))();
   TextColumn get doctorName => text().withDefault(const Constant(''))();
+  // Novos campos para clínica-escola
+  TextColumn get studentId => text().nullable()();
+  TextColumn get studentName => text().nullable()();
+  TextColumn get professorId => text().nullable()();
+  TextColumn get professorName => text().nullable()();
+  
   DateTimeColumn get startTime => dateTime()();
   DateTimeColumn get endTime => dateTime()();
   TextColumn get status => text()();
@@ -187,7 +193,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1001; 
+  int get schemaVersion => 1002; 
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -198,20 +204,25 @@ class AppDatabase extends _$AppDatabase {
               await m.deleteTable(table.actualTableName);
             }
             await m.createAll();
-          } else if (from < 1001) {
-            await m.createTable(clinicsLocal);
-            // Garantir que a clínica padrão exista para agendamentos antigos
-            await into(clinicsLocal).insert(ClinicsLocalCompanion.insert(
-              id: 'default-clinic',
-              name: 'Clínica Principal',
-              isActive: const Value(true),
-            ));
-            
-            // Atualizar agendamentos sem clínica para a clínica padrão
-            await customUpdate(
-              "UPDATE appointments_local SET clinic_id = 'default-clinic' WHERE clinic_id = '' OR clinic_id IS NULL",
-              updates: {appointmentsLocal},
-            );
+          } else {
+            if (from < 1001) {
+              await m.createTable(clinicsLocal);
+              await into(clinicsLocal).insert(ClinicsLocalCompanion.insert(
+                id: 'default-clinic',
+                name: 'Clínica Principal',
+                isActive: const Value(true),
+              ));
+              await customUpdate(
+                "UPDATE appointments_local SET clinic_id = 'default-clinic' WHERE clinic_id = '' OR clinic_id IS NULL",
+                updates: {appointmentsLocal},
+              );
+            }
+            if (from < 1002) {
+              await m.addColumn(appointmentsLocal, appointmentsLocal.studentId);
+              await m.addColumn(appointmentsLocal, appointmentsLocal.studentName);
+              await m.addColumn(appointmentsLocal, appointmentsLocal.professorId);
+              await m.addColumn(appointmentsLocal, appointmentsLocal.professorName);
+            }
           }
         },
       );

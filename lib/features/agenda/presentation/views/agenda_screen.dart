@@ -6,7 +6,7 @@ import 'package:promt/features/agenda/domain/entities/appointment.dart';
 import 'package:promt/features/procedures/domain/entities/clinic.dart';
 import 'package:intl/intl.dart';
 
-/// Tela de Agenda Odontológica organizada por Clínica.
+/// Tela de Agenda Odontológica organizada por Clínica com Filtros, Estatísticas e Horários Livres.
 class AgendaScreen extends ConsumerStatefulWidget {
   const AgendaScreen({super.key});
 
@@ -19,6 +19,10 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(appointmentViewModelProvider);
     final notifier = ref.read(appointmentViewModelProvider.notifier);
+    
+    // Slots gerados dinamicamente (Ocupados + Livres)
+    final slots = state.timeSlots;
+    final stats = notifier.getDayStats();
 
     return Scaffold(
       appBar: AppBar(
@@ -30,6 +34,10 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
             onPressed: () => context.push('/dashboard/agenda/institutional'),
           ),
           IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: () => _showFilterBottomSheet(context),
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => notifier.refresh(),
           ),
@@ -39,27 +47,15 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
         children: [
           _buildClinicSelector(state, notifier),
           _buildDateSelector(state.selectedDate, notifier),
+          _buildStatsBar(stats),
           const Divider(height: 1),
           Expanded(
             child: state.appointments.when(
-              data: (appointments) => appointments.isEmpty
+              data: (_) => slots.isEmpty
                   ? _buildEmptyState()
-                  : _buildAppointmentList(appointments),
+                  : _buildTimeSlotList(slots, state.selectedClinic),
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                    const SizedBox(height: 16),
-                    Text('Erro ao carregar agenda: $err'),
-                    TextButton(
-                      onPressed: () => notifier.refresh(),
-                      child: const Text('Tentar novamente'),
-                    ),
-                  ],
-                ),
-              ),
+              error: (err, stack) => _buildErrorState(err.toString(), notifier),
             ),
           ),
         ],
@@ -90,7 +86,7 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
                   const Icon(Icons.local_hospital_outlined, size: 20, color: Color(0xFF006494)),
                   const SizedBox(width: 12),
                   Text(clinic.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  if (clinic.location != null) ...[
+                  if (clinic.location != null && clinic.location!.isNotEmpty) ...[
                     const SizedBox(width: 8),
                     Text('(${clinic.location})', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                   ],
@@ -135,51 +131,104 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
     );
   }
 
-  Widget _buildAppointmentList(List<Appointment> appointments) {
-    // Ordenar por horário
-    final sortedAppointments = [...appointments]..sort((a, b) => a.startTime.compareTo(b.startTime));
+  Widget _buildStatsBar(Map<String, dynamic> stats) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _StatCard(label: 'Total', value: '${stats['total']}', color: Colors.blue, icon: Icons.people),
+            const SizedBox(width: 8),
+            _StatCard(label: 'Concluídos', value: '${stats['completed']}', color: Colors.green, icon: Icons.check_circle),
+            const SizedBox(width: 8),
+            _StatCard(label: 'Faltas', value: '${stats['missed']}', color: Colors.red, icon: Icons.person_off),
+            const SizedBox(width: 8),
+            _StatCard(label: 'Ocupação', value: '${(stats['occupancy'] * 100).toStringAsFixed(1)}%', color: Colors.orange, icon: Icons.pie_chart),
+          ],
+        ),
+      ),
+    );
+  }
 
+  Widget _buildTimeSlotList(List<TimeSlot> slots, Clinic? selectedClinic) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: sortedAppointments.length,
+      itemCount: slots.length,
       itemBuilder: (context, index) {
-        final appt = sortedAppointments[index];
-        return Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Colors.grey.shade200),
-          ),
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            contentPadding: const EdgeInsets.all(16),
-            leading: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  DateFormat('HH:mm').format(appt.startTime),
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                Text(
-                  DateFormat('HH:mm').format(appt.endTime),
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                ),
-              ],
-            ),
-            title: Text(appt.patientName, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 4),
-                Text(appt.procedureName ?? 'Procedimento não informado', style: const TextStyle(color: Color(0xFF006494))),
-                Text('Responsável: ${appt.doctorName}', style: const TextStyle(fontSize: 12)),
-              ],
-            ),
-            trailing: _buildStatusChip(appt.status),
-            onTap: () => _showAppointmentDetails(appt),
-          ),
-        );
+        final slot = slots[index];
+        if (slot.isFree) {
+          return _buildFreeSlot(slot, selectedClinic);
+        } else {
+          return _buildAppointmentSlot(slot.appointment!);
+        }
       },
+    );
+  }
+
+  Widget _buildFreeSlot(TimeSlot slot, Clinic? selectedClinic) {
+    return Card(
+      elevation: 0,
+      color: Colors.grey.shade50,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200, style: BorderStyle.solid),
+      ),
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Text(
+          DateFormat('HH:mm').format(slot.startTime),
+          style: TextStyle(fontWeight: FontWeight.w500, color: Colors.grey.shade600),
+        ),
+        title: Text('Horário Livre', style: TextStyle(color: Colors.grey.shade600, fontStyle: FontStyle.italic)),
+        trailing: IconButton(
+          icon: const Icon(Icons.add_circle_outline, color: Color(0xFF006494)),
+          onPressed: () => context.push('/dashboard/agenda/add', extra: {
+            'clinic': selectedClinic,
+            'time': slot.startTime,
+          }),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAppointmentSlot(Appointment appt) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        leading: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              DateFormat('HH:mm').format(appt.startTime),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            Text(
+              DateFormat('HH:mm').format(appt.endTime),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+        title: Text(appt.patientName, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text(appt.procedureName ?? 'Procedimento não informado', style: const TextStyle(color: Color(0xFF006494))),
+            Text('Aluno: ${appt.studentName ?? "Não atribuído"}', style: const TextStyle(fontSize: 12)),
+            Text('Prof: ${appt.professorName ?? "Não atribuído"}', style: const TextStyle(fontSize: 12)),
+          ],
+        ),
+        trailing: _buildStatusChip(appt.status),
+        onTap: () => _showAppointmentDetails(appt),
+      ),
     );
   }
 
@@ -213,8 +262,122 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
         children: [
           Icon(Icons.event_available, size: 64, color: Colors.grey.shade300),
           const SizedBox(height: 16),
-          const Text('Nenhum agendamento para esta data e clínica.', style: TextStyle(color: Colors.grey)),
+          const Text('Nenhum agendamento ou horário configurado.', style: TextStyle(color: Colors.grey)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String error, AppointmentViewModel notifier) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+          const SizedBox(height: 16),
+          Text('Erro ao carregar agenda: $error'),
+          TextButton(
+            onPressed: () => notifier.refresh(),
+            child: const Text('Tentar novamente'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFilterBottomSheet(BuildContext context) {
+    final state = ref.read(appointmentViewModelProvider);
+    final notifier = ref.read(appointmentViewModelProvider.notifier);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          top: 24,
+          left: 24,
+          right: 24,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Filtros Avançados', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 24),
+            const Text('Período do Dia', style: TextStyle(fontWeight: FontWeight.bold)),
+            Wrap(
+              spacing: 8,
+              children: DayPeriod.values.map((p) {
+                return ChoiceChip(
+                  label: Text(p.name == 'all' ? 'Todos' : p.name == 'morning' ? 'Manhã' : p.name == 'afternoon' ? 'Tarde' : 'Noite'),
+                  selected: state.period == p,
+                  onSelected: (val) {
+                    if (val) notifier.setFilters(period: p);
+                  },
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 16),
+            const Text('Situação', style: TextStyle(fontWeight: FontWeight.bold)),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  ...AppointmentStatus.values.map((status) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text(status.displayName),
+                        selected: state.filterStatus == status,
+                        onSelected: (val) {
+                          notifier.setFilters(status: val ? status : null);
+                        },
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              decoration: const InputDecoration(labelText: 'Aluno Responsável', prefixIcon: Icon(Icons.school)),
+              onChanged: (val) => notifier.setFilters(student: val.isEmpty ? null : val),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              decoration: const InputDecoration(labelText: 'Professor Supervisor', prefixIcon: Icon(Icons.person)),
+              onChanged: (val) => notifier.setFilters(professor: val.isEmpty ? null : val),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              decoration: const InputDecoration(labelText: 'Procedimento', prefixIcon: Icon(Icons.medical_services)),
+              onChanged: (val) => notifier.setFilters(procedure: val.isEmpty ? null : val),
+            ),
+            const SizedBox(height: 32),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      notifier.clearFilters();
+                      Navigator.pop(context);
+                    },
+                    child: const Text('Limpar Tudo'),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Aplicar'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -242,7 +405,9 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
             const SizedBox(height: 12),
             _buildInfoRow(Icons.medical_services_outlined, 'Procedimento', appointment.procedureName ?? 'Consulta de Avaliação'),
             const SizedBox(height: 12),
-            _buildInfoRow(Icons.person_outline, 'Responsável', appointment.doctorName),
+            _buildInfoRow(Icons.school_outlined, 'Aluno', appointment.studentName ?? 'N/A'),
+            const SizedBox(height: 12),
+            _buildInfoRow(Icons.person_outline, 'Professor', appointment.professorName ?? 'N/A'),
             const SizedBox(height: 12),
             if (appointment.notes != null && appointment.notes!.isNotEmpty)
               _buildInfoRow(Icons.notes, 'Observações', appointment.notes!),
@@ -336,6 +501,35 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
     if (picked != null && picked != selectedDate) {
       notifier.selectDate(picked);
     }
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  final IconData icon;
+
+  const _StatCard({required this.label, required this.value, required this.color, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.1)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(height: 4),
+          Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 18)),
+          Text(label, style: TextStyle(color: color.withOpacity(0.8), fontSize: 10, fontWeight: FontWeight.w500)),
+        ],
+      ),
+    );
   }
 }
 

@@ -11,6 +11,10 @@ class Appointment with _$Appointment {
     required String patientName,
     required String doctorId,
     required String doctorName,
+    String? studentId,
+    String? studentName,
+    String? professorId,
+    String? professorName,
     required DateTime startTime,
     required DateTime endTime,
     required AppointmentStatus status,
@@ -21,7 +25,6 @@ class Appointment with _$Appointment {
 
   factory Appointment.fromJson(Map<String, dynamic> json) => _$AppointmentFromJson(json);
 
-  // Adicionado para permitir a conversão do objeto para JSON no repositório
   Map<String, dynamic> toJson() => _$$AppointmentImplToJson(this as _$AppointmentImpl);
 }
 

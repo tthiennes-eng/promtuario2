@@ -12,7 +12,7 @@ class ClinicManagementScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gerenciamento de Clínicas'),
+        title: const Text('Configuração de Unidades/Clínicas'),
       ),
       body: clinicsAsync.when(
         data: (clinics) => ListView.builder(
@@ -22,16 +22,24 @@ class ClinicManagementScreen extends ConsumerWidget {
             final clinic = clinics[index];
             return Card(
               margin: const EdgeInsets.only(bottom: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
               child: ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: clinic.isActive ? Colors.green.shade100 : Colors.grey.shade200,
+                  backgroundColor: clinic.isActive ? const Color(0xFF006494).withOpacity(0.1) : Colors.grey.shade100,
                   child: Icon(
-                    Icons.local_hospital,
-                    color: clinic.isActive ? Colors.green : Colors.grey,
+                    Icons.business,
+                    color: clinic.isActive ? const Color(0xFF006494) : Colors.grey,
                   ),
                 ),
                 title: Text(clinic.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text('${clinic.location ?? "Sem localização"} • ${clinic.capacity} cadeiras'),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('${clinic.location ?? "Sem local"} • ${clinic.capacity} consultórios'),
+                    Text('Funcionamento: ${clinic.startHour}h às ${clinic.endHour}h • Slots: ${clinic.slotDurationMinutes}min', 
+                      style: const TextStyle(fontSize: 11, color: Colors.blueGrey)),
+                  ],
+                ),
                 trailing: Switch(
                   value: clinic.isActive,
                   onChanged: (val) => ref.read(clinicsViewModelProvider.notifier).toggleClinicStatus(clinic),
@@ -46,8 +54,8 @@ class ClinicManagementScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showEditClinicDialog(context, ref, null),
-        label: const Text('Nova Clínica'),
-        icon: const Icon(Icons.add),
+        label: const Text('Cadastrar Clínica'),
+        icon: const Icon(Icons.add_business),
       ),
     );
   }
@@ -57,32 +65,72 @@ class ClinicManagementScreen extends ConsumerWidget {
     final locationController = TextEditingController(text: clinic?.location);
     final descController = TextEditingController(text: clinic?.description);
     final capacityController = TextEditingController(text: clinic?.capacity.toString() ?? '1');
+    final startController = TextEditingController(text: clinic?.startHour.toString() ?? '8');
+    final endController = TextEditingController(text: clinic?.endHour.toString() ?? '18');
+    final slotController = TextEditingController(text: clinic?.slotDurationMinutes.toString() ?? '60');
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(clinic == null ? 'Nova Clínica' : 'Editar Clínica'),
+        title: Text(clinic == null ? 'Nova Clínica Escola' : 'Editar Parâmetros da Clínica'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(labelText: 'Nome da Clínica'),
+                decoration: const InputDecoration(labelText: 'Nome da Clínica (Ex: Clínica Integrada I)', border: OutlineInputBorder()),
               ),
+              const SizedBox(height: 12),
               TextField(
                 controller: locationController,
-                decoration: const InputDecoration(labelText: 'Localização/Bloco'),
+                decoration: const InputDecoration(labelText: 'Localização/Bloco', border: OutlineInputBorder()),
               ),
-              TextField(
-                controller: capacityController,
-                decoration: const InputDecoration(labelText: 'Capacidade (Cadeiras)'),
-                keyboardType: TextInputType.number,
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: capacityController,
+                      decoration: const InputDecoration(labelText: 'Cadeiras', border: OutlineInputBorder()),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: slotController,
+                      decoration: const InputDecoration(labelText: 'Duração (min)', border: OutlineInputBorder()),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: startController,
+                      decoration: const InputDecoration(labelText: 'Hora Início', border: OutlineInputBorder()),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: endController,
+                      decoration: const InputDecoration(labelText: 'Hora Fim', border: OutlineInputBorder()),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
               TextField(
                 controller: descController,
-                decoration: const InputDecoration(labelText: 'Descrição'),
-                maxLines: 2,
+                decoration: const InputDecoration(labelText: 'Observações Administrativas', border: OutlineInputBorder()),
+                maxLines: 3,
               ),
             ],
           ),
@@ -91,24 +139,27 @@ class ClinicManagementScreen extends ConsumerWidget {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
           FilledButton(
             onPressed: () {
+              final newClinic = Clinic(
+                id: clinic?.id ?? '', // Será gerado no VM se vazio
+                name: nameController.text,
+                location: locationController.text,
+                description: descController.text,
+                capacity: int.tryParse(capacityController.text) ?? 1,
+                startHour: int.tryParse(startController.text) ?? 8,
+                endHour: int.tryParse(endController.text) ?? 18,
+                slotDurationMinutes: int.tryParse(slotController.text) ?? 60,
+                isActive: clinic?.isActive ?? true,
+                metadata: clinic?.metadata ?? {},
+              );
+
               if (clinic == null) {
-                ref.read(clinicsViewModelProvider.notifier).addClinic(
-                  name: nameController.text,
-                  location: locationController.text,
-                  description: descController.text,
-                  capacity: int.tryParse(capacityController.text) ?? 1,
-                );
+                ref.read(clinicsViewModelProvider.notifier).saveClinic(newClinic);
               } else {
-                ref.read(clinicsViewModelProvider.notifier).saveClinic(clinic.copyWith(
-                  name: nameController.text,
-                  location: locationController.text,
-                  description: descController.text,
-                  capacity: int.tryParse(capacityController.text) ?? 1,
-                ));
+                ref.read(clinicsViewModelProvider.notifier).saveClinic(newClinic);
               }
               Navigator.pop(context);
             },
-            child: const Text('Salvar'),
+            child: const Text('Salvar Alterações'),
           ),
         ],
       ),

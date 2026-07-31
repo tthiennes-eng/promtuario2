@@ -6,11 +6,13 @@ abstract class IReportsRepository {
   Future<List<SpecialtyProduction>> getProductionBySpecialty({
     required DateTime start,
     required DateTime end,
+    String? clinicId,
   });
 
   /// Recupera indicadores de eficiência (taxa de ocupação, faltas, etc).
   Future<ClinicPerformanceMetrics> getClinicMetrics({
     required DateTime start,
     required DateTime end,
+    String? clinicId,
   });
 }
