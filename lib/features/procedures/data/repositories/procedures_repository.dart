@@ -32,6 +32,7 @@ class ProceduresRepository implements IProceduresRepository {
       
       final results = await query.get();
       return results.map((row) {
+        final dataMap = row.toJson();
         return Clinic(
           id: row.id,
           name: row.name,
@@ -39,6 +40,9 @@ class ProceduresRepository implements IProceduresRepository {
           location: row.location,
           capacity: row.capacity,
           isActive: row.isActive,
+          startHour: dataMap['start_hour'] as int? ?? 8,
+          endHour: dataMap['end_hour'] as int? ?? 18,
+          slotDurationMinutes: dataMap['slot_duration_minutes'] as int? ?? 60,
           metadata: const {},
         );
       }).toList();
@@ -54,18 +58,16 @@ class ProceduresRepository implements IProceduresRepository {
       );
       await saveClinicLocal(clinic);
     } catch (e) {
-      // Se falhar a rede, salva localmente para sincronia posterior
       await saveClinicLocal(clinic);
     }
   }
 
   @override
   Future<void> syncClinics() async {
-    // Busca clínicas que poderiam estar pendentes (nesta estrutura simplificada,
-    // atualizamos todas as locais que possam ter mudado)
     final locals = await _localDb.select(_localDb.clinicsLocal).get();
     for (final row in locals) {
       try {
+        final dataMap = row.toJson();
         await _apiClient.instance.put('/clinics/${row.id}', data: {
           'id': row.id,
           'name': row.name,
@@ -73,6 +75,9 @@ class ProceduresRepository implements IProceduresRepository {
           'location': row.location,
           'capacity': row.capacity,
           'isActive': row.isActive,
+          'startHour': dataMap['start_hour'],
+          'endHour': dataMap['end_hour'],
+          'slotDurationMinutes': dataMap['slot_duration_minutes'],
         });
       } catch (_) {}
     }
@@ -88,6 +93,9 @@ class ProceduresRepository implements IProceduresRepository {
         location: Value(clinic.location),
         capacity: Value(clinic.capacity),
         isActive: Value(clinic.isActive),
+        startHour: Value(clinicJson['startHour'] as int? ?? 8),
+        endHour: Value(clinicJson['endHour'] as int? ?? 18),
+        slotDurationMinutes: Value(clinicJson['slotDurationMinutes'] as int? ?? 60),
       ),
     );
   }

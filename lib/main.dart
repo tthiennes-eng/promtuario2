@@ -13,7 +13,7 @@ void main() async {
   // Garante que o binding do Flutter esteja inicializado.
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Configuração global de Logs
+  // Configuração global de Logs para depuração.
   Logger.root.level = Level.ALL;
   Logger.root.onRecord.listen((record) {
     debugPrint('${record.level.name}: ${record.time}: ${record.message}');
@@ -22,11 +22,11 @@ void main() async {
   // Inicializa a formatação de datas para Português do Brasil.
   await initializeDateFormatting('pt_BR', null);
 
-  // Inicializa o ProviderContainer para serviços fora da árvore de widgets
+  // Inicializa o ProviderContainer para gerenciar serviços de background.
   final container = ProviderContainer();
   
-  // Inicia o serviço de sincronização automática (Offline First)
-  // Garante a integridade dos dados de clínicas e agendamentos.
+  // Inicia o serviço de sincronização automática (Offline First).
+  // Garante a integridade dos dados de clínicas e agendamentos mesmo sem rede.
   container.read(syncServiceProvider).startAutoSync();
 
   runApp(

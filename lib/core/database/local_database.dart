@@ -48,7 +48,6 @@ class Patients extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// Outras tabelas do sistema...
 class UsersLocal extends Table {
   TextColumn get id => text()();
   TextColumn get name => text()();
@@ -123,7 +122,6 @@ class AppointmentsLocal extends Table {
   TextColumn get doctorId => text().withDefault(const Constant(''))();
   TextColumn get doctorName => text().withDefault(const Constant(''))();
   
-  // Novos campos para clínica-escola
   TextColumn get studentId => text().nullable()();
   TextColumn get studentName => text().nullable()();
   TextColumn get professorId => text().nullable()();
@@ -195,27 +193,61 @@ class AppDatabase extends _$AppDatabase {
         onCreate: (m) async => await m.createAll(),
         onUpgrade: (m, from, to) async {
           if (from < 1001) {
-            await m.createTable(clinicsLocal);
-            await into(clinicsLocal).insert(ClinicsLocalCompanion.insert(
+            // Verifica se a tabela ClinicsLocal existe fisicamente antes de tentar criar
+            final tableExists = await _checkTableExists('clinics_local');
+            if (!tableExists) {
+              await m.createTable(clinicsLocal);
+            }
+            
+            await into(clinicsLocal).insertOnConflictUpdate(ClinicsLocalCompanion.insert(
               id: 'default-clinic',
-              name: 'Clínica Principal',
+              name: 'Cl\u00EDnica Principal',
               isActive: const Value(true),
             ));
+            
             await customUpdate("UPDATE appointments_local SET clinic_id = 'default-clinic' WHERE clinic_id = '' OR clinic_id IS NULL");
           }
+          
           if (from < 1002) {
-            // Migração robusta via SQL puro para evitar erros de compilação
-            await customStatement('ALTER TABLE appointments_local ADD COLUMN student_id TEXT;');
-            await customStatement('ALTER TABLE appointments_local ADD COLUMN student_name TEXT;');
-            await customStatement('ALTER TABLE appointments_local ADD COLUMN professor_id TEXT;');
-            await customStatement('ALTER TABLE appointments_local ADD COLUMN professor_name TEXT;');
+            // Migra\u00E7\u00E3o de colunas para AppointmentsLocal (verificando exist\u00EAncia f\u00EDsica)
+            await _addColumnIfMissing(m, appointmentsLocal, appointmentsLocal.studentId);
+            await _addColumnIfMissing(m, appointmentsLocal, appointmentsLocal.studentName);
+            await _addColumnIfMissing(m, appointmentsLocal, appointmentsLocal.professorId);
+            await _addColumnIfMissing(m, appointmentsLocal, appointmentsLocal.professorName);
             
-            await customStatement('ALTER TABLE clinics_local ADD COLUMN start_hour INTEGER NOT NULL DEFAULT 8;');
-            await customStatement('ALTER TABLE clinics_local ADD COLUMN end_hour INTEGER NOT NULL DEFAULT 18;');
-            await customStatement('ALTER TABLE clinics_local ADD COLUMN slot_duration_minutes INTEGER NOT NULL DEFAULT 60;');
+            // Migra\u00E7\u00E3o de colunas para ClinicsLocal (verificando exist\u00EAncia f\u00EDsica)
+            await _addColumnIfMissing(m, clinicsLocal, clinicsLocal.startHour);
+            await _addColumnIfMissing(m, clinicsLocal, clinicsLocal.endHour);
+            await _addColumnIfMissing(m, clinicsLocal, clinicsLocal.slotDurationMinutes);
           }
         },
       );
+
+  Future<bool> _checkTableExists(String tableName) async {
+    final result = await customSelect(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='$tableName';",
+    ).getSingleOrNull();
+    return result != null;
+  }
+
+  /// Adiciona uma coluna apenas se ela n\u00E3o estiver presente na tabela f\u00EDsica (independente do c\u00F3digo gerado)
+  Future<void> _addColumnIfMissing(Migrator m, TableInfo table, GeneratedColumn column) async {
+    try {
+      final columns = await customSelect("PRAGMA table_info('${table.actualTableName}');").get();
+      final columnNames = columns.map((row) => row.read<String>('name').toLowerCase()).toList();
+      
+      // O Drift utiliza nomes snake_case no SQL. column.name j\u00E1 retorna o nome SQL.
+      if (!columnNames.contains(column.name.toLowerCase())) {
+        await m.addColumn(table, column);
+      }
+    } catch (e) {
+      // Como redund\u00E2ncia, ignora erro de coluna duplicada caso a verifica\u00E7\u00E3o falhe
+      final errorMsg = e.toString().toLowerCase();
+      if (!errorMsg.contains('duplicate column name') && !errorMsg.contains('already exists')) {
+        rethrow;
+      }
+    }
+  }
 }
 
 LazyDatabase _openConnection() {
