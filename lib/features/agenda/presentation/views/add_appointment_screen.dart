@@ -108,6 +108,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                   Expanded(
                     child: patientsAsync.when(
                       data: (patients) => DropdownButtonFormField<String>(
+                        value: _selectedPatientId,
                         decoration: const InputDecoration(labelText: 'Paciente', border: OutlineInputBorder()),
                         items: patients.map((p) => DropdownMenuItem(value: p.id, child: Text(p.fullName))).toList(),
                         onChanged: (val) {
@@ -134,11 +135,11 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
 
               usersAsync.when(
                 data: (users) {
-                  // Fallback: se não houver alunos, mostra todos os profissionais ativos
                   final students = users.where((u) => u.role == UserRole.aluno).toList();
                   final displayList = students.isEmpty ? users.where((u) => u.isActive).toList() : students;
 
                   return DropdownButtonFormField<String>(
+                    value: _selectedStudentId, // Vinculo de valor adicionado
                     decoration: const InputDecoration(labelText: 'Aluno Responsável', border: OutlineInputBorder(), prefixIcon: Icon(Icons.school)),
                     items: displayList.map((u) => DropdownMenuItem(value: u.id, child: Text(u.name))).toList(),
                     onChanged: (val) {
@@ -157,11 +158,11 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
 
               usersAsync.when(
                 data: (users) {
-                  // Fallback: se não houver professores, mostra todos os profissionais ativos
                   final professors = users.where((u) => u.role == UserRole.professor || u.role == UserRole.coordenador).toList();
                   final displayList = professors.isEmpty ? users.where((u) => u.isActive).toList() : professors;
 
                   return DropdownButtonFormField<String>(
+                    value: _selectedProfessorId, // Vinculo de valor adicionado
                     decoration: const InputDecoration(labelText: 'Professor Supervisor', border: OutlineInputBorder(), prefixIcon: Icon(Icons.person)),
                     items: displayList.map((u) => DropdownMenuItem(value: u.id, child: Text(u.name))).toList(),
                     onChanged: (val) {
@@ -180,6 +181,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
 
               proceduresAsync.when(
                 data: (procedures) => DropdownButtonFormField<String>(
+                  value: _selectedProcedureName,
                   decoration: const InputDecoration(labelText: 'Procedimento Previsto', border: OutlineInputBorder()),
                   items: procedures.isEmpty
                     ? [const DropdownMenuItem(value: 'Avaliação', child: Text('Avaliação Geral'))]
@@ -283,8 +285,8 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
         id: const Uuid().v4(),
         patientId: _selectedPatientId!,
         patientName: _selectedPatientName!,
-        doctorId: _selectedStudentId!, // Compatibilidade
-        doctorName: _selectedStudentName!, // Compatibilidade
+        doctorId: _selectedStudentId!, 
+        doctorName: _selectedStudentName!,
         studentId: _selectedStudentId,
         studentName: _selectedStudentName,
         professorId: _selectedProfessorId,

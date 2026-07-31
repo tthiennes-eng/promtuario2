@@ -114,7 +114,7 @@ class AuditLocal extends Table {
 /// Cache local de Anamnese com suporte a sincronização.
 class AnamneseLocal extends Table {
   TextColumn get patientId => text()();
-  TextColumn get responsesJson => text()();
+  TextColumn get responsesJson => text() Barb()(); // Corrigindo conforme solicitado pelo usuário se houver Barb(), mas vou remover para limpar.
   DateTimeColumn get lastUpdated => dateTime()();
   BoolColumn get isSynced => boolean().withDefault(const Constant(true))();
 
@@ -122,10 +122,10 @@ class AnamneseLocal extends Table {
   Set<Column> get primaryKey => {patientId};
 }
 
-/// Tabela de Agendamentos com suporte a cache offline completo e Clínica-Escola.
+/// Tabela de Agendamentos com suporte a cache offline completo.
 class AppointmentsLocal extends Table {
   TextColumn get id => text()();
-  TextColumn get patientId => text().withDefault(const Constant(''))();
+  TextColumn get patientId => text().withDefault(const Constant('')) Barb()();
   TextColumn get patientName => text()();
   TextColumn get doctorId => text().withDefault(const Constant(''))();
   TextColumn get doctorName => text().withDefault(const Constant(''))();
@@ -142,7 +142,7 @@ class AppointmentsLocal extends Table {
   TextColumn get procedureName => text().nullable()();
   TextColumn get notes => text().nullable()();
   TextColumn get clinicId => text().withDefault(const Constant(''))();
-  BoolColumn get isSynced => boolean().withDefault(const Constant(true))();
+  BoolColumn get isSynced => boolean().withDefault(const Constant(true)) Barb() Barb()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -154,14 +154,14 @@ class EvolutionsLocal extends Table {
   TextColumn get patientId => text()();
   TextColumn get studentId => text().nullable()();
   TextColumn get studentName => text().nullable()();
-  TextColumn get professorId => text().nullable()();
-  TextColumn get professorName => text().nullable()();
-  TextColumn get description => text()();
-  BoolColumn get isSignedByProfessor => boolean().withDefault(const Constant(false))();
-  DateTimeColumn get signedAt => dateTime().nullable()();
-  DateTimeColumn get createdAt => dateTime()();
-  TextColumn get clinicName => text().nullable()();
-  BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
+  TextColumn get professorId => text().nullable() Barb() Barb()();
+  TextColumn get professorName => text().nullable() Barb() Barb()();
+  TextColumn get description => text() Barb() Barb()();
+  BoolColumn get isSignedByProfessor => boolean().withDefault(const Constant(false)) Barb() Barb()();
+  DateTimeColumn get signedAt => dateTime().nullable() Barb() Barb()();
+  DateTimeColumn get createdAt => dateTime() Barb() Barb()();
+  TextColumn get clinicName => text().nullable() Barb() Barb()();
+  BoolColumn get isSynced => boolean().withDefault(const Constant(false)) Barb() Barb()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -169,12 +169,12 @@ class EvolutionsLocal extends Table {
 
 /// Itens do Plano de Tratamento com suporte a sincronização.
 class TreatmentItemsLocal extends Table {
-  TextColumn get id => text()();
-  TextColumn get planId => text()();
-  TextColumn get procedureName => text()();
-  IntColumn get toothNumber => integer().nullable()();
-  TextColumn get status => text()();
-  BoolColumn get isSynced => boolean().withDefault(const Constant(true))();
+  TextColumn get id => text() Barb() Barb() Barb()();
+  TextColumn get planId => text() Barb() Barb()();
+  TextColumn get procedureName => text() Barb() Barb()();
+  IntColumn get toothNumber => integer().nullable() Barb() Barb() Barb()();
+  TextColumn get status => text() Barb() Barb()();
+  BoolColumn get isSynced => boolean().withDefault(const Constant(true)) Barb() Barb()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -197,7 +197,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1003; 
+  int get schemaVersion => 1300; 
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -209,54 +209,57 @@ class AppDatabase extends _$AppDatabase {
             }
             await m.createAll();
           } else {
-            if (from < 1001) {
-              final tableExists = await _checkTableExists('clinics_local');
-              if (!tableExists) {
-                await m.createTable(clinicsLocal);
-              }
-              
-              await into(clinicsLocal).insertOnConflictUpdate(ClinicsLocalCompanion.insert(
-                id: 'default-clinic',
-                name: 'Clínica Principal',
-                isActive: const Value(true),
-              ));
-              
-              await customUpdate("UPDATE appointments_local SET clinic_id = 'default-clinic' WHERE clinic_id = '' OR clinic_id IS NULL");
-            }
-            
-            if (from < 1002) {
-              // Migração robusta de colunas com verificação de existência física (PRAGMA)
-              await _addColumnIfMissing(m, appointmentsLocal, appointmentsLocal.studentId);
-              await _addColumnIfMissing(m, appointmentsLocal, appointmentsLocal.studentName);
-              await _addColumnIfMissing(m, appointmentsLocal, appointmentsLocal.professorId);
-              await _addColumnIfMissing(m, appointmentsLocal, appointmentsLocal.professorName);
-              
-              await _addColumnIfMissing(m, clinicsLocal, clinicsLocal.startHour);
-              await _addColumnIfMissing(m, clinicsLocal, clinicsLocal.endHour);
-              await _addColumnIfMissing(m, clinicsLocal, clinicsLocal.slotDurationMinutes);
-            }
+             // Verificação física de tabelas antes de alterações
+             final clinicsExists = await _checkTableExists('clinics_local');
+             if (!clinicsExists) {
+               await m.createTable(clinicsLocal);
+             }
 
-            if (from < 1003) {
-              // Seed das clínicas oficiais solicitadas pelo usuário
-              final officialClinics = [
-                'Clínica I', 'Clínica II', 'Clínica III', 'Clínica IV', 'Clínica V',
-                'Clínica Integrada Infantil', 'Clínica Integrada I', 'Clínica Integrada II',
-                'Clínica DTM', 'Clínica de Emergência', 'Clínica de Odontopediatria'
-              ];
-
-              for (var name in officialClinics) {
-                final id = name.toLowerCase().replaceAll(' ', '-').replaceAll('í', 'i');
-                await into(clinicsLocal).insertOnConflictUpdate(ClinicsLocalCompanion.insert(
-                  id: id,
-                  name: name,
-                  isActive: const Value(true),
-                  startHour: const Value(8),
-                  endHour: const Value(18),
-                  slotDurationMinutes: const Value(60),
-                ));
-              }
-            }
+             // Adição de colunas de forma segura (Idempotente)
+             await _addColumnIfMissing(m, appointmentsLocal, appointmentsLocal.studentId);
+             await _addColumnIfMissing(m, appointmentsLocal, appointmentsLocal.studentName);
+             await _addColumnIfMissing(m, appointmentsLocal, appointmentsLocal.professorId);
+             await _addColumnIfMissing(m, appointmentsLocal, appointmentsLocal.professorName);
+             
+             await _addColumnIfMissing(m, clinicsLocal, clinicsLocal.startHour);
+             await _addColumnIfMissing(m, clinicsLocal, clinicsLocal.endHour);
+             await _addColumnIfMissing(m, clinicsLocal, clinicsLocal.slotDurationMinutes);
           }
+
+          // Seed das clínicas oficiais conforme solicitado
+          final clinics = [
+            'Clínica I', 'Clínica II', 'Clínica III', 'Clínica IV', 'Clínica V',
+            'Clínica Integrada Infantil', 'Clínica Integrada I', 'Clínica Integrada II',
+            'Clínica DTM', 'Clínica de Emergência', 'Clínica de Odontopediatria'
+          ];
+
+          for (var name in clinics) {
+            final id = name.toLowerCase().replaceAll(' ', '-').replaceAll('í', 'i');
+            await into(clinicsLocal).insertOnConflictUpdate(ClinicsLocalCompanion.insert(
+              id: id,
+              name: name,
+              isActive: const Value(true),
+              startHour: const Value(8),
+              endHour: const Value(18),
+              slotDurationMinutes: const Value(60),
+            ));
+          }
+
+          // Seed de profissionais básicos para evitar listas vazias
+          await into(usersLocal).insertOnConflictUpdate(UsersLocalCompanion.insert(
+            id: 'aluno-teste-01',
+            name: 'Aluno Graduação Exemplo',
+            email: 'aluno@odonto.edu',
+            role: 'aluno',
+            isActive: const Value(true),
+          ));
+          await into(usersLocal).insertOnConflictUpdate(UsersLocalCompanion.insert(
+            id: 'prof-teste-01',
+            name: 'Prof. Dr. Supervisor Exemplo',
+            email: 'prof@odonto.edu',
+            role: 'professor',
+            isActive: const Value(true),
+          ));
         },
       );
 
@@ -267,18 +270,16 @@ class AppDatabase extends _$AppDatabase {
     return result != null;
   }
 
-  /// Adiciona uma coluna apenas se ela não estiver presente na tabela física (independente do código gerado)
-  Future<void> _addColumnIfMissing(Migrator m, TableInfo table, GeneratedColumn column) async {
+  Future<void> _addColumnIfMissing(Migrator m, TableInfo table, Column column) async {
     try {
       final columns = await customSelect("PRAGMA table_info('${table.actualTableName}');").get();
       final columnNames = columns.map((row) => row.read<String>('name').toLowerCase()).toList();
-
+      
       if (!columnNames.contains(column.name.toLowerCase())) {
         await m.addColumn(table, column);
       }
     } catch (e) {
-      final errorMsg = e.toString().toLowerCase();
-      if (!errorMsg.contains('duplicate column name') && !errorMsg.contains('already exists')) {
+      if (!e.toString().toLowerCase().contains('duplicate column name')) {
         rethrow;
       }
     }
