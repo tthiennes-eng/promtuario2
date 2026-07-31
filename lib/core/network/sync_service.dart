@@ -5,7 +5,7 @@ import 'package:logging/logging.dart';
 import 'package:promt/core/database/local_database.dart';
 import 'package:promt/core/providers/providers.dart';
 
-/// Coordena a sincronizaÃ§Ã£o de dados persistidos localmente.
+/// Coordena a sincronização de dados persistidos localmente.
 class SyncService {
   SyncService(this._db, this._ref);
 
@@ -26,18 +26,22 @@ class SyncService {
     if (_isSynchronizing) return;
     _isSynchronizing = true;
     try {
-      _logger.info('Iniciando sincronizaÃ§Ã£o de dados pendentes.');
+      _logger.info('Iniciando sincronização de dados pendentes.');
+      await _syncClinics(); // Adicionado sincronização de clínicas
       await _syncPatients();
       await _syncAppointments();
       await _syncWaitList();
       await _syncProntuario();
       await _syncAttachments();
       await _syncAuditLogs();
-      _logger.info('SincronizaÃ§Ã£o de dados pendentes concluÃ­da.');
+      _logger.info('Sincronização de dados pendentes concluída.');
     } finally {
       _isSynchronizing = false;
     }
   }
+
+  Future<void> _syncClinics() => _run(
+      'clínicas', () => _ref.read(proceduresRepositoryProvider).syncClinics());
 
   Future<void> _syncPatients() => _run(
       'pacientes', () => _ref.read(patientRepositoryProvider).syncPatients());
@@ -48,7 +52,7 @@ class SyncService {
   Future<void> _syncWaitList() => _run('lista de espera',
       () => _ref.read(waitListRepositoryProvider).syncWaitList());
 
-  Future<void> _syncProntuario() => _run('prontuÃ¡rio',
+  Future<void> _syncProntuario() => _run('prontuário',
       () => _ref.read(prontuarioRepositoryProvider).syncPendingData());
 
   Future<void> _syncAttachments() async {

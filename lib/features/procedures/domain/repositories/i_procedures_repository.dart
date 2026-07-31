@@ -4,11 +4,13 @@ import '../entities/procedure.dart';
 /// Contrato para o Repositório de Clínicas e Procedimentos.
 abstract class IProceduresRepository {
   /// Recupera todas as clínicas da instituição.
-  /// Se [onlyActive] for true, retorna apenas as ativas.
   Future<List<Clinic>> getClinics({bool onlyActive = true});
 
   /// Salva ou atualiza uma clínica.
   Future<void> saveClinic(Clinic clinic);
+
+  /// Sincroniza clínicas criadas ou editadas offline.
+  Future<void> syncClinics();
 
   /// Recupera os procedimentos disponíveis para uma clínica específica.
   Future<List<Procedure>> getProceduresByClinic(String clinicId);

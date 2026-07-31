@@ -20,6 +20,11 @@ class ClinicManagementScreen extends ConsumerWidget {
           itemCount: clinics.length,
           itemBuilder: (context, index) {
             final clinic = clinics[index];
+            // Acesso seguro via extensão ClinicX definida na entidade
+            final startHour = clinic.startHourSafe;
+            final endHour = clinic.endHourSafe;
+            final slotDuration = clinic.slotDurationMinutesSafe;
+
             return Card(
               margin: const EdgeInsets.only(bottom: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
@@ -36,7 +41,7 @@ class ClinicManagementScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('${clinic.location ?? "Sem local"} • ${clinic.capacity} consultórios'),
-                    Text('Funcionamento: ${clinic.startHour}h às ${clinic.endHour}h • Slots: ${clinic.slotDurationMinutes}min', 
+                    Text('Funcionamento: ${startHour}h às ${endHour}h • Slots: ${slotDuration}min', 
                       style: const TextStyle(fontSize: 11, color: Colors.blueGrey)),
                   ],
                 ),
@@ -65,9 +70,15 @@ class ClinicManagementScreen extends ConsumerWidget {
     final locationController = TextEditingController(text: clinic?.location);
     final descController = TextEditingController(text: clinic?.description);
     final capacityController = TextEditingController(text: clinic?.capacity.toString() ?? '1');
-    final startController = TextEditingController(text: clinic?.startHour.toString() ?? '8');
-    final endController = TextEditingController(text: clinic?.endHour.toString() ?? '18');
-    final slotController = TextEditingController(text: clinic?.slotDurationMinutes.toString() ?? '60');
+    
+    // Acesso seguro para os campos de texto do diálogo
+    final startHour = clinic?.startHourSafe ?? 8;
+    final endHour = clinic?.endHourSafe ?? 18;
+    final slotDuration = clinic?.slotDurationMinutesSafe ?? 60;
+
+    final startController = TextEditingController(text: startHour.toString());
+    final endController = TextEditingController(text: endHour.toString());
+    final slotController = TextEditingController(text: slotDuration.toString());
 
     showDialog(
       context: context,
@@ -79,7 +90,7 @@ class ClinicManagementScreen extends ConsumerWidget {
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(labelText: 'Nome da Clínica (Ex: Clínica Integrada I)', border: OutlineInputBorder()),
+                decoration: const InputDecoration(labelText: 'Nome da Clínica', border: OutlineInputBorder()),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -139,11 +150,12 @@ class ClinicManagementScreen extends ConsumerWidget {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
           FilledButton(
             onPressed: () {
+              // Criando o objeto com campos nomeados explicitamente para o construtor manual
               final newClinic = Clinic(
-                id: clinic?.id ?? '', // Será gerado no VM se vazio
+                id: clinic?.id ?? '',
                 name: nameController.text,
                 location: locationController.text,
-                description: descController.text,
+                description: descController.text ?? '',
                 capacity: int.tryParse(capacityController.text) ?? 1,
                 startHour: int.tryParse(startController.text) ?? 8,
                 endHour: int.tryParse(endController.text) ?? 18,
@@ -152,11 +164,7 @@ class ClinicManagementScreen extends ConsumerWidget {
                 metadata: clinic?.metadata ?? {},
               );
 
-              if (clinic == null) {
-                ref.read(clinicsViewModelProvider.notifier).saveClinic(newClinic);
-              } else {
-                ref.read(clinicsViewModelProvider.notifier).saveClinic(newClinic);
-              }
+              ref.read(clinicsViewModelProvider.notifier).saveClinic(newClinic);
               Navigator.pop(context);
             },
             child: const Text('Salvar Alterações'),

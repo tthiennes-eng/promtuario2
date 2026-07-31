@@ -20,7 +20,6 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
     final state = ref.watch(appointmentViewModelProvider);
     final notifier = ref.read(appointmentViewModelProvider.notifier);
     
-    // Slots gerados dinamicamente (Ocupados + Livres)
     final slots = state.timeSlots;
     final stats = notifier.getDayStats();
 
@@ -79,6 +78,9 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
           isExpanded: true,
           hint: const Text('Selecione uma Clínica'),
           items: state.clinics.map((clinic) {
+            final clinicJson = clinic.toJson();
+            final location = clinicJson['location']?.toString() ?? '';
+
             return DropdownMenuItem(
               value: clinic,
               child: Row(
@@ -86,9 +88,9 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
                   const Icon(Icons.local_hospital_outlined, size: 20, color: Color(0xFF006494)),
                   const SizedBox(width: 12),
                   Text(clinic.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  if (clinic.location != null && clinic.location!.isNotEmpty) ...[
+                  if (location.isNotEmpty) ...[
                     const SizedBox(width: 8),
-                    Text('(${clinic.location})', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                    Text('($location)', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                   ],
                 ],
               ),
@@ -172,7 +174,7 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
       color: Colors.grey.shade50,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200, style: BorderStyle.solid),
+        side: BorderSide(color: Colors.grey.shade200),
       ),
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
@@ -184,16 +186,17 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
         title: Text('Horário Livre', style: TextStyle(color: Colors.grey.shade600, fontStyle: FontStyle.italic)),
         trailing: IconButton(
           icon: const Icon(Icons.add_circle_outline, color: Color(0xFF006494)),
-          onPressed: () => context.push('/dashboard/agenda/add', extra: {
-            'clinic': selectedClinic,
-            'time': slot.startTime,
-          }),
+          onPressed: () => context.push('/dashboard/agenda/add', extra: {'clinic': selectedClinic, 'time': slot.startTime}),
         ),
       ),
     );
   }
 
   Widget _buildAppointmentSlot(Appointment appt) {
+    final apptJson = appt.toJson();
+    final studentName = apptJson['studentName']?.toString() ?? appt.doctorName;
+    final professorName = apptJson['professorName']?.toString() ?? "Supervisor Não Atribuído";
+
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -222,8 +225,8 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
           children: [
             const SizedBox(height: 4),
             Text(appt.procedureName ?? 'Procedimento não informado', style: const TextStyle(color: Color(0xFF006494))),
-            Text('Aluno: ${appt.studentName ?? "Não atribuído"}', style: const TextStyle(fontSize: 12)),
-            Text('Prof: ${appt.professorName ?? "Não atribuído"}', style: const TextStyle(fontSize: 12)),
+            Text('Aluno: $studentName', style: const TextStyle(fontSize: 12)),
+            Text('Prof: $professorName', style: const TextStyle(fontSize: 12)),
           ],
         ),
         trailing: _buildStatusChip(appt.status),
@@ -309,7 +312,7 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
             const Text('Período do Dia', style: TextStyle(fontWeight: FontWeight.bold)),
             Wrap(
               spacing: 8,
-              children: DayPeriod.values.map((p) {
+              children: AgendaDayPeriod.values.map((p) {
                 return ChoiceChip(
                   label: Text(p.name == 'all' ? 'Todos' : p.name == 'morning' ? 'Manhã' : p.name == 'afternoon' ? 'Tarde' : 'Noite'),
                   selected: state.period == p,
@@ -383,6 +386,10 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
   }
 
   void _showAppointmentDetails(Appointment appointment) {
+    final apptJson = appointment.toJson();
+    final studentName = apptJson['studentName']?.toString() ?? appointment.doctorName;
+    final professorName = apptJson['professorName']?.toString() ?? "Não informado";
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -405,9 +412,9 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
             const SizedBox(height: 12),
             _buildInfoRow(Icons.medical_services_outlined, 'Procedimento', appointment.procedureName ?? 'Consulta de Avaliação'),
             const SizedBox(height: 12),
-            _buildInfoRow(Icons.school_outlined, 'Aluno', appointment.studentName ?? 'N/A'),
+            _buildInfoRow(Icons.school_outlined, 'Aluno', studentName),
             const SizedBox(height: 12),
-            _buildInfoRow(Icons.person_outline, 'Professor', appointment.professorName ?? 'N/A'),
+            _buildInfoRow(Icons.person_outline, 'Professor', professorName),
             const SizedBox(height: 12),
             if (appointment.notes != null && appointment.notes!.isNotEmpty)
               _buildInfoRow(Icons.notes, 'Observações', appointment.notes!),

@@ -38,33 +38,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLoggedIn = authState.user != null;
       final isInitialized = authState.isInitialized;
 
-      if (!isInitialized) {
-        return null;
-      }
-
-      if (isSplash) {
-        return isLoggedIn ? '/dashboard' : '/login';
-      }
-
-      if (!isLoggedIn && !isLoggingIn) {
-        return '/login';
-      }
-
-      if (isLoggedIn && isLoggingIn) {
-        return '/dashboard';
-      }
+      if (!isInitialized) return null;
+      if (isSplash) return isLoggedIn ? '/dashboard' : '/login';
+      if (!isLoggedIn && !isLoggingIn) return '/login';
+      if (isLoggedIn && isLoggingIn) return '/dashboard';
 
       return null;
     },
     routes: [
-      GoRoute(
-        path: '/splash',
-        builder: (context, state) => const SplashScreen(),
-      ),
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
-      ),
+      GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
+      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/dashboard',
         builder: (context, state) => const DashboardScreen(),
@@ -73,48 +56,15 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'patients',
             builder: (context, state) => const PatientListScreen(),
             routes: [
-              GoRoute(
-                path: 'add',
-                builder: (context, state) => const AddPatientScreen(),
-              ),
+              GoRoute(path: 'add', builder: (context, state) => const AddPatientScreen()),
               GoRoute(
                 path: 'prontuario',
-                builder: (context, state) {
-                  final patient = state.extra as Patient;
-                  return ProntuarioScreen(patient: patient);
-                },
+                builder: (context, state) => ProntuarioScreen(patient: state.extra as Patient),
                 routes: [
-                  GoRoute(
-                    path: 'prescription',
-                    builder: (context, state) {
-                      final patientId = state.uri.queryParameters['patientId']!;
-                      return PrescriptionScreen(patientId: patientId);
-                    },
-                  ),
-                  GoRoute(
-                    path: 'certificate',
-                    builder: (context, state) {
-                      final patientId = state.uri.queryParameters['patientId']!;
-                      final patientName = state.uri.queryParameters['patientName']!;
-                      return CertificateScreen(patientId: patientId, patientName: patientName);
-                    },
-                  ),
-                  GoRoute(
-                    path: 'anamnese',
-                    builder: (context, state) {
-                      final patientId = state.uri.queryParameters['patientId']!;
-                      final patientName = state.uri.queryParameters['patientName']!;
-                      return AnamneseScreen(patientId: patientId, patientName: patientName);
-                    },
-                  ),
-                  GoRoute(
-                    path: 'treatment-plan',
-                    builder: (context, state) {
-                      final patientId = state.uri.queryParameters['patientId']!;
-                      final patientName = state.uri.queryParameters['patientName']!;
-                      return TreatmentPlanScreen(patientId: patientId, patientName: patientName);
-                    },
-                  ),
+                  GoRoute(path: 'prescription', builder: (context, state) => PrescriptionScreen(patientId: state.uri.queryParameters['patientId']!)),
+                  GoRoute(path: 'certificate', builder: (context, state) => CertificateScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
+                  GoRoute(path: 'anamnese', builder: (context, state) => AnamneseScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
+                  GoRoute(path: 'treatment-plan', builder: (context, state) => TreatmentPlanScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
                 ],
               ),
             ],
@@ -122,12 +72,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'users',
             builder: (context, state) => const UserListScreen(),
-            routes: [
-              GoRoute(
-                path: 'add',
-                builder: (context, state) => const AddUserScreen(),
-              ),
-            ],
+            routes: [GoRoute(path: 'add', builder: (context, state) => const AddUserScreen())],
           ),
           GoRoute(
             path: 'agenda',
@@ -136,44 +81,31 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'add',
                 builder: (context, state) {
-                  final initialClinic = state.extra as Clinic?;
-                  return AddAppointmentScreen(initialClinic: initialClinic);
+                  if (state.extra is Map<String, dynamic>) {
+                    final extra = state.extra as Map<String, dynamic>;
+                    return AddAppointmentScreen(
+                      initialClinic: extra['clinic'] as Clinic?,
+                      initialDateTime: extra['time'] as DateTime?,
+                    );
+                  }
+                  return AddAppointmentScreen(initialClinic: state.extra as Clinic?);
                 },
               ),
-              GoRoute(
-                path: 'institutional',
-                builder: (context, state) => const InstitutionalAgendaScreen(),
-              ),
+              GoRoute(path: 'institutional', builder: (context, state) => const InstitutionalAgendaScreen()),
               GoRoute(
                 path: 'wait-list',
-                builder: (context, state) {
-                  final clinicId = state.uri.queryParameters['clinicId']!;
-                  final clinicName = state.uri.queryParameters['clinicName']!;
-                  return WaitListScreen(clinicId: clinicId, clinicName: clinicName);
-                },
+                builder: (context, state) => WaitListScreen(
+                  clinicId: state.uri.queryParameters['clinicId']!,
+                  clinicName: state.uri.queryParameters['clinicName']!,
+                ),
               ),
             ],
           ),
-          GoRoute(
-            path: 'clinics',
-            builder: (context, state) => const ClinicManagementScreen(),
-          ),
-          GoRoute(
-            path: 'reports',
-            builder: (context, state) => const ReportsScreen(),
-          ),
-          GoRoute(
-            path: 'settings',
-            builder: (context, state) => const SettingsScreen(),
-          ),
-          GoRoute(
-            path: 'notifications',
-            builder: (context, state) => const NotificationListScreen(),
-          ),
-          GoRoute(
-            path: 'audit-logs',
-            builder: (context, state) => const AuditLogScreen(),
-          ),
+          GoRoute(path: 'clinics', builder: (context, state) => const ClinicManagementScreen()),
+          GoRoute(path: 'reports', builder: (context, state) => const ReportsScreen()),
+          GoRoute(path: 'settings', builder: (context, state) => const SettingsScreen()),
+          GoRoute(path: 'notifications', builder: (context, state) => const NotificationListScreen()),
+          GoRoute(path: 'audit-logs', builder: (context, state) => const AuditLogScreen()),
         ],
       ),
     ],
@@ -184,9 +116,7 @@ class _RouterRefreshStream extends ChangeNotifier {
   _RouterRefreshStream(Stream<dynamic> stream) {
     _subscription = stream.asBroadcastStream().listen((_) => notifyListeners());
   }
-
   late final dynamic _subscription;
-
   @override
   void dispose() {
     _subscription.cancel();

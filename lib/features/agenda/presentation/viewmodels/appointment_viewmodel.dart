@@ -4,7 +4,7 @@ import 'package:promt/features/procedures/domain/entities/clinic.dart';
 import 'package:promt/core/providers/providers.dart';
 import 'package:promt/core/network/realtime_service.dart';
 
-enum DayPeriod { all, morning, afternoon, night }
+enum AgendaDayPeriod { all, morning, afternoon, night }
 
 /// Representa um slot na agenda (pode ser um agendamento ou horário livre)
 class TimeSlot {
@@ -24,13 +24,13 @@ class TimeSlot {
 /// Estado do ViewModel de Agenda com Filtros Avançados e Slots.
 class AppointmentState {
   final AsyncValue<List<Appointment>> appointments;
-  final AsyncValue<List<Appointment>> institutionalAppointments; // Para visão de todas as clínicas
+  final AsyncValue<List<Appointment>> institutionalAppointments;
   final DateTime selectedDate;
   final Clinic? selectedClinic;
   final List<Clinic> clinics;
   
   // Filtros
-  final DayPeriod period;
+  final AgendaDayPeriod period;
   final String? filterStudent;
   final String? filterProfessor;
   final String? filterProcedure;
@@ -42,7 +42,7 @@ class AppointmentState {
     required this.selectedDate,
     this.selectedClinic,
     this.clinics = const [],
-    this.period = DayPeriod.all,
+    this.period = AgendaDayPeriod.all,
     this.filterStudent,
     this.filterProfessor,
     this.filterProcedure,
@@ -53,20 +53,20 @@ class AppointmentState {
     return appointments.maybeWhen(
       data: (list) {
         return list.where((app) {
-          // Filtro por Período
-          if (period != DayPeriod.all) {
+          if (period != AgendaDayPeriod.all) {
             final hour = app.startTime.hour;
-            if (period == DayPeriod.morning && (hour < 7 || hour >= 12)) return false;
-            if (period == DayPeriod.afternoon && (hour < 12 || hour >= 18)) return false;
-            if (period == DayPeriod.night && hour < 18) return false;
+            if (period == AgendaDayPeriod.morning && (hour < 7 || hour >= 12)) return false;
+            if (period == AgendaDayPeriod.afternoon && (hour < 12 || hour >= 18)) return false;
+            if (period == AgendaDayPeriod.night && hour < 18) return false;
           }
-          // Filtro por Aluno
-          if (filterStudent != null && !(app.studentName?.toLowerCase().contains(filterStudent!.toLowerCase()) ?? false)) return false;
-          // Filtro por Professor
-          if (filterProfessor != null && !(app.professorName?.toLowerCase().contains(filterProfessor!.toLowerCase()) ?? false)) return false;
-          // Filtro por Procedimento
+          
+          final appJson = app.toJson();
+          final student = appJson['studentName']?.toString() ?? app.doctorName;
+          final professor = appJson['professorName']?.toString() ?? "";
+          
+          if (filterStudent != null && !student.toLowerCase().contains(filterStudent!.toLowerCase())) return false;
+          if (filterProfessor != null && !professor.toLowerCase().contains(filterProfessor!.toLowerCase())) return false;
           if (filterProcedure != null && !(app.procedureName?.toLowerCase().contains(filterProcedure!.toLowerCase()) ?? false)) return false;
-          // Filtro por Status
           if (filterStatus != null && app.status != filterStatus) return false;
           
           return true;
@@ -76,25 +76,24 @@ class AppointmentState {
     );
   }
 
-  /// Gera a lista de slots para a clínica e data selecionadas
   List<TimeSlot> get timeSlots {
     if (selectedClinic == null) return [];
     
     final allSlots = <TimeSlot>[];
     final date = selectedDate;
-    final startHour = selectedClinic!.startHour;
-    final endHour = selectedClinic!.endHour;
-    final duration = selectedClinic!.slotDurationMinutes;
+    
+    final clinicJson = selectedClinic!.toJson();
+    final startHour = clinicJson['startHour'] as int? ?? 8;
+    final endHour = clinicJson['endHour'] as int? ?? 18;
+    final duration = clinicJson['slotDurationMinutes'] as int? ?? 60;
     
     final dayAppointments = appointments.value ?? [];
 
     for (int hour = startHour; hour < endHour; hour++) {
-      for (int min = 0; min < 60; min += duration) {
+      for (int min = 0; min < 60; min += (duration > 0 ? duration : 60)) {
         final slotStart = DateTime(date.year, date.month, date.day, hour, min);
-        final slotEnd = slotStart.add(Duration(minutes: duration));
+        final slotEnd = slotStart.add(Duration(minutes: duration > 0 ? duration : 60));
         
-        // Verifica se há agendamentos neste slot (considerando capacidade da clínica futuramente se necessário)
-        // Por enquanto, mostra agendamentos existentes ou slot livre
         final appsInSlot = dayAppointments.where((a) => 
           (a.startTime.isAtSameMomentAs(slotStart)) || 
           (a.startTime.isAfter(slotStart) && a.startTime.isBefore(slotEnd))
@@ -118,7 +117,7 @@ class AppointmentState {
     DateTime? selectedDate,
     Clinic? selectedClinic,
     List<Clinic>? clinics,
-    DayPeriod? period,
+    AgendaDayPeriod? period,
     String? filterStudent,
     String? filterProfessor,
     String? filterProcedure,
@@ -168,7 +167,7 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
   }
 
   void setFilters({
-    DayPeriod? period,
+    AgendaDayPeriod? period,
     String? student,
     String? professor,
     String? procedure,
@@ -185,7 +184,7 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
 
   void clearFilters() {
     state = state.copyWith(
-      period: DayPeriod.all,
+      period: AgendaDayPeriod.all,
       filterStudent: null,
       filterProfessor: null,
       filterProcedure: null,
@@ -205,9 +204,7 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
 
   Future<void> refresh() async {
     if (state.selectedClinic == null) return;
-    
     state = state.copyWith(appointments: const AsyncValue.loading());
-    
     final result = await AsyncValue.guard(() async {
       final repository = ref.read(appointmentRepositoryProvider);
       final date = state.selectedDate;
@@ -217,11 +214,9 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
         clinicId: state.selectedClinic!.id,
       );
     });
-    
     state = state.copyWith(appointments: result);
   }
 
-  /// Busca agendamentos de todas as clínicas para a visão institucional
   Future<void> fetchInstitutionalData() async {
     state = state.copyWith(institutionalAppointments: const AsyncValue.loading());
     final result = await AsyncValue.guard(() async {
@@ -230,7 +225,7 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
       return await repository.getAppointments(
         start: DateTime(date.year, date.month, date.day, 0, 0),
         end: DateTime(date.year, date.month, date.day, 23, 59, 59),
-        clinicId: null, // Busca todos
+        clinicId: null,
       );
     });
     state = state.copyWith(institutionalAppointments: result);
@@ -248,14 +243,30 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
 
   Map<String, dynamic> getDayStats() {
     final list = state.appointments.value ?? [];
+    double occupancy = 0.0;
+    
+    if (state.selectedClinic != null) {
+      final clinic = state.selectedClinic!;
+      final clinicJson = clinic.toJson();
+      final startHour = clinicJson['startHour'] as int? ?? 8;
+      final endHour = clinicJson['endHour'] as int? ?? 18;
+      final duration = clinicJson['slotDurationMinutes'] as int? ?? 60;
+      
+      final workingMinutes = (endHour - startHour) * 60;
+      final slotsPerChair = workingMinutes / (duration > 0 ? duration : 60);
+      final totalCapacity = slotsPerChair * clinic.capacity;
+      
+      if (totalCapacity > 0) {
+        occupancy = list.length / totalCapacity;
+      }
+    }
+
     return {
       'total': list.length,
       'completed': list.where((a) => a.status == AppointmentStatus.completed).length,
       'missed': list.where((a) => a.status == AppointmentStatus.missed).length,
       'canceled': list.where((a) => a.status == AppointmentStatus.cancelled).length,
-      'occupancy': state.selectedClinic != null && state.selectedClinic!.capacity > 0 
-          ? (list.length / (state.selectedClinic!.capacity * 10))
-          : 0.0,
+      'occupancy': occupancy,
     };
   }
 }

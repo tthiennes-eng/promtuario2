@@ -6,6 +6,7 @@ import 'package:logging/logging.dart';
 import 'package:promt/core/router/app_router.dart';
 import 'package:promt/core/theme/app_theme.dart';
 import 'package:promt/core/theme/theme_viewmodel.dart';
+import 'package:promt/core/network/sync_service.dart';
 
 /// Ponto de entrada principal do sistema OdontoClinica Universitária.
 void main() async {
@@ -21,9 +22,17 @@ void main() async {
   // Inicializa a formatação de datas para Português do Brasil.
   await initializeDateFormatting('pt_BR', null);
 
+  // Inicializa o ProviderContainer para serviços fora da árvore de widgets
+  final container = ProviderContainer();
+  
+  // Inicia o serviço de sincronização automática (Offline First)
+  // Garante a integridade dos dados de clínicas e agendamentos.
+  container.read(syncServiceProvider).startAutoSync();
+
   runApp(
-    const ProviderScope(
-      child: OdontoClinicaApp(),
+    UncontrolledProviderScope(
+      container: container,
+      child: const OdontoClinicaApp(),
     ),
   );
 }

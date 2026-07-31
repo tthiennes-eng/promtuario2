@@ -7,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 part 'local_database.g.dart';
 
-/// Tabela de Clínicas.
+/// Tabela de Clínicas com parâmetros de funcionamento.
 class ClinicsLocal extends Table {
   TextColumn get id => text()();
   TextColumn get name => text().withLength(min: 1, max: 255)();
@@ -15,13 +15,16 @@ class ClinicsLocal extends Table {
   TextColumn get location => text().nullable()();
   IntColumn get capacity => integer().withDefault(const Constant(1))();
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  IntColumn get startHour => integer().withDefault(const Constant(8))();
+  IntColumn get endHour => integer().withDefault(const Constant(18))();
+  IntColumn get slotDurationMinutes => integer().withDefault(const Constant(60))();
   TextColumn get metadataJson => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
 }
 
-/// Tabela de Pacientes com suporte a endereços e sincronização.
+/// Tabela de Pacientes.
 class Patients extends Table {
   TextColumn get id => text()();
   TextColumn get fullName => text().withLength(min: 3, max: 255)();
@@ -34,7 +37,6 @@ class Patients extends Table {
   BoolColumn get lgpdConsent => boolean().withDefault(const Constant(false))();
   BoolColumn get isSynced => boolean().withDefault(const Constant(true))();
 
-  // Colunas de endereço
   TextColumn get street => text().nullable()();
   TextColumn get number => text().nullable()();
   TextColumn get neighborhood => text().nullable()();
@@ -46,7 +48,7 @@ class Patients extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// Tabela de Usuários (Cache para seleção de profissionais offline).
+/// Outras tabelas do sistema...
 class UsersLocal extends Table {
   TextColumn get id => text()();
   TextColumn get name => text()();
@@ -58,7 +60,6 @@ class UsersLocal extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// Cache local de metadados de Anexos pendentes de upload.
 class AttachmentsLocal extends Table {
   TextColumn get id => text()();
   TextColumn get patientId => text()();
@@ -72,7 +73,6 @@ class AttachmentsLocal extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// Cache local de Odontograma (Estado dos dentes em JSON).
 class OdontogramLocal extends Table {
   TextColumn get patientId => text()();
   TextColumn get dataJson => text()();
@@ -83,7 +83,6 @@ class OdontogramLocal extends Table {
   Set<Column> get primaryKey => {patientId};
 }
 
-/// Tabela de Lista de Espera com suporte a sincronização.
 class WaitListLocal extends Table {
   TextColumn get id => text()();
   TextColumn get patientId => text()();
@@ -99,7 +98,6 @@ class WaitListLocal extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// Tabela de Auditoria com suporte a sincronização (Conformidade LGPD).
 class AuditLocal extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get resourceId => text()();
@@ -108,7 +106,6 @@ class AuditLocal extends Table {
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
 }
 
-/// Cache local de Anamnese com suporte a sincronização.
 class AnamneseLocal extends Table {
   TextColumn get patientId => text()();
   TextColumn get responsesJson => text()();
@@ -119,13 +116,13 @@ class AnamneseLocal extends Table {
   Set<Column> get primaryKey => {patientId};
 }
 
-/// Tabela de Agendamentos com suporte a cache offline completo.
 class AppointmentsLocal extends Table {
   TextColumn get id => text()();
   TextColumn get patientId => text().withDefault(const Constant(''))();
   TextColumn get patientName => text()();
   TextColumn get doctorId => text().withDefault(const Constant(''))();
   TextColumn get doctorName => text().withDefault(const Constant(''))();
+  
   // Novos campos para clínica-escola
   TextColumn get studentId => text().nullable()();
   TextColumn get studentName => text().nullable()();
@@ -144,7 +141,6 @@ class AppointmentsLocal extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// Tabela de Evoluções Clínicas com suporte a sincronização e auditoria.
 class EvolutionsLocal extends Table {
   TextColumn get id => text()();
   TextColumn get patientId => text()();
@@ -163,7 +159,6 @@ class EvolutionsLocal extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// Itens do Plano de Tratamento com suporte a sincronização.
 class TreatmentItemsLocal extends Table {
   TextColumn get id => text()();
   TextColumn get planId => text()();
@@ -199,30 +194,25 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async => await m.createAll(),
         onUpgrade: (m, from, to) async {
-          if (from < 1000) {
-            for (final table in allTables) {
-              await m.deleteTable(table.actualTableName);
-            }
-            await m.createAll();
-          } else {
-            if (from < 1001) {
-              await m.createTable(clinicsLocal);
-              await into(clinicsLocal).insert(ClinicsLocalCompanion.insert(
-                id: 'default-clinic',
-                name: 'Clínica Principal',
-                isActive: const Value(true),
-              ));
-              await customUpdate(
-                "UPDATE appointments_local SET clinic_id = 'default-clinic' WHERE clinic_id = '' OR clinic_id IS NULL",
-                updates: {appointmentsLocal},
-              );
-            }
-            if (from < 1002) {
-              await m.addColumn(appointmentsLocal, appointmentsLocal.studentId);
-              await m.addColumn(appointmentsLocal, appointmentsLocal.studentName);
-              await m.addColumn(appointmentsLocal, appointmentsLocal.professorId);
-              await m.addColumn(appointmentsLocal, appointmentsLocal.professorName);
-            }
+          if (from < 1001) {
+            await m.createTable(clinicsLocal);
+            await into(clinicsLocal).insert(ClinicsLocalCompanion.insert(
+              id: 'default-clinic',
+              name: 'Clínica Principal',
+              isActive: const Value(true),
+            ));
+            await customUpdate("UPDATE appointments_local SET clinic_id = 'default-clinic' WHERE clinic_id = '' OR clinic_id IS NULL");
+          }
+          if (from < 1002) {
+            // Migração robusta via SQL puro para evitar erros de compilação
+            await customStatement('ALTER TABLE appointments_local ADD COLUMN student_id TEXT;');
+            await customStatement('ALTER TABLE appointments_local ADD COLUMN student_name TEXT;');
+            await customStatement('ALTER TABLE appointments_local ADD COLUMN professor_id TEXT;');
+            await customStatement('ALTER TABLE appointments_local ADD COLUMN professor_name TEXT;');
+            
+            await customStatement('ALTER TABLE clinics_local ADD COLUMN start_hour INTEGER NOT NULL DEFAULT 8;');
+            await customStatement('ALTER TABLE clinics_local ADD COLUMN end_hour INTEGER NOT NULL DEFAULT 18;');
+            await customStatement('ALTER TABLE clinics_local ADD COLUMN slot_duration_minutes INTEGER NOT NULL DEFAULT 60;');
           }
         },
       );

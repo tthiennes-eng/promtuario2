@@ -20,7 +20,13 @@ class ClinicsViewModel extends StateNotifier<AsyncValue<List<Clinic>>> {
 
   Future<void> saveClinic(Clinic clinic) async {
     final repository = ref.read(proceduresRepositoryProvider);
-    await repository.saveClinic(clinic);
+    
+    // Gera ID se for uma nova clínica
+    final clinicToSave = clinic.id.isEmpty 
+        ? clinic.copyWith(id: const Uuid().v4()) 
+        : clinic;
+
+    await repository.saveClinic(clinicToSave);
     await refresh();
   }
 
@@ -34,6 +40,9 @@ class ClinicsViewModel extends StateNotifier<AsyncValue<List<Clinic>>> {
     String? description,
     String? location,
     int capacity = 1,
+    int startHour = 8,
+    int endHour = 18,
+    int slotDuration = 60,
   }) async {
     final clinic = Clinic(
       id: const Uuid().v4(),
@@ -41,6 +50,9 @@ class ClinicsViewModel extends StateNotifier<AsyncValue<List<Clinic>>> {
       description: description ?? '',
       location: location,
       capacity: capacity,
+      startHour: startHour,
+      endHour: endHour,
+      slotDurationMinutes: slotDuration,
       isActive: true,
       metadata: {},
     );

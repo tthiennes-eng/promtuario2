@@ -5,7 +5,7 @@ import '../../domain/entities/clinic.dart';
 import '../../domain/entities/procedure.dart';
 import '../../domain/repositories/i_procedures_repository.dart';
 
-/// Implementação do repositório de Clínicas e Procedimentos com Cache Local.
+/// Implementação do repositório de Clínicas e Procedimentos com Cache Local e Sincronização.
 class ProceduresRepository implements IProceduresRepository {
   final ApiClient _apiClient;
   final AppDatabase _localDb;
@@ -32,11 +32,9 @@ class ProceduresRepository implements IProceduresRepository {
       
       final results = await query.get();
       return results.map((row) {
-        // Usamos ?? '' para garantir que String? não seja atribuída a String obrigatória
-        // mesmo que o código gerado esteja temporariamente inconsistente.
         return Clinic(
-          id: row.id ?? '',
-          name: row.name ?? '',
+          id: row.id,
+          name: row.name,
           description: row.description,
           location: row.location,
           capacity: row.capacity,
@@ -56,11 +54,32 @@ class ProceduresRepository implements IProceduresRepository {
       );
       await saveClinicLocal(clinic);
     } catch (e) {
+      // Se falhar a rede, salva localmente para sincronia posterior
       await saveClinicLocal(clinic);
     }
   }
 
+  @override
+  Future<void> syncClinics() async {
+    // Busca clínicas que poderiam estar pendentes (nesta estrutura simplificada,
+    // atualizamos todas as locais que possam ter mudado)
+    final locals = await _localDb.select(_localDb.clinicsLocal).get();
+    for (final row in locals) {
+      try {
+        await _apiClient.instance.put('/clinics/${row.id}', data: {
+          'id': row.id,
+          'name': row.name,
+          'description': row.description,
+          'location': row.location,
+          'capacity': row.capacity,
+          'isActive': row.isActive,
+        });
+      } catch (_) {}
+    }
+  }
+
   Future<void> saveClinicLocal(Clinic clinic) async {
+    final clinicJson = clinic.toJson();
     await _localDb.into(_localDb.clinicsLocal).insertOnConflictUpdate(
       ClinicsLocalCompanion.insert(
         id: clinic.id,

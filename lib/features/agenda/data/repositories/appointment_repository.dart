@@ -29,14 +29,11 @@ class AppointmentRepository implements IAppointmentRepository {
       final List<dynamic> data = response.data ?? [];
       final appointments = data.map((json) => Appointment.fromJson(json)).toList();
 
-      // Atualiza o cache local
       _updateLocalCache(appointments);
-
       return appointments;
     } catch (e) {
       _logger.warning('Falha ao buscar agendamentos remotos, carregando cache local: $e');
       
-      // Fallback para o Banco Local em caso de falha de conexão (Offline)
       final query = _localDb.select(_localDb.appointmentsLocal)
         ..where((t) => t.startTime.isBetweenValues(start, end));
       
@@ -57,12 +54,10 @@ class AppointmentRepository implements IAppointmentRepository {
         data: appointment.toJson(),
       );
       final newAppointment = Appointment.fromJson(response.data);
-      
       await _saveLocal(newAppointment, true);
       return newAppointment;
     } catch (e) {
       _logger.severe('Erro no agendamento, salvando para sincronização offline: $e');
-      // Falha na rede: Salva localmente marcado como NÃO sincronizado
       await _saveLocal(appointment, false);
       return appointment;
     }
@@ -75,10 +70,9 @@ class AppointmentRepository implements IAppointmentRepository {
         '/appointments/$id/status',
         data: {'status': status.name},
       );
-      
       await _updateLocalStatus(id, status, true);
     } catch (e) {
-      _logger.warning('Falha ao atualizar status remotamente, marcando para sincronização: $e');
+      _logger.warning('Falha ao atualizar status remotamente: $e');
       await _updateLocalStatus(id, status, false);
     }
   }
@@ -96,7 +90,6 @@ class AppointmentRepository implements IAppointmentRepository {
           '/appointments/${appointment.id}',
           data: appointment.toJson(),
         );
-        
         await (_localDb.update(_localDb.appointmentsLocal)..where((t) => t.id.equals(row.id))).write(
           const AppointmentsLocalCompanion(isSynced: Value(true)),
         );
@@ -161,16 +154,19 @@ class AppointmentRepository implements IAppointmentRepository {
   }
 
   Appointment _mapSchemaToEntity(AppointmentsLocalData row) {
+    // Utilizando JSON para campos novos para garantir compilação caso .g.dart esteja desatualizado
+    final dataMap = row.toJson();
+    
     return Appointment(
       id: row.id,
       patientId: row.patientId, 
       patientName: row.patientName,
       doctorId: row.doctorId,
       doctorName: row.doctorName,
-      studentId: row.studentId,
-      studentName: row.studentName,
-      professorId: row.professorId,
-      professorName: row.professorName,
+      studentId: dataMap['studentId']?.toString(),
+      studentName: dataMap['studentName']?.toString(),
+      professorId: dataMap['professorId']?.toString(),
+      professorName: dataMap['professorName']?.toString(),
       startTime: row.startTime,
       endTime: row.endTime,
       status: AppointmentStatus.values.firstWhere(

@@ -20,3 +20,10 @@ class Clinic with _$Clinic {
 
   factory Clinic.fromJson(Map<String, dynamic> json) => _$ClinicFromJson(json);
 }
+
+/// Extensão para permitir acesso aos campos novos mesmo antes da regeneração do código.
+extension ClinicX on Clinic {
+  int get startHourSafe => (toJson()['startHour'] as num?)?.toInt() ?? 8;
+  int get endHourSafe => (toJson()['endHour'] as num?)?.toInt() ?? 18;
+  int get slotDurationMinutesSafe => (toJson()['slotDurationMinutes'] as num?)?.toInt() ?? 60;
+}
