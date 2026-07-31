@@ -87,7 +87,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                 data: (clinics) => DropdownButtonFormField<String>(
                   value: _selectedClinicId,
                   decoration: const InputDecoration(
-                    labelText: 'Clínica Obrigatória',
+                    labelText: 'Clínica de Atendimento',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.local_hospital),
                   ),
@@ -134,14 +134,17 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
 
               usersAsync.when(
                 data: (users) {
+                  // Fallback: se não houver alunos, mostra todos os profissionais ativos
                   final students = users.where((u) => u.role == UserRole.aluno).toList();
+                  final displayList = students.isEmpty ? users.where((u) => u.isActive).toList() : students;
+
                   return DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(labelText: 'Aluno Responsável', border: OutlineInputBorder()),
-                    items: students.map((u) => DropdownMenuItem(value: u.id, child: Text(u.name))).toList(),
+                    decoration: const InputDecoration(labelText: 'Aluno Responsável', border: OutlineInputBorder(), prefixIcon: Icon(Icons.school)),
+                    items: displayList.map((u) => DropdownMenuItem(value: u.id, child: Text(u.name))).toList(),
                     onChanged: (val) {
                       setState(() {
                         _selectedStudentId = val;
-                        _selectedStudentName = students.firstWhere((u) => u.id == val).name;
+                        _selectedStudentName = displayList.firstWhere((u) => u.id == val).name;
                       });
                     },
                     validator: (v) => v == null ? 'Selecione o aluno' : null,
@@ -154,14 +157,17 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
 
               usersAsync.when(
                 data: (users) {
+                  // Fallback: se não houver professores, mostra todos os profissionais ativos
                   final professors = users.where((u) => u.role == UserRole.professor || u.role == UserRole.coordenador).toList();
+                  final displayList = professors.isEmpty ? users.where((u) => u.isActive).toList() : professors;
+
                   return DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(labelText: 'Professor Supervisor', border: OutlineInputBorder()),
-                    items: professors.map((u) => DropdownMenuItem(value: u.id, child: Text(u.name))).toList(),
+                    decoration: const InputDecoration(labelText: 'Professor Supervisor', border: OutlineInputBorder(), prefixIcon: Icon(Icons.person)),
+                    items: displayList.map((u) => DropdownMenuItem(value: u.id, child: Text(u.name))).toList(),
                     onChanged: (val) {
                       setState(() {
                         _selectedProfessorId = val;
-                        _selectedProfessorName = professors.firstWhere((u) => u.id == val).name;
+                        _selectedProfessorName = displayList.firstWhere((u) => u.id == val).name;
                       });
                     },
                     validator: (v) => v == null ? 'Selecione o professor' : null,
@@ -277,10 +283,8 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
         id: const Uuid().v4(),
         patientId: _selectedPatientId!,
         patientName: _selectedPatientName!,
-        // Usamos studentId como doctorId principal para compatibilidade com lógica existente
-        // mas mantemos os campos específicos preenchidos.
-        doctorId: _selectedStudentId!,
-        doctorName: _selectedStudentName!,
+        doctorId: _selectedStudentId!, // Compatibilidade
+        doctorName: _selectedStudentName!, // Compatibilidade
         studentId: _selectedStudentId,
         studentName: _selectedStudentName,
         professorId: _selectedProfessorId,
