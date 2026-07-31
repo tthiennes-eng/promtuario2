@@ -7,7 +7,7 @@
       },
       "declaration": {
         "source_uri": "package:promt/core/database/local_database.dart",
-        "offset": 6713,
+        "offset": 6640,
         "name": "AppDatabase"
       },
       "references": [
@@ -814,7 +814,7 @@
       },
       "declaration": {
         "source_uri": "package:promt/core/database/local_database.dart",
-        "offset": 2094,
+        "offset": 2060,
         "name": "UsersLocal"
       },
       "references": [],
@@ -829,7 +829,7 @@
           "nameInDart": "id",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 2139,
+            "offset": 2105,
             "name": "id"
           },
           "typeConverter": null,
@@ -850,7 +850,7 @@
           "nameInDart": "name",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 2173,
+            "offset": 2139,
             "name": "name"
           },
           "typeConverter": null,
@@ -871,7 +871,7 @@
           "nameInDart": "email",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 2209,
+            "offset": 2175,
             "name": "email"
           },
           "typeConverter": null,
@@ -892,7 +892,7 @@
           "nameInDart": "role",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 2246,
+            "offset": 2212,
             "name": "role"
           },
           "typeConverter": null,
@@ -913,7 +913,7 @@
           "nameInDart": "isActive",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 2282,
+            "offset": 2248,
             "name": "isActive"
           },
           "typeConverter": null,
@@ -963,7 +963,7 @@
       },
       "declaration": {
         "source_uri": "package:promt/core/database/local_database.dart",
-        "offset": 2407,
+        "offset": 2373,
         "name": "AttachmentsLocal"
       },
       "references": [],
@@ -978,7 +978,7 @@
           "nameInDart": "id",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 2458,
+            "offset": 2424,
             "name": "id"
           },
           "typeConverter": null,
@@ -999,7 +999,7 @@
           "nameInDart": "patientId",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 2492,
+            "offset": 2458,
             "name": "patientId"
           },
           "typeConverter": null,
@@ -1020,7 +1020,7 @@
           "nameInDart": "localPath",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 2533,
+            "offset": 2499,
             "name": "localPath"
           },
           "typeConverter": null,
@@ -1041,7 +1041,7 @@
           "nameInDart": "type",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 2574,
+            "offset": 2540,
             "name": "type"
           },
           "typeConverter": null,
@@ -1062,7 +1062,7 @@
           "nameInDart": "description",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 2610,
+            "offset": 2576,
             "name": "description"
           },
           "typeConverter": null,
@@ -1083,7 +1083,7 @@
           "nameInDart": "createdAt",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 2668,
+            "offset": 2634,
             "name": "createdAt"
           },
           "typeConverter": null,
@@ -1104,7 +1104,7 @@
           "nameInDart": "isSynced",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 2713,
+            "offset": 2679,
             "name": "isSynced"
           },
           "typeConverter": null,
@@ -1154,7 +1154,7 @@
       },
       "declaration": {
         "source_uri": "package:promt/core/database/local_database.dart",
-        "offset": 2839,
+        "offset": 2805,
         "name": "OdontogramLocal"
       },
       "references": [],
@@ -1169,7 +1169,7 @@
           "nameInDart": "patientId",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 2889,
+            "offset": 2855,
             "name": "patientId"
           },
           "typeConverter": null,
@@ -1190,7 +1190,7 @@
           "nameInDart": "dataJson",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 2930,
+            "offset": 2896,
             "name": "dataJson"
           },
           "typeConverter": null,
@@ -1211,7 +1211,7 @@
           "nameInDart": "lastUpdated",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 2974,
+            "offset": 2940,
             "name": "lastUpdated"
           },
           "typeConverter": null,
@@ -1232,7 +1232,7 @@
           "nameInDart": "isSynced",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 3021,
+            "offset": 2987,
             "name": "isSynced"
           },
           "typeConverter": null,
@@ -1282,7 +1282,7 @@
       },
       "declaration": {
         "source_uri": "package:promt/core/database/local_database.dart",
-        "offset": 3154,
+        "offset": 3120,
         "name": "WaitListLocal"
       },
       "references": [],
@@ -1297,7 +1297,7 @@
           "nameInDart": "id",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 3202,
+            "offset": 3168,
             "name": "id"
           },
           "typeConverter": null,
@@ -1318,7 +1318,7 @@
           "nameInDart": "patientId",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 3236,
+            "offset": 3202,
             "name": "patientId"
           },
           "typeConverter": null,
@@ -1339,7 +1339,7 @@
           "nameInDart": "patientName",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 3277,
+            "offset": 3243,
             "name": "patientName"
           },
           "typeConverter": null,
@@ -1360,7 +1360,7 @@
           "nameInDart": "clinicId",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 3320,
+            "offset": 3286,
             "name": "clinicId"
           },
           "typeConverter": null,
@@ -1381,7 +1381,7 @@
           "nameInDart": "priority",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 3360,
+            "offset": 3326,
             "name": "priority"
           },
           "typeConverter": null,
@@ -1402,7 +1402,7 @@
           "nameInDart": "specialty",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 3400,
+            "offset": 3366,
             "name": "specialty"
           },
           "typeConverter": null,
@@ -1423,7 +1423,7 @@
           "nameInDart": "observation",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 3441,
+            "offset": 3407,
             "name": "observation"
           },
           "typeConverter": null,
@@ -1444,7 +1444,7 @@
           "nameInDart": "createdAt",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 3499,
+            "offset": 3465,
             "name": "createdAt"
           },
           "typeConverter": null,
@@ -1465,7 +1465,7 @@
           "nameInDart": "isSynced",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 3544,
+            "offset": 3510,
             "name": "isSynced"
           },
           "typeConverter": null,
@@ -1515,7 +1515,7 @@
       },
       "declaration": {
         "source_uri": "package:promt/core/database/local_database.dart",
-        "offset": 3670,
+        "offset": 3636,
         "name": "AuditLocal"
       },
       "references": [],
@@ -1530,7 +1530,7 @@
           "nameInDart": "id",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 3714,
+            "offset": 3680,
             "name": "id"
           },
           "typeConverter": null,
@@ -1556,7 +1556,7 @@
           "nameInDart": "resourceId",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 3767,
+            "offset": 3733,
             "name": "resourceId"
           },
           "typeConverter": null,
@@ -1577,7 +1577,7 @@
           "nameInDart": "action",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 3809,
+            "offset": 3775,
             "name": "action"
           },
           "typeConverter": null,
@@ -1598,7 +1598,7 @@
           "nameInDart": "timestamp",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 3851,
+            "offset": 3817,
             "name": "timestamp"
           },
           "typeConverter": null,
@@ -1619,7 +1619,7 @@
           "nameInDart": "isSynced",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 3896,
+            "offset": 3862,
             "name": "isSynced"
           },
           "typeConverter": null,
@@ -1662,7 +1662,7 @@
       },
       "declaration": {
         "source_uri": "package:promt/core/database/local_database.dart",
-        "offset": 3968,
+        "offset": 3934,
         "name": "AnamneseLocal"
       },
       "references": [],
@@ -1677,7 +1677,7 @@
           "nameInDart": "patientId",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 4016,
+            "offset": 3982,
             "name": "patientId"
           },
           "typeConverter": null,
@@ -1698,7 +1698,7 @@
           "nameInDart": "responsesJson",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 4057,
+            "offset": 4023,
             "name": "responsesJson"
           },
           "typeConverter": null,
@@ -1719,7 +1719,7 @@
           "nameInDart": "lastUpdated",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 4106,
+            "offset": 4072,
             "name": "lastUpdated"
           },
           "typeConverter": null,
@@ -1740,7 +1740,7 @@
           "nameInDart": "isSynced",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 4153,
+            "offset": 4119,
             "name": "isSynced"
           },
           "typeConverter": null,
@@ -1790,7 +1790,7 @@
       },
       "declaration": {
         "source_uri": "package:promt/core/database/local_database.dart",
-        "offset": 4285,
+        "offset": 4251,
         "name": "AppointmentsLocal"
       },
       "references": [],
@@ -1805,7 +1805,7 @@
           "nameInDart": "id",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 4337,
+            "offset": 4303,
             "name": "id"
           },
           "typeConverter": null,
@@ -1826,7 +1826,7 @@
           "nameInDart": "patientId",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 4371,
+            "offset": 4337,
             "name": "patientId"
           },
           "typeConverter": null,
@@ -1856,7 +1856,7 @@
           "nameInDart": "patientName",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 4444,
+            "offset": 4410,
             "name": "patientName"
           },
           "typeConverter": null,
@@ -1877,7 +1877,7 @@
           "nameInDart": "doctorId",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 4487,
+            "offset": 4453,
             "name": "doctorId"
           },
           "typeConverter": null,
@@ -1907,7 +1907,7 @@
           "nameInDart": "doctorName",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 4559,
+            "offset": 4525,
             "name": "doctorName"
           },
           "typeConverter": null,
@@ -1937,7 +1937,7 @@
           "nameInDart": "studentId",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 4676,
+            "offset": 4603,
             "name": "studentId"
           },
           "typeConverter": null,
@@ -1958,7 +1958,7 @@
           "nameInDart": "studentName",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 4728,
+            "offset": 4655,
             "name": "studentName"
           },
           "typeConverter": null,
@@ -1979,7 +1979,7 @@
           "nameInDart": "professorId",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 4782,
+            "offset": 4709,
             "name": "professorId"
           },
           "typeConverter": null,
@@ -2000,7 +2000,7 @@
           "nameInDart": "professorName",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 4836,
+            "offset": 4763,
             "name": "professorName"
           },
           "typeConverter": null,
@@ -2021,7 +2021,7 @@
           "nameInDart": "startTime",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 4900,
+            "offset": 4827,
             "name": "startTime"
           },
           "typeConverter": null,
@@ -2042,7 +2042,7 @@
           "nameInDart": "endTime",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 4949,
+            "offset": 4876,
             "name": "endTime"
           },
           "typeConverter": null,
@@ -2063,7 +2063,7 @@
           "nameInDart": "status",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 4992,
+            "offset": 4919,
             "name": "status"
           },
           "typeConverter": null,
@@ -2084,7 +2084,7 @@
           "nameInDart": "procedureName",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 5030,
+            "offset": 4957,
             "name": "procedureName"
           },
           "typeConverter": null,
@@ -2105,7 +2105,7 @@
           "nameInDart": "notes",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 5086,
+            "offset": 5013,
             "name": "notes"
           },
           "typeConverter": null,
@@ -2126,7 +2126,7 @@
           "nameInDart": "clinicId",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 5134,
+            "offset": 5061,
             "name": "clinicId"
           },
           "typeConverter": null,
@@ -2156,7 +2156,7 @@
           "nameInDart": "isSynced",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 5206,
+            "offset": 5133,
             "name": "isSynced"
           },
           "typeConverter": null,
@@ -2206,7 +2206,7 @@
       },
       "declaration": {
         "source_uri": "package:promt/core/database/local_database.dart",
-        "offset": 5331,
+        "offset": 5258,
         "name": "EvolutionsLocal"
       },
       "references": [],
@@ -2221,7 +2221,7 @@
           "nameInDart": "id",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 5381,
+            "offset": 5308,
             "name": "id"
           },
           "typeConverter": null,
@@ -2242,7 +2242,7 @@
           "nameInDart": "patientId",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 5415,
+            "offset": 5342,
             "name": "patientId"
           },
           "typeConverter": null,
@@ -2263,7 +2263,7 @@
           "nameInDart": "studentId",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 5456,
+            "offset": 5383,
             "name": "studentId"
           },
           "typeConverter": null,
@@ -2284,7 +2284,7 @@
           "nameInDart": "studentName",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 5508,
+            "offset": 5435,
             "name": "studentName"
           },
           "typeConverter": null,
@@ -2305,7 +2305,7 @@
           "nameInDart": "professorId",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 5562,
+            "offset": 5489,
             "name": "professorId"
           },
           "typeConverter": null,
@@ -2326,7 +2326,7 @@
           "nameInDart": "professorName",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 5616,
+            "offset": 5543,
             "name": "professorName"
           },
           "typeConverter": null,
@@ -2347,7 +2347,7 @@
           "nameInDart": "description",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 5672,
+            "offset": 5599,
             "name": "description"
           },
           "typeConverter": null,
@@ -2368,7 +2368,7 @@
           "nameInDart": "isSignedByProfessor",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 5715,
+            "offset": 5642,
             "name": "isSignedByProfessor"
           },
           "typeConverter": null,
@@ -2398,7 +2398,7 @@
           "nameInDart": "signedAt",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 5808,
+            "offset": 5735,
             "name": "signedAt"
           },
           "typeConverter": null,
@@ -2419,7 +2419,7 @@
           "nameInDart": "createdAt",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 5867,
+            "offset": 5794,
             "name": "createdAt"
           },
           "typeConverter": null,
@@ -2440,7 +2440,7 @@
           "nameInDart": "clinicName",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 5912,
+            "offset": 5839,
             "name": "clinicName"
           },
           "typeConverter": null,
@@ -2461,7 +2461,7 @@
           "nameInDart": "isSynced",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 5965,
+            "offset": 5892,
             "name": "isSynced"
           },
           "typeConverter": null,
@@ -2511,7 +2511,7 @@
       },
       "declaration": {
         "source_uri": "package:promt/core/database/local_database.dart",
-        "offset": 6091,
+        "offset": 6018,
         "name": "TreatmentItemsLocal"
       },
       "references": [],
@@ -2526,7 +2526,7 @@
           "nameInDart": "id",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 6145,
+            "offset": 6072,
             "name": "id"
           },
           "typeConverter": null,
@@ -2547,7 +2547,7 @@
           "nameInDart": "planId",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 6179,
+            "offset": 6106,
             "name": "planId"
           },
           "typeConverter": null,
@@ -2568,7 +2568,7 @@
           "nameInDart": "procedureName",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 6217,
+            "offset": 6144,
             "name": "procedureName"
           },
           "typeConverter": null,
@@ -2589,7 +2589,7 @@
           "nameInDart": "toothNumber",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 6261,
+            "offset": 6188,
             "name": "toothNumber"
           },
           "typeConverter": null,
@@ -2610,7 +2610,7 @@
           "nameInDart": "status",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 6318,
+            "offset": 6245,
             "name": "status"
           },
           "typeConverter": null,
@@ -2631,7 +2631,7 @@
           "nameInDart": "isSynced",
           "declaration": {
             "source_uri": "package:promt/core/database/local_database.dart",
-            "offset": 6356,
+            "offset": 6283,
             "name": "isSynced"
           },
           "typeConverter": null,
