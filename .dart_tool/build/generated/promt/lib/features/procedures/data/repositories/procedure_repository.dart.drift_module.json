@@ -1,8 +1,0 @@
-{
-  "elements": {},
-  "imports": [
-    "package:promt/core/network/api_client.dart",
-    "package:promt/features/procedures/domain/entities/procedure.dart",
-    "package:promt/features/procedures/domain/repositories/i_procedure_repository.dart"
-  ]
-}
