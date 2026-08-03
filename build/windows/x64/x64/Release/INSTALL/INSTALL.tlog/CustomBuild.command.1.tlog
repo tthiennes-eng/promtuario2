@@ -1,0 +1,10 @@
+^C:\USERS\THIAGO\ANDROIDSTUDIOPROJECTS\PROMTUARIO2\BUILD\WINDOWS\X64\CMAKEFILES\56A00DA6BEB74DB5AF3DA962F9227869\INSTALL_FORCE.RULE
+setlocal
+cd .
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
