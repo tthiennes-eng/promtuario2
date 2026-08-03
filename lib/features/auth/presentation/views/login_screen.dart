@@ -31,8 +31,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             _passwordController.text,
           );
 
+      if (!mounted) return;
+
       final state = ref.read(authViewModelProvider);
-      if (state.errorMessage != null && mounted) {
+      if (state.errorMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(state.errorMessage!),
