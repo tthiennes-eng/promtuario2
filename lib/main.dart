@@ -13,7 +13,7 @@ void main() async {
   // Garante que o binding do Flutter esteja inicializado.
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Configuraçã o global de Logs para depuração.
+  // Configuração global de Logs para depuração.
   Logger.root.level = Level.ALL;
   Logger.root.onRecord.listen((record) {
     debugPrint('${record.level.name}: ${record.time}: ${record.message}');
