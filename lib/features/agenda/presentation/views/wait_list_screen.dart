@@ -6,7 +6,6 @@ import 'package:promt/features/agenda/presentation/viewmodels/wait_list_viewmode
 import 'package:promt/features/agenda/domain/entities/wait_list_entry.dart';
 import 'package:promt/features/patients/presentation/viewmodels/patient_viewmodel.dart';
 
-/// Tela de Gestão da Lista de Espera.
 class WaitListScreen extends ConsumerWidget {
   final String clinicId;
   final String clinicName;
@@ -76,7 +75,7 @@ class WaitListScreen extends ConsumerWidget {
           builder: (context, setState) => Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              patientsAsync.patients.when(
+              patientsAsync.when(
                 data: (patients) => DropdownButtonFormField<String>(
                   decoration: const InputDecoration(labelText: 'Paciente'),
                   items: patients.map((p) => DropdownMenuItem(value: p.id, child: Text(p.fullName))).toList(),

@@ -3,6 +3,7 @@ import 'package:promt/features/agenda/domain/entities/appointment.dart';
 import 'package:promt/features/procedures/domain/entities/clinic.dart';
 import 'package:promt/core/providers/providers.dart';
 import 'package:promt/core/network/realtime_service.dart';
+import 'package:promt/features/patients/presentation/viewmodels/patient_viewmodel.dart';
 
 enum AgendaDayPeriod { all, morning, afternoon, night }
 
@@ -256,6 +257,8 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
 
   Future<void> schedule(Appointment appointment) async {
     await ref.read(appointmentRepositoryProvider).scheduleAppointment(appointment);
+    // Invalida o provider de histórico global para que a lista de pacientes reflita a mudança na hora
+    ref.invalidate(allAppointmentsProvider);
     await refresh();
   }
 

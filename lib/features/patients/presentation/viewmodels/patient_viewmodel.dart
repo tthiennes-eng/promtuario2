@@ -3,57 +3,44 @@ import 'package:promt/features/patients/domain/entities/patient.dart';
 import 'package:promt/features/agenda/domain/entities/appointment.dart';
 import 'package:promt/core/providers/providers.dart';
 
+/// Estado que combina a lista de pacientes com o histórico global de agendamentos.
 class PatientListState {
   final AsyncValue<List<Patient>> patients;
-  final List<Appointment> allHistory;
+  final AsyncValue<List<Appointment>> allHistory;
 
   PatientListState({
     required this.patients,
-    this.allHistory = const [],
+    required this.allHistory,
   });
-
-  PatientListState copyWith({
-    AsyncValue<List<Patient>>? patients,
-    List<Appointment>? allHistory,
-  }) {
-    return PatientListState(
-      patients: patients ?? this.patients,
-      allHistory: allHistory ?? this.allHistory,
-    );
-  }
 }
 
-class PatientViewModel extends StateNotifier<PatientListState> {
-  PatientViewModel(this.ref) : super(PatientListState(patients: const AsyncValue.loading())) {
+/// Provider que busca todos os agendamentos do sistema para alimentar os prontuários na lista.
+final allAppointmentsProvider = FutureProvider<List<Appointment>>((ref) async {
+  final repository = ref.watch(appointmentRepositoryProvider);
+  // Busca histórico amplo para garantir que todos os atendimentos apareçam
+  return await repository.getAppointments(
+    start: DateTime(2000), 
+    end: DateTime(2100),
+  );
+});
+
+/// Notifier para gerenciar a lógica de pacientes.
+class PatientViewModel extends StateNotifier<AsyncValue<List<Patient>>> {
+  PatientViewModel(this.ref) : super(const AsyncValue.loading()) {
     refresh();
   }
 
   final Ref ref;
 
   Future<void> refresh() async {
-    state = state.copyWith(patients: const AsyncValue.loading());
-    
+    state = const AsyncValue.loading();
     final repository = ref.read(patientRepositoryProvider);
-    final appointmentRepo = ref.read(appointmentRepositoryProvider);
-
-    final patientsResult = await AsyncValue.guard(() => repository.getPatients());
-    
-    // Busca TODOS os agendamentos locais para compor o histórico na lista
-    final history = await appointmentRepo.getAppointments(
-      start: DateTime(2000), 
-      end: DateTime(2100)
-    );
-
-    state = PatientListState(
-      patients: patientsResult,
-      allHistory: history,
-    );
+    state = await AsyncValue.guard(() => repository.getPatients());
   }
 
   Future<void> searchPatients(String query) async {
     final repository = ref.read(patientRepositoryProvider);
-    final results = await AsyncValue.guard(() => repository.getPatients(query: query));
-    state = state.copyWith(patients: results);
+    state = await AsyncValue.guard(() => repository.getPatients(query: query));
   }
 
   Future<void> addPatient(Patient patient) async {
@@ -63,6 +50,18 @@ class PatientViewModel extends StateNotifier<PatientListState> {
   }
 }
 
-final patientViewModelProvider = StateNotifierProvider<PatientViewModel, PatientListState>((ref) {
+final patientViewModelProvider = StateNotifierProvider<PatientViewModel, AsyncValue<List<Patient>>>((ref) {
   return PatientViewModel(ref);
+});
+
+/// Provider combinado que une Pacientes e Agendamentos de forma reativa.
+/// Sempre que um agendamento for feito, este provider atualizará a lista automaticamente.
+final patientListWithHistoryProvider = Provider<PatientListState>((ref) {
+  final patients = ref.watch(patientViewModelProvider);
+  final history = ref.watch(allAppointmentsProvider);
+
+  return PatientListState(
+    patients: patients,
+    allHistory: history,
+  );
 });

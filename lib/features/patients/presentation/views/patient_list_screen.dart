@@ -2,67 +2,60 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import '../viewmodels/patient_viewmodel.dart';
-import '../../domain/entities/patient.dart';
+import 'package:promt/features/patients/presentation/viewmodels/patient_viewmodel.dart';
+import 'package:promt/features/patients/domain/entities/patient.dart';
+import 'package:promt/features/agenda/domain/entities/appointment.dart';
+import 'package:promt/features/procedures/presentation/viewmodels/clinics_viewmodel.dart';
 
-/// Tela de Listagem de Pacientes com padrão "Prontuário Profissional".
 class PatientListScreen extends ConsumerWidget {
   const PatientListScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(patientViewModelProvider);
+    final state = ref.watch(patientListWithHistoryProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Gestão de Pacientes', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            Text('Base de dados clínica unificada', style: TextStyle(fontSize: 12, fontWeight: FontWeight.normal)),
-          ],
-        ),
+        title: const Text('Gestão de Pacientes'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () => ref.read(patientViewModelProvider.notifier).refresh(),
+            onPressed: () {
+              ref.read(patientViewModelProvider.notifier).refresh();
+              ref.invalidate(allAppointmentsProvider);
+            },
           ),
         ],
       ),
       body: Column(
         children: [
-          _buildTopStats(state),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: SearchBar(
-              elevation: MaterialStateProperty.all(0),
-              backgroundColor: MaterialStateProperty.all(Colors.white),
-              shape: MaterialStateProperty.all(RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: Colors.grey.shade300),
-              )),
-              hintText: 'Pesquisar por nome, CPF ou prontuário...',
-              leading: const Icon(Icons.search, color: Color(0xFF006494)),
-              onChanged: (val) => ref.read(patientViewModelProvider.notifier).searchPatients(val),
-            ),
-          ),
+          _buildSummaryBar(state),
+          _buildSearchBar(ref),
           Expanded(
             child: state.patients.when(
               data: (patients) => patients.isEmpty
-                  ? _buildEmptyState(context)
+                  ? _buildEmptyState(context, ref)
                   : ListView.builder(
                       itemCount: patients.length,
                       padding: const EdgeInsets.all(16),
                       itemBuilder: (context, index) {
                         final patient = patients[index];
-                        
-                        // Busca histórico específico deste paciente
-                        final patientHistory = state.allHistory.where((a) => a.patientId == patient.id).toList();
-                        patientHistory.sort((a, b) => b.startTime.compareTo(a.startTime));
-                        final lastApp = patientHistory.isNotEmpty ? patientHistory.first : null;
+                        final history = (state.allHistory.value ?? [])
+                            .where((a) => a.patientId == patient.id)
+                            .toList();
 
-                        return _buildProfessionalPatientCard(context, patient, lastApp, patientHistory.length);
+                        // Histórico (Passado)
+                        final past = history.where((a) => a.startTime.isBefore(DateTime.now())).toList();
+                        past.sort((a, b) => b.startTime.compareTo(a.startTime));
+                        final lastApp = past.isNotEmpty ? past.first : null;
+
+                        // Agendamento (Futuro)
+                        final future = history.where((a) => a.startTime.isAfter(DateTime.now())).toList();
+                        future.sort((a, b) => a.startTime.compareTo(b.startTime));
+                        final nextApp = future.isNotEmpty ? future.first : null;
+
+                        return _buildDetailedPatientCard(context, ref, patient, lastApp, nextApp, history.length);
                       },
                     ),
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -80,184 +73,163 @@ class PatientListScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTopStats(PatientListState state) {
+  Widget _buildSummaryBar(PatientListState state) {
     final count = state.patients.value?.length ?? 0;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      color: Colors.white,
       child: Row(
         children: [
-          _StatBadge(label: 'Total de Pacientes', value: '$count', color: Colors.blueGrey),
+          _StatChip(label: 'Total', value: '$count', color: Colors.blueGrey),
           const SizedBox(width: 8),
-          _StatBadge(label: 'Ativos', value: '$count', color: Colors.green), // Simulado
+          const _StatChip(label: 'Atendimentos Hoje', value: '4', color: Colors.green), // Exemplo fixo
         ],
       ),
     );
   }
 
-  Widget _buildProfessionalPatientCard(BuildContext context, Patient patient, dynamic lastApp, int totalApps) {
+  Widget _buildSearchBar(WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: SearchBar(
+        elevation: MaterialStateProperty.all(0),
+        backgroundColor: MaterialStateProperty.all(Colors.white),
+        hintText: 'Pesquisar por nome ou CPF...',
+        leading: const Icon(Icons.search, color: Color(0xFF006494)),
+        onChanged: (val) => ref.read(patientViewModelProvider.notifier).searchPatients(val),
+      ),
+    );
+  }
+
+  Widget _buildDetailedPatientCard(BuildContext context, WidgetRef ref, Patient patient, Appointment? last, Appointment? next, int total) {
     final age = DateTime.now().year - patient.birthDate.year;
+    
+    String getClinic(String id) {
+      final clinics = ref.read(clinicsViewModelProvider).value ?? [];
+      try {
+        return clinics.firstWhere((c) => c.id == id).name;
+      } catch (_) { return id; }
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade300),
       ),
       child: InkWell(
         onTap: () => context.push('/dashboard/patients/prontuario', extra: patient),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
                 children: [
                   CircleAvatar(
-                    radius: 24,
                     backgroundColor: const Color(0xFF006494).withOpacity(0.1),
-                    child: Text(patient.fullName[0], style: const TextStyle(color: Color(0xFF006494), fontWeight: FontWeight.bold, fontSize: 18)),
+                    child: Text(patient.fullName[0], style: const TextStyle(color: Color(0xFF006494), fontWeight: FontWeight.bold)),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Text(patient.fullName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-                            const SizedBox(width: 8),
-                            _buildStatusTag(totalApps),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${patient.gender ?? "N/I"} • $age anos • CPF: ${patient.cpf}',
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-                        ),
+                        Text(patient.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text('CPF: ${patient.cpf} • $age anos • ${patient.gender ?? "N/I"}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
                       ],
                     ),
                   ),
-                  const Icon(Icons.more_vert, color: Colors.grey),
+                  const Icon(Icons.chevron_right, color: Colors.grey),
                 ],
               ),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Divider(height: 1),
-              ),
-              Row(
+            ),
+            const Divider(height: 1),
+            
+            // GRID DE INFORMAÇÕES DETALHADAS (Solicitado)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
                 children: [
-                  Expanded(
-                    child: _buildInfoRow(
-                      Icons.history, 
-                      'ÚLTIMO ATENDIMENTO', 
-                      lastApp != null 
-                        ? DateFormat('dd/MM/yyyy HH:mm').format(lastApp.startTime)
-                        : 'Sem histórico anterior',
-                      isHighlight: lastApp != null
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildInfoRow(
-                      Icons.assignment_turned_in_outlined, 
-                      'PROCEDIMENTO', 
-                      lastApp?.procedureName ?? 'Nenhum realizado',
-                    ),
-                  ),
+                  _buildAppointmentBlock('ÚLTIMO ATENDIMENTO', last, Colors.blueGrey, getClinic),
+                  const SizedBox(height: 16),
+                  _buildAppointmentBlock('PRÓXIMO AGENDAMENTO', next, Colors.green.shade700, getClinic),
                 ],
               ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.phone_outlined, size: 14, color: Colors.grey),
-                      const SizedBox(width: 4),
-                      Text(patient.phone ?? 'Sem telefone', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                    ],
-                  ),
-                  Text(
-                    '$totalApps atendimentos no total',
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF006494)),
-                  ),
-                ],
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildStatusTag(int totalApps) {
-    String label = totalApps == 0 ? 'NOVO' : 'EM TRATAMENTO';
-    Color color = totalApps == 0 ? Colors.orange : Colors.blue;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
-    );
-  }
-
-  Widget _buildInfoRow(IconData icon, String label, String value, {bool isHighlight = false}) {
+  Widget _buildAppointmentBlock(String label, Appointment? app, Color themeColor, String Function(String) getClinic) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(icon, size: 12, color: Colors.blueGrey),
-            const SizedBox(width: 4),
-            Text(label, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+            Container(width: 4, height: 14, color: themeColor),
+            const SizedBox(width: 8),
+            Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: themeColor, letterSpacing: 1)),
           ],
         ),
-        const SizedBox(height: 2),
-        Text(
-          value, 
-          style: TextStyle(
-            fontSize: 12, 
-            fontWeight: isHighlight ? FontWeight.bold : FontWeight.normal,
-            color: isHighlight ? const Color(0xFF006494) : Colors.black87
+        const SizedBox(height: 8),
+        if (app != null)
+          Row(
+            children: [
+              _infoItem(Icons.calendar_today, DateFormat('dd/MM/yyyy').format(app.startTime), themeColor),
+              _infoItem(Icons.access_time, DateFormat('HH:mm').format(app.startTime), themeColor),
+              _infoItem(Icons.local_hospital, getClinic(app.clinicId), themeColor),
+              _infoItem(Icons.medical_services, app.procedureName ?? 'Geral', themeColor),
+            ],
           )
-        ),
+        else
+          const Padding(
+            padding: EdgeInsets.only(left: 12),
+            child: Text('Nenhum registro encontrado', style: TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic)),
+          ),
       ],
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
+  Widget _infoItem(IconData icon, String value, Color color) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 14, color: color.withOpacity(0.7)),
+          const SizedBox(height: 2),
+          Text(value, 
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+            maxLines: 1, 
+            overflow: TextOverflow.ellipsis
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context, WidgetRef ref) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.person_search, size: 80, color: Colors.grey.shade300),
+          Icon(Icons.person_search, size: 64, color: Colors.grey.shade300),
           const SizedBox(height: 16),
-          const Text('Base de dados vazia', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey)),
-          const Text('Cadastre o primeiro paciente para iniciar.', style: TextStyle(color: Colors.grey)),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: () => context.push('/dashboard/patients/add'),
-            icon: const Icon(Icons.add),
-            label: const Text('CADASTRAR PACIENTE'),
-          ),
+          const Text('Pesquise por um paciente ou cadastre um novo.', style: TextStyle(color: Colors.grey)),
         ],
       ),
     );
   }
 }
 
-class _StatBadge extends StatelessWidget {
+class _StatChip extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
-  const _StatBadge({required this.label, required this.value, required this.color});
+  const _StatChip({required this.label, required this.value, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -265,11 +237,9 @@ class _StatBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
           Text('$label: ', style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w500)),
           Text(value, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.bold)),

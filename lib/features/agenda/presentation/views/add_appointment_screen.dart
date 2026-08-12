@@ -43,7 +43,6 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
   late TimeOfDay _startTime;
   final _notesController = TextEditingController();
 
-  // Lista exata de clínicas solicitada
   final List<String> _clinicOptions = [
     'Clinica I',
     'Clinica II',
@@ -115,7 +114,6 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
               const Text('Local e Paciente', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
               const SizedBox(height: 16),
               
-              // 1. Seleção de Clínica (Lista Fixa e Funcional)
               DropdownButtonFormField<String>(
                 value: _selectedClinicName,
                 isExpanded: true,
@@ -132,7 +130,6 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                 onChanged: (name) {
                   setState(() {
                     _selectedClinicName = name;
-                    // Busca o ID real se a clínica estiver no banco, senão usa o nome como ID temporário
                     clinicsAsync.whenData((list) {
                       try {
                         _selectedClinicId = list.firstWhere((c) => c.name == name).id;
@@ -146,11 +143,10 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
               ),
               const SizedBox(height: 16),
 
-              // 2. Seleção de Paciente
               Row(
                 children: [
                   Expanded(
-                    child: patientsAsync.patients.when(
+                    child: patientsAsync.when(
                       data: (patients) => DropdownButtonFormField<String>(
                         value: _selectedPatientId,
                         isExpanded: true,
@@ -185,7 +181,6 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
               const Text('Responsáveis (Campos Editáveis)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
               const SizedBox(height: 16),
 
-              // 3. Dupla Responsável (Editável com Autocomplete)
               usersAsync.when(
                 data: (users) {
                   final students = users.where((u) => u.role == UserRole.aluno).toList();
@@ -223,7 +218,6 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
               ),
               const SizedBox(height: 16),
 
-              // 4. Professor Supervisor (Editável com Autocomplete)
               usersAsync.when(
                 data: (users) {
                   final professors = users.where((u) => u.role == UserRole.professor || u.role == UserRole.coordenador).toList();
@@ -264,7 +258,6 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
               const Text('Procedimento e Horário', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
               const SizedBox(height: 16),
 
-              // 5. Procedimento Previsto
               proceduresAsync.when(
                 data: (procedures) {
                   final allOptions = procedures.isEmpty 
@@ -355,7 +348,6 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
       );
       final end = start.add(const Duration(hours: 1));
 
-      // Caso a clínica não exista no banco com ID, usamos um UUID ou o próprio nome como ID
       final finalClinicId = _selectedClinicId ?? const Uuid().v4();
 
       final appointment = Appointment(
