@@ -6,7 +6,6 @@ import 'package:promt/core/network/realtime_service.dart';
 
 enum AgendaDayPeriod { all, morning, afternoon, night }
 
-/// Representa um slot na agenda (pode ser um agendamento ou horário livre)
 class TimeSlot {
   final DateTime startTime;
   final DateTime endTime;
@@ -21,7 +20,6 @@ class TimeSlot {
   });
 }
 
-/// Estado do ViewModel de Agenda com Filtros Avançados e Slots.
 class AppointmentState {
   final AsyncValue<List<Appointment>> appointments;
   final AsyncValue<List<Appointment>> institutionalAppointments;
@@ -29,7 +27,6 @@ class AppointmentState {
   final Clinic? selectedClinic;
   final List<Clinic> clinics;
   
-  // Filtros
   final AgendaDayPeriod period;
   final String? filterStudent;
   final String? filterProfessor;
@@ -150,6 +147,13 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
 
   final Ref ref;
 
+  final List<String> _defaultClinicNames = [
+    'Clinica I', 'Clinica II', 'Clinica III', 'Clinica IV', 'Clinica V',
+    'Clinica Integrada Infantil', 'Clinica de Emergência',
+    'Clinica Integrada Adulto I', 'Clinica Integrada Adulto II',
+    'Clinica de DTM', 'Clinica de Odontopediatria'
+  ];
+
   void _initRealtime() {
     final realtime = ref.read(realtimeServiceProvider);
     realtime.on('AppointmentUpdated', (args) => refresh());
@@ -158,7 +162,23 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
   Future<void> _loadInitialData() async {
     try {
       final proceduresRepo = ref.read(proceduresRepositoryProvider);
-      final clinics = await proceduresRepo.getClinics(onlyActive: true);
+      var clinics = await proceduresRepo.getClinics(onlyActive: true);
+      
+      // Se não houver clínicas no banco, popula com os nomes padrão para que a agenda funcione
+      if (clinics.isEmpty) {
+        clinics = _defaultClinicNames.map((name) => Clinic(
+          id: name, // Usa o nome como ID se não houver registro no banco
+          name: name,
+          description: 'Clínica Escola',
+          isActive: true,
+          capacity: 1,
+          startHour: 8,
+          endHour: 18,
+          slotDurationMinutes: 60,
+          metadata: {},
+        )).toList();
+      }
+
       state = state.copyWith(clinics: clinics);
       if (clinics.isNotEmpty) selectClinic(clinics.first);
     } catch (e, stack) {
@@ -254,7 +274,7 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
       
       final workingMinutes = (endHour - startHour) * 60;
       final slotsPerChair = workingMinutes / (duration > 0 ? duration : 60);
-      final totalCapacity = slotsPerChair * clinic.capacity;
+      final totalCapacity = slotsPerChair * (clinic.capacity > 0 ? clinic.capacity : 1);
       
       if (totalCapacity > 0) {
         occupancy = list.length / totalCapacity;

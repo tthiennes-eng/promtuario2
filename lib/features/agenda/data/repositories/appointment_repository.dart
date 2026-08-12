@@ -5,7 +5,6 @@ import 'package:promt/core/database/local_database.dart';
 import 'package:promt/features/agenda/domain/entities/appointment.dart';
 import 'package:promt/features/agenda/domain/repositories/i_appointment_repository.dart';
 
-/// Implementação do Repositório de Agenda com Cache Offline e Sincronização.
 class AppointmentRepository implements IAppointmentRepository {
   final ApiClient _apiClient;
   final AppDatabase _localDb;
@@ -19,6 +18,9 @@ class AppointmentRepository implements IAppointmentRepository {
     required DateTime end,
     String? clinicId,
   }) async {
+    List<Appointment> remoteAppointments = [];
+    bool remoteSuccess = false;
+
     try {
       final response = await _apiClient.instance.get('/appointments', queryParameters: {
         'start': start.toIso8601String(),
@@ -27,40 +29,54 @@ class AppointmentRepository implements IAppointmentRepository {
       });
 
       final List<dynamic> data = response.data ?? [];
-      final appointments = data.map((json) => Appointment.fromJson(json)).toList();
-
-      _updateLocalCache(appointments);
-      return appointments;
+      remoteAppointments = data.map((json) => Appointment.fromJson(json)).toList();
+      _updateLocalCache(remoteAppointments);
+      remoteSuccess = true;
     } catch (e) {
-      _logger.warning('Falha ao buscar agendamentos remotos, carregando cache local: $e');
-      
-      final query = _localDb.select(_localDb.appointmentsLocal)
-        ..where((t) => t.startTime.isBetweenValues(start, end));
-      
-      if (clinicId != null) {
-        query.where((t) => t.clinicId.equals(clinicId));
-      }
-
-      final results = await query.get();
-      return results.map((row) => _mapSchemaToEntity(row)).toList();
+      _logger.warning('Falha ao buscar agendamentos remotos: $e');
     }
+
+    // Sempre busca do banco local para garantir que dados offline apareçam
+    final query = _localDb.select(_localDb.appointmentsLocal);
+    query.where((t) {
+      var expression = t.startTime.isBetweenValues(start, end);
+      if (clinicId != null) {
+        expression = expression & t.clinicId.equals(clinicId);
+      }
+      return expression;
+    });
+
+    final results = await query.get();
+    final localAppointments = results.map((row) => _mapSchemaToEntity(row)).toList();
+
+    // Se a busca remota falhou, retorna o que tem no local.
+    // Se a busca remota funcionou, o cache local já foi atualizado, então retornamos o local
+    // para garantir consistência entre o que foi salvo offline e o que veio do servidor.
+    return localAppointments;
   }
 
   @override
   Future<Appointment> scheduleAppointment(Appointment appointment) async {
+    // 1. Salva localmente primeiro
+    await _saveLocal(appointment, false);
+
     try {
+      // 2. Tenta enviar para o servidor
       final response = await _apiClient.instance.post(
         '/appointments',
         data: appointment.toJson(),
       );
-      final newAppointment = Appointment.fromJson(response.data);
-      await _saveLocal(newAppointment, true);
-      return newAppointment;
+      
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final newAppointment = Appointment.fromJson(response.data);
+        await _saveLocal(newAppointment, true);
+        return newAppointment;
+      }
     } catch (e) {
-      _logger.severe('Erro no agendamento, salvando para sincronização offline: $e');
-      await _saveLocal(appointment, false);
-      return appointment;
+      _logger.severe('Erro no agendamento remoto, mantido localmente: $e');
     }
+    
+    return appointment;
   }
 
   @override
@@ -86,13 +102,16 @@ class AppointmentRepository implements IAppointmentRepository {
     for (final row in unsynced) {
       try {
         final appointment = _mapSchemaToEntity(row);
-        await _apiClient.instance.put(
-          '/appointments/${appointment.id}',
+        final response = await _apiClient.instance.post(
+          '/appointments',
           data: appointment.toJson(),
         );
-        await (_localDb.update(_localDb.appointmentsLocal)..where((t) => t.id.equals(row.id))).write(
-          const AppointmentsLocalCompanion(isSynced: Value(true)),
-        );
+        
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          await (_localDb.update(_localDb.appointmentsLocal)..where((t) => t.id.equals(row.id))).write(
+            const AppointmentsLocalCompanion(isSynced: Value(true)),
+          );
+        }
       } catch (e) {
         _logger.warning('Falha ao sincronizar agendamento ${row.id}: $e');
       }
@@ -154,7 +173,6 @@ class AppointmentRepository implements IAppointmentRepository {
   }
 
   Appointment _mapSchemaToEntity(AppointmentsLocalData row) {
-    // Utilizando JSON para campos novos para garantir compilação caso .g.dart esteja desatualizado
     final dataMap = row.toJson();
     
     return Appointment(
