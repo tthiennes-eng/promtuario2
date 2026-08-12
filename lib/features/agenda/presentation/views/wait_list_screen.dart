@@ -76,7 +76,7 @@ class WaitListScreen extends ConsumerWidget {
           builder: (context, setState) => Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              patientsAsync.when(
+              patientsAsync.patients.when(
                 data: (patients) => DropdownButtonFormField<String>(
                   decoration: const InputDecoration(labelText: 'Paciente'),
                   items: patients.map((p) => DropdownMenuItem(value: p.id, child: Text(p.fullName))).toList(),

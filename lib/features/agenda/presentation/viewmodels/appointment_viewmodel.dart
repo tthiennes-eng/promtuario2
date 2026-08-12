@@ -87,6 +87,9 @@ class AppointmentState {
     final dayAppointments = appointments.value ?? [];
 
     for (int hour = startHour; hour < endHour; hour++) {
+      // Pula horários de almoço (11h, 12h, 13h) conforme solicitado
+      if (hour == 11 || hour == 12 || hour == 13) continue;
+
       for (int min = 0; min < 60; min += (duration > 0 ? duration : 60)) {
         final slotStart = DateTime(date.year, date.month, date.day, hour, min);
         final slotEnd = slotStart.add(Duration(minutes: duration > 0 ? duration : 60));

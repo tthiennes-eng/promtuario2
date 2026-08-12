@@ -150,7 +150,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: patientsAsync.when(
+                    child: patientsAsync.patients.when(
                       data: (patients) => DropdownButtonFormField<String>(
                         value: _selectedPatientId,
                         isExpanded: true,

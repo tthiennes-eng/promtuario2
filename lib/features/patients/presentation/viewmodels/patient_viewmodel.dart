@@ -1,54 +1,68 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:promt/features/patients/domain/entities/patient.dart';
+import 'package:promt/features/agenda/domain/entities/appointment.dart';
 import 'package:promt/core/providers/providers.dart';
 
-/// Notifier responsável pela gestão de pacientes.
-class PatientViewModel extends StateNotifier<AsyncValue<List<Patient>>> {
-  PatientViewModel(this.ref) : super(const AsyncValue.loading()) {
+class PatientListState {
+  final AsyncValue<List<Patient>> patients;
+  final List<Appointment> allHistory;
+
+  PatientListState({
+    required this.patients,
+    this.allHistory = const [],
+  });
+
+  PatientListState copyWith({
+    AsyncValue<List<Patient>>? patients,
+    List<Appointment>? allHistory,
+  }) {
+    return PatientListState(
+      patients: patients ?? this.patients,
+      allHistory: allHistory ?? this.allHistory,
+    );
+  }
+}
+
+class PatientViewModel extends StateNotifier<PatientListState> {
+  PatientViewModel(this.ref) : super(PatientListState(patients: const AsyncValue.loading())) {
     refresh();
   }
 
   final Ref ref;
 
-  /// Recarrega a lista de pacientes.
   Future<void> refresh() async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      final repository = ref.read(patientRepositoryProvider);
-      return await repository.getPatients();
-    });
+    state = state.copyWith(patients: const AsyncValue.loading());
+    
+    final repository = ref.read(patientRepositoryProvider);
+    final appointmentRepo = ref.read(appointmentRepositoryProvider);
+
+    final patientsResult = await AsyncValue.guard(() => repository.getPatients());
+    
+    // Busca TODOS os agendamentos locais para compor o histórico na lista
+    final history = await appointmentRepo.getAppointments(
+      start: DateTime(2000), 
+      end: DateTime(2100)
+    );
+
+    state = PatientListState(
+      patients: patientsResult,
+      allHistory: history,
+    );
   }
 
-  /// Realiza uma busca por pacientes.
   Future<void> searchPatients(String query) async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      final repository = ref.read(patientRepositoryProvider);
-      return await repository.getPatients(query: query);
-    });
+    final repository = ref.read(patientRepositoryProvider);
+    final results = await AsyncValue.guard(() => repository.getPatients(query: query));
+    state = state.copyWith(patients: results);
   }
 
-  /// Cadastra um novo paciente. 
-  /// O erro é propagado para que a UI possa tratá-lo.
   Future<void> addPatient(Patient patient) async {
     final repository = ref.read(patientRepositoryProvider);
-    
-    // Atualiza estado local para loading
-    state = const AsyncValue.loading();
-    
-    try {
-      await repository.createPatient(patient);
-      // Recarrega a lista após o sucesso
-      final patients = await repository.getPatients();
-      state = AsyncValue.data(patients);
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
-      rethrow; // Repropaga para a tela de cadastro tratar
-    }
+    await repository.createPatient(patient);
+    await refresh();
   }
 }
 
-/// Provider para o PatientViewModel.
-final patientViewModelProvider = StateNotifierProvider<PatientViewModel, AsyncValue<List<Patient>>>((ref) {
+final patientViewModelProvider = StateNotifierProvider<PatientViewModel, PatientListState>((ref) {
   return PatientViewModel(ref);
 });
