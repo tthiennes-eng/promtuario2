@@ -21,7 +21,7 @@ class OdontogramWidget extends ConsumerWidget {
 
   String _getConditionLabel(ConditionType type) {
     return switch (type) {
-      ConditionType.healthy => 'Saudável',
+      ConditionType.healthy => 'Hígido',
       ConditionType.decayed => 'Cárie',
       ConditionType.restored => 'Restaurado',
       ConditionType.missing => 'Ausente',

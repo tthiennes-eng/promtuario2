@@ -46,7 +46,7 @@ class ProntuarioViewModel extends StateNotifier<AsyncValue<Odontogram?>> {
         }
       }
 
-      // 2. Adiciona a nova condição se não for "Saudável"
+      // 2. Adiciona a nova condição se não for "Hígido"
       if (newCondition.condition != ConditionType.healthy) {
         updatedTeeth.add(newCondition);
       }

@@ -73,31 +73,37 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
       child: DropdownButtonHideUnderline(
-        child: DropdownButton<Clinic>(
+        child: DropdownButton<Clinic?>(
           value: state.selectedClinic,
           isExpanded: true,
           hint: const Text('Selecione uma Clínica'),
-          items: state.clinics.map((clinic) {
-            final clinicJson = clinic.toJson();
-            final location = clinicJson['location']?.toString() ?? '';
-
-            return DropdownMenuItem(
-              value: clinic,
+          items: [
+            // Opção de Visão Geral adicionada no topo
+            const DropdownMenuItem<Clinic?>(
+              value: null,
               child: Row(
                 children: [
-                  const Icon(Icons.local_hospital_outlined, size: 20, color: Color(0xFF006494)),
-                  const SizedBox(width: 12),
-                  Text(clinic.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  if (location.isNotEmpty) ...[
-                    const SizedBox(width: 8),
-                    Text('($location)', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-                  ],
+                  Icon(Icons.dashboard_customize_outlined, size: 20, color: Colors.blueGrey),
+                  SizedBox(width: 12),
+                  Text('VISÃO GERAL (TODAS AS CLÍNICAS)', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey)),
                 ],
               ),
-            );
-          }).toList(),
+            ),
+            ...state.clinics.map((clinic) {
+              return DropdownMenuItem<Clinic?>(
+                value: clinic,
+                child: Row(
+                  children: [
+                    const Icon(Icons.local_hospital_outlined, size: 20, color: Color(0xFF006494)),
+                    const SizedBox(width: 12),
+                    Text(clinic.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              );
+            }),
+          ],
           onChanged: (clinic) {
-            if (clinic != null) notifier.selectClinic(clinic);
+            notifier.selectClinic(clinic); // Agora pode receber null para visão geral
           },
         ),
       ),
@@ -105,6 +111,10 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
   }
 
   Widget _buildDateSelector(DateTime selectedDate, AppointmentViewModel notifier) {
+    // Formatação de data ajustada e capitalizada
+    final rawDate = DateFormat("EEEE, d 'de' MMMM", 'pt_BR').format(selectedDate);
+    final formattedDate = rawDate[0].toUpperCase() + rawDate.substring(1);
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -119,7 +129,7 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                DateFormat('EEEE, d de MMMM', 'pt_BR').format(selectedDate),
+                formattedDate,
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF006494)),
               ),
             ),
@@ -154,11 +164,18 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
   }
 
   Widget _buildTimeSlotList(List<TimeSlot> slots, Clinic? selectedClinic) {
+    // Na visão geral, removemos os slots de "Horário Livre" para não poluir a tela
+    final displaySlots = selectedClinic == null 
+        ? slots.where((s) => !s.isFree).toList() 
+        : slots;
+
+    if (displaySlots.isEmpty) return _buildEmptyState();
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: slots.length,
+      itemCount: displaySlots.length,
       itemBuilder: (context, index) {
-        final slot = slots[index];
+        final slot = displaySlots[index];
         if (slot.isFree) {
           return _buildFreeSlot(slot, selectedClinic);
         } else {
@@ -186,7 +203,7 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
         title: Text('Horário Livre', style: TextStyle(color: Colors.grey.shade600, fontStyle: FontStyle.italic)),
         trailing: IconButton(
           icon: const Icon(Icons.add_circle_outline, color: Color(0xFF006494)),
-          onPressed: () => context.push('/dashboard/agenda/add', extra: {'clinic': selectedClinic, 'time': slot.startTime}),
+          onPressed: () => context.push('/dashboard/agenda/add', extra: selectedClinic),
         ),
       ),
     );
@@ -265,7 +282,7 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
         children: [
           Icon(Icons.event_available, size: 64, color: Colors.grey.shade300),
           const SizedBox(height: 16),
-          const Text('Nenhum agendamento ou horário configurado.', style: TextStyle(color: Colors.grey)),
+          const Text('Nenhum agendamento para este período.', style: TextStyle(color: Colors.grey)),
         ],
       ),
     );

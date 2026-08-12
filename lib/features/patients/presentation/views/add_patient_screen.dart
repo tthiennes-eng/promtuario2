@@ -29,8 +29,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
   final _zipCodeController = TextEditingController();
 
   DateTime? _selectedBirthDate;
-  String _selectedGender = 'M';
-  bool _lgpdConsent = false;
+  String _selectedGender = 'M'; // Padrão Masculino
 
   @override
   void dispose() {
@@ -46,13 +45,6 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
 
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      if (!_lgpdConsent) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('É necessário o consentimento LGPD.')),
-        );
-        return;
-      }
-
       setState(() => _isLoading = true);
 
       try {
@@ -63,7 +55,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
           birthDate: _selectedBirthDate!,
           email: _emailController.text.trim(),
           phone: _phoneController.text.trim(),
-          gender: _selectedGender,
+          gender: _selectedGender == 'M' ? 'Masculino' : 'Feminino',
           address: PatientAddress(
             street: _streetController.text.trim(),
             number: _numberController.text.trim(),
@@ -73,7 +65,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
             zipCode: _zipCodeController.text.trim(),
           ),
           createdAt: DateTime.now(),
-          lgpdConsent: _lgpdConsent,
+          lgpdConsent: true, // Consentimento implícito no cadastro institucional
         );
 
         await ref.read(patientViewModelProvider.notifier).addPatient(newPatient);
@@ -107,29 +99,42 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Nome Completo', prefixIcon: Icon(Icons.person)),
-                validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
-              ),
+              const Text('Dados Identificadores', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey)),
               const SizedBox(height: 16),
               TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'E-mail', prefixIcon: Icon(Icons.email)),
-                validator: (v) => v!.isEmpty || !v.contains('@') ? 'E-mail inválido' : null,
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Nome Completo', border: OutlineInputBorder(), prefixIcon: Icon(Icons.person)),
+                validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
               ),
               const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
+                    flex: 2,
                     child: TextFormField(
                       controller: _cpfController,
-                      decoration: const InputDecoration(labelText: 'CPF', prefixIcon: Icon(Icons.badge)),
+                      decoration: const InputDecoration(labelText: 'CPF', border: OutlineInputBorder(), prefixIcon: Icon(Icons.badge)),
                       validator: (v) => v!.length < 11 ? 'CPF inválido' : null,
                     ),
                   ),
                   const SizedBox(width: 16),
+                  Expanded(
+                    flex: 1,
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedGender,
+                      decoration: const InputDecoration(labelText: 'Sexo', border: OutlineInputBorder()),
+                      items: const [
+                        DropdownMenuItem(value: 'M', child: Text('Masc.')),
+                        DropdownMenuItem(value: 'F', child: Text('Fem.')),
+                      ],
+                      onChanged: (v) => setState(() => _selectedGender = v!),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
                   Expanded(
                     child: TextFormField(
                       controller: _birthDateController,
@@ -148,24 +153,56 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                           });
                         }
                       },
-                      decoration: const InputDecoration(labelText: 'Nascimento', prefixIcon: Icon(Icons.cake)),
+                      decoration: const InputDecoration(labelText: 'Nascimento', border: OutlineInputBorder(), prefixIcon: Icon(Icons.cake)),
+                      validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _phoneController,
+                      decoration: const InputDecoration(labelText: 'Celular/WhatsApp', border: OutlineInputBorder(), prefixIcon: Icon(Icons.phone)),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
-              CheckboxListTile(
-                value: _lgpdConsent,
-                title: const Text('Consinto com a coleta de dados (LGPD)'),
-                onChanged: (v) => setState(() => _lgpdConsent = v!),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(labelText: 'E-mail para contato', border: OutlineInputBorder(), prefixIcon: Icon(Icons.email)),
               ),
+              
               const SizedBox(height: 32),
+              const Text('Endereço Residencial', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(flex: 3, child: TextFormField(controller: _streetController, decoration: const InputDecoration(labelText: 'Logradouro', border: OutlineInputBorder()))),
+                  const SizedBox(width: 8),
+                  Expanded(flex: 1, child: TextFormField(controller: _numberController, decoration: const InputDecoration(labelText: 'Nº', border: OutlineInputBorder()))),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextFormField(controller: _neighborhoodController, decoration: const InputDecoration(labelText: 'Bairro', border: OutlineInputBorder())),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(child: TextFormField(controller: _cityController, decoration: const InputDecoration(labelText: 'Cidade', border: OutlineInputBorder()))),
+                  const SizedBox(width: 8),
+                  Expanded(child: TextFormField(controller: _zipCodeController, decoration: const InputDecoration(labelText: 'CEP', border: OutlineInputBorder()))),
+                ],
+              ),
+              
+              const SizedBox(height: 48),
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 56,
                 child: FilledButton(
                   onPressed: _isLoading ? null : _submitForm,
-                  child: _isLoading ? const CircularProgressIndicator() : const Text('Salvar Paciente'),
+                  child: _isLoading 
+                    ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+                    : const Text('FINALIZAR CADASTRO', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],

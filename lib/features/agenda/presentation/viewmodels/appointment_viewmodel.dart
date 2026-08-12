@@ -117,6 +117,7 @@ class AppointmentState {
     AsyncValue<List<Appointment>>? institutionalAppointments,
     DateTime? selectedDate,
     Clinic? selectedClinic,
+    bool clearClinic = false,
     List<Clinic>? clinics,
     AgendaDayPeriod? period,
     String? filterStudent,
@@ -128,7 +129,7 @@ class AppointmentState {
       appointments: appointments ?? this.appointments,
       institutionalAppointments: institutionalAppointments ?? this.institutionalAppointments,
       selectedDate: selectedDate ?? this.selectedDate,
-      selectedClinic: selectedClinic ?? this.selectedClinic,
+      selectedClinic: clearClinic ? null : (selectedClinic ?? this.selectedClinic),
       clinics: clinics ?? this.clinics,
       period: period ?? this.period,
       filterStudent: filterStudent ?? this.filterStudent,
@@ -216,8 +217,11 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
     );
   }
 
-  Future<void> selectClinic(Clinic clinic) async {
-    state = state.copyWith(selectedClinic: clinic);
+  Future<void> selectClinic(Clinic? clinic) async {
+    state = state.copyWith(
+      selectedClinic: clinic,
+      clearClinic: clinic == null,
+    );
     await refresh();
   }
 
@@ -227,7 +231,6 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
   }
 
   Future<void> refresh() async {
-    if (state.selectedClinic == null) return;
     state = state.copyWith(appointments: const AsyncValue.loading());
     final result = await AsyncValue.guard(() async {
       final repository = ref.read(appointmentRepositoryProvider);
@@ -235,7 +238,7 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
       return await repository.getAppointments(
         start: DateTime(date.year, date.month, date.day, 0, 0),
         end: DateTime(date.year, date.month, date.day, 23, 59, 59),
-        clinicId: state.selectedClinic!.id,
+        clinicId: state.selectedClinic?.id, // Null busca todas as clínicas
       );
     });
     state = state.copyWith(appointments: result);
