@@ -12,7 +12,7 @@ import 'package:promt/features/agenda/domain/entities/appointment.dart';
 import 'package:promt/features/auth/domain/entities/user.dart';
 import 'package:promt/features/procedures/domain/entities/clinic.dart';
 
-/// Tela para "Novo Agendamento" com suporte a estrutura de clínica-escola.
+/// Tela para "Novo Agendamento" aprimorada.
 class AddAppointmentScreen extends ConsumerStatefulWidget {
   final Clinic? initialClinic;
   final DateTime? initialDateTime;
@@ -42,6 +42,22 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
   late DateTime _selectedDate;
   late TimeOfDay _startTime;
   final _notesController = TextEditingController();
+  final _studentSearchController = TextEditingController();
+
+  // Lista de procedimentos padrão expandida
+  final List<String> _defaultProcedures = [
+    'Avaliação Geral',
+    'Profilaxia (Limpeza)',
+    'Exodontia Simples',
+    'Exodontia de Terceiro Molar',
+    'Restauração de Resina',
+    'Tratamento Endodôntico (Canal)',
+    'Raspagem Periodontal',
+    'Aplicação de Flúor',
+    'Radiografia Periapical',
+    'Prótese Total',
+    'Prótese Parcial Removível',
+  ];
 
   @override
   void initState() {
@@ -59,6 +75,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
   @override
   void dispose() {
     _notesController.dispose();
+    _studentSearchController.dispose();
     super.dispose();
   }
 
@@ -72,6 +89,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Novo Agendamento'),
+        elevation: 0,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -80,12 +98,14 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Dados do Atendimento', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+              const Text('Local e Paciente', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
               const SizedBox(height: 16),
               
+              // 1. Seleção de Clínica
               clinicsAsync.when(
                 data: (clinics) => DropdownButtonFormField<String>(
                   value: _selectedClinicId,
+                  isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Clínica de Atendimento',
                     border: OutlineInputBorder(),
@@ -93,23 +113,28 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                   ),
                   items: clinics.map((c) => DropdownMenuItem(
                     value: c.id, 
-                    child: Text(c.name + (c.location != null ? ' (${c.location})' : ''))
+                    child: Text(c.name)
                   )).toList(),
                   onChanged: (val) => setState(() => _selectedClinicId = val),
                   validator: (v) => v == null ? 'Selecione uma clínica' : null,
                 ),
-                loading: () => const LinearProgressIndicator(),
+                loading: () => const Center(child: CircularProgressIndicator()),
                 error: (_, __) => const Text('Erro ao carregar clínicas'),
               ),
               const SizedBox(height: 16),
 
+              // 2. Seleção de Paciente
               Row(
                 children: [
                   Expanded(
                     child: patientsAsync.when(
                       data: (patients) => DropdownButtonFormField<String>(
                         value: _selectedPatientId,
-                        decoration: const InputDecoration(labelText: 'Paciente', border: OutlineInputBorder()),
+                        decoration: const InputDecoration(
+                          labelText: 'Paciente', 
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.person_outline),
+                        ),
                         items: patients.map((p) => DropdownMenuItem(value: p.id, child: Text(p.fullName))).toList(),
                         onChanged: (val) {
                           setState(() {
@@ -131,64 +156,88 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                   ),
                 ],
               ),
+              
+              const SizedBox(height: 32),
+              const Text('Responsáveis', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
               const SizedBox(height: 16),
 
+              // 3. Dupla Responsável (Editável com busca)
               usersAsync.when(
                 data: (users) {
                   final students = users.where((u) => u.role == UserRole.aluno).toList();
-                  final displayList = students.isEmpty ? users.where((u) => u.isActive).toList() : students;
-
-                  return DropdownButtonFormField<String>(
-                    value: _selectedStudentId, // Vinculo de valor adicionado
-                    decoration: const InputDecoration(labelText: 'Aluno Responsável', border: OutlineInputBorder(), prefixIcon: Icon(Icons.school)),
-                    items: displayList.map((u) => DropdownMenuItem(value: u.id, child: Text(u.name))).toList(),
-                    onChanged: (val) {
-                      setState(() {
-                        _selectedStudentId = val;
-                        _selectedStudentName = displayList.firstWhere((u) => u.id == val).name;
-                      });
+                  return Autocomplete<User>(
+                    initialValue: TextEditingValue(text: _selectedStudentName ?? ''),
+                    displayStringForOption: (u) => u.name,
+                    optionsBuilder: (TextEditingValue textEditingValue) {
+                      if (textEditingValue.text == '') return const Iterable<User>.empty();
+                      return students.where((u) => u.name.toLowerCase().contains(textEditingValue.text.toLowerCase()));
                     },
-                    validator: (v) => v == null ? 'Selecione o aluno' : null,
+                    onSelected: (u) => setState(() {
+                      _selectedStudentId = u.id;
+                      _selectedStudentName = u.name;
+                    }),
+                    fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                      return TextFormField(
+                        controller: controller,
+                        focusNode: focusNode,
+                        decoration: const InputDecoration(
+                          labelText: 'Dupla Responsável', 
+                          hintText: 'Digite o nome do aluno ou da dupla',
+                          border: OutlineInputBorder(), 
+                          prefixIcon: Icon(Icons.group_outlined)
+                        ),
+                        onChanged: (val) => _selectedStudentName = val,
+                        validator: (v) => (v == null || v.isEmpty) ? 'Informe o responsável' : null,
+                      );
+                    },
                   );
                 },
                 loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text('Erro ao carregar alunos'),
+                error: (_, __) => const Text('Erro ao carregar usuários'),
               ),
               const SizedBox(height: 16),
 
+              // 4. Professor Supervisor
               usersAsync.when(
                 data: (users) {
                   final professors = users.where((u) => u.role == UserRole.professor || u.role == UserRole.coordenador).toList();
-                  final displayList = professors.isEmpty ? users.where((u) => u.isActive).toList() : professors;
-
                   return DropdownButtonFormField<String>(
-                    value: _selectedProfessorId, // Vinculo de valor adicionado
-                    decoration: const InputDecoration(labelText: 'Professor Supervisor', border: OutlineInputBorder(), prefixIcon: Icon(Icons.person)),
-                    items: displayList.map((u) => DropdownMenuItem(value: u.id, child: Text(u.name))).toList(),
+                    value: _selectedProfessorId,
+                    decoration: const InputDecoration(labelText: 'Professor Supervisor', border: OutlineInputBorder(), prefixIcon: Icon(Icons.verified_user_outlined)),
+                    items: professors.map((u) => DropdownMenuItem(value: u.id, child: Text(u.name))).toList(),
                     onChanged: (val) {
                       setState(() {
                         _selectedProfessorId = val;
-                        _selectedProfessorName = displayList.firstWhere((u) => u.id == val).name;
+                        _selectedProfessorName = professors.firstWhere((u) => u.id == val).name;
                       });
                     },
                     validator: (v) => v == null ? 'Selecione o professor' : null,
                   );
                 },
-                loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text('Erro ao carregar professores'),
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
               ),
+
+              const SizedBox(height: 32),
+              const Text('Procedimento e Data', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
               const SizedBox(height: 16),
 
+              // 5. Procedimento Previsto (Mais opções)
               proceduresAsync.when(
-                data: (procedures) => DropdownButtonFormField<String>(
-                  value: _selectedProcedureName,
-                  decoration: const InputDecoration(labelText: 'Procedimento Previsto', border: OutlineInputBorder()),
-                  items: procedures.isEmpty
-                    ? [const DropdownMenuItem(value: 'Avaliação', child: Text('Avaliação Geral'))]
-                    : procedures.map((p) => DropdownMenuItem(value: p.name, child: Text(p.name))).toList(),
-                  onChanged: (val) => setState(() => _selectedProcedureName = val),
-                  validator: (v) => v == null ? 'Selecione o procedimento' : null,
-                ),
+                data: (procedures) {
+                  final allOptions = procedures.isEmpty 
+                      ? _defaultProcedures 
+                      : procedures.map((p) => p.name).toList();
+                  
+                  return DropdownButtonFormField<String>(
+                    value: _selectedProcedureName,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'Procedimento Previsto', border: OutlineInputBorder(), prefixIcon: Icon(Icons.medical_information_outlined)),
+                    items: allOptions.map((name) => DropdownMenuItem(value: name, child: Text(name))).toList(),
+                    onChanged: (val) => setState(() => _selectedProcedureName = val),
+                    validator: (v) => v == null ? 'Selecione o procedimento' : null,
+                  );
+                },
                 loading: () => const LinearProgressIndicator(),
                 error: (_, __) => const Text('Erro ao carregar procedimentos'),
               ),
@@ -208,7 +257,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                         if (picked != null) setState(() => _selectedDate = picked);
                       },
                       child: InputDecorator(
-                        decoration: const InputDecoration(labelText: 'Data', border: OutlineInputBorder()),
+                        decoration: const InputDecoration(labelText: 'Data', border: OutlineInputBorder(), prefixIcon: Icon(Icons.calendar_today)),
                         child: Text(DateFormat('dd/MM/yyyy').format(_selectedDate)),
                       ),
                     ),
@@ -224,7 +273,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                         if (picked != null) setState(() => _startTime = picked);
                       },
                       child: InputDecorator(
-                        decoration: const InputDecoration(labelText: 'Hora', border: OutlineInputBorder()),
+                        decoration: const InputDecoration(labelText: 'Hora', border: OutlineInputBorder(), prefixIcon: Icon(Icons.access_time)),
                         child: Text(_startTime.format(context)),
                       ),
                     ),
@@ -235,15 +284,20 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
 
               TextFormField(
                 controller: _notesController,
-                decoration: const InputDecoration(labelText: 'Observações Administrativas', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Observações do Agendamento', 
+                  hintText: 'Ex: Trazer exames anteriores',
+                  border: OutlineInputBorder()
+                ),
                 maxLines: 3,
               ),
               const SizedBox(height: 32),
 
-              FilledButton(
+              FilledButton.icon(
                 onPressed: _saveAppointment,
-                style: FilledButton.styleFrom(padding: const EdgeInsets.all(16)),
-                child: const Text('Confirmar Agendamento', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                icon: const Icon(Icons.check_circle_outline),
+                label: const Text('Confirmar Agendamento', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                style: FilledButton.styleFrom(padding: const EdgeInsets.all(20)),
               ),
             ],
           ),
@@ -263,30 +317,28 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
       );
       final end = start.add(const Duration(hours: 1));
 
-      // Verificação de conflitos local
+      // Verificação de conflitos básica
       final existing = ref.read(appointmentViewModelProvider).appointments.value ?? [];
       final hasConflict = existing.any((a) => 
         a.clinicId == _selectedClinicId && 
         ((start.isAfter(a.startTime) && start.isBefore(a.endTime)) ||
-         (end.isAfter(a.startTime) && end.isBefore(a.endTime)) ||
          (start.isAtSameMomentAs(a.startTime))));
 
       if (hasConflict) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Conflito: Já existe um paciente ocupando este horário nesta clínica.'),
-            backgroundColor: Colors.red,
+            content: Text('Atenção: Já existe um atendimento neste horário.'),
+            backgroundColor: Colors.orange,
           ),
         );
-        return;
       }
 
       final appointment = Appointment(
         id: const Uuid().v4(),
         patientId: _selectedPatientId!,
         patientName: _selectedPatientName!,
-        doctorId: _selectedStudentId!, 
-        doctorName: _selectedStudentName!,
+        doctorId: _selectedStudentId ?? 'custom', 
+        doctorName: _selectedStudentName!, // Agora usa o valor livre do Autocomplete
         studentId: _selectedStudentId,
         studentName: _selectedStudentName,
         professorId: _selectedProfessorId,
@@ -304,7 +356,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
       if (mounted) {
         context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Agendamento realizado com sucesso!'), behavior: SnackBarBehavior.floating),
+          const SnackBar(content: Text('Agendamento salvo com sucesso!'), behavior: SnackBarBehavior.floating),
         );
       }
     }
