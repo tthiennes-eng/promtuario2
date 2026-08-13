@@ -45,7 +45,8 @@ class AuthViewModel extends StateNotifier<AuthState> {
     
     if (user != null) {
       state = state.copyWith(user: user, isInitialized: true);
-      await ref.read(realtimeServiceProvider).init();
+      // Inicializa serviços de fundo sem bloquear a entrada do usuário
+      ref.read(realtimeServiceProvider).init();
     } else {
       state = state.copyWith(isInitialized: true);
     }
@@ -59,13 +60,14 @@ class AuthViewModel extends StateNotifier<AuthState> {
       final repository = ref.read(authRepositoryProvider);
       final user = await repository.login(email, password);
       
-      // Inicializa o tempo real
-      await ref.read(realtimeServiceProvider).init();
-      
-      // Registra o evento de login para auditoria (LGPD)
+      // Define o usuário no estado IMEDIATAMENTE para liberar a tela
+      state = state.copyWith(user: user, isLoading: false);
+
+      // Dispara inicializações em segundo plano (Background)
+      // Não usamos 'await' aqui para não travar o carregamento do login
+      ref.read(realtimeServiceProvider).init();
       ref.read(auditRepositoryProvider).registerAccess(user.id, 'USER_LOGIN');
       
-      state = state.copyWith(user: user, isLoading: false);
     } catch (e) {
       state = state.copyWith(
         isLoading: false, 
