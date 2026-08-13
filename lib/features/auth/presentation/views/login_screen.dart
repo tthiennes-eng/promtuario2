@@ -16,6 +16,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _rememberMe = true; // Opção de manter login salvo
 
   @override
   void dispose() {
@@ -134,18 +135,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           validator: (v) => (v == null || v.length < 6) ? 'Senha obrigatória (mín. 6 caracteres)' : null,
                         ),
                         const SizedBox(height: 12),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: authState.isLoading ? null : () {},
-                            child: const Text('Esqueceu a senha?'),
-                          ),
+                        Row(
+                          children: [
+                            SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: Checkbox(
+                                value: _rememberMe,
+                                onChanged: (val) => setState(() => _rememberMe = val!),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text('Manter login salvo', style: TextStyle(fontSize: 14)),
+                            const Spacer(),
+                            TextButton(
+                              onPressed: authState.isLoading ? null : () {},
+                              child: const Text('Esqueceu a senha?'),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 32),
                         FilledButton(
                           onPressed: authState.isLoading ? null : _handleLogin,
                           style: FilledButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 20),
+                            backgroundColor: const Color(0xFF006494),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                           child: authState.isLoading

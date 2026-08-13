@@ -65,7 +65,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
             zipCode: _zipCodeController.text.trim(),
           ),
           createdAt: DateTime.now(),
-          lgpdConsent: true, // Consentimento implícito no cadastro institucional
+          lgpdConsent: true, // Consentimento implícito
         );
 
         await ref.read(patientViewModelProvider.notifier).addPatient(newPatient);
@@ -91,7 +91,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Novo Cadastro')),
+      appBar: AppBar(title: const Text('Admitir Novo Paciente')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
@@ -99,14 +99,16 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Dados Identificadores', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey)),
-              const SizedBox(height: 16),
+              const Text('Informações Gerais', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF006494), fontSize: 16)),
+              const SizedBox(height: 24),
+              
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(labelText: 'Nome Completo', border: OutlineInputBorder(), prefixIcon: Icon(Icons.person)),
                 validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
               ),
               const SizedBox(height: 16),
+              
               Row(
                 children: [
                   Expanded(
@@ -133,6 +135,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                 ],
               ),
               const SizedBox(height: 16),
+              
               Row(
                 children: [
                   Expanded(
@@ -167,42 +170,51 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                 ],
               ),
               const SizedBox(height: 16),
+              
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(labelText: 'E-mail para contato', border: OutlineInputBorder(), prefixIcon: Icon(Icons.email)),
               ),
               
-              const SizedBox(height: 32),
-              const Text('Endereço Residencial', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey)),
               const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 16),
+              
+              // Endereço integrado agora
               Row(
                 children: [
-                  Expanded(flex: 3, child: TextFormField(controller: _streetController, decoration: const InputDecoration(labelText: 'Logradouro', border: OutlineInputBorder()))),
+                  Expanded(flex: 3, child: TextFormField(controller: _streetController, decoration: const InputDecoration(labelText: 'Logradouro (Rua/Av)', border: OutlineInputBorder(), prefixIcon: Icon(Icons.map)))),
                   const SizedBox(width: 8),
                   Expanded(flex: 1, child: TextFormField(controller: _numberController, decoration: const InputDecoration(labelText: 'Nº', border: OutlineInputBorder()))),
                 ],
               ),
               const SizedBox(height: 16),
-              TextFormField(controller: _neighborhoodController, decoration: const InputDecoration(labelText: 'Bairro', border: OutlineInputBorder())),
-              const SizedBox(height: 16),
+              
               Row(
                 children: [
-                  Expanded(child: TextFormField(controller: _cityController, decoration: const InputDecoration(labelText: 'Cidade', border: OutlineInputBorder()))),
+                  Expanded(child: TextFormField(controller: _neighborhoodController, decoration: const InputDecoration(labelText: 'Bairro', border: OutlineInputBorder()))),
                   const SizedBox(width: 8),
                   Expanded(child: TextFormField(controller: _zipCodeController, decoration: const InputDecoration(labelText: 'CEP', border: OutlineInputBorder()))),
                 ],
               ),
+              const SizedBox(height: 16),
+              
+              TextFormField(controller: _cityController, decoration: const InputDecoration(labelText: 'Cidade', border: OutlineInputBorder(), prefixIcon: Icon(Icons.location_city))),
               
               const SizedBox(height: 48),
               SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF006494),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                   onPressed: _isLoading ? null : _submitForm,
                   child: _isLoading 
                     ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
-                    : const Text('FINALIZAR CADASTRO', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    : const Text('FINALIZAR ADMISSÃO', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
