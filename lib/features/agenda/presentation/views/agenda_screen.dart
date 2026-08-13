@@ -6,7 +6,6 @@ import 'package:promt/features/agenda/domain/entities/appointment.dart';
 import 'package:promt/features/procedures/domain/entities/clinic.dart';
 import 'package:intl/intl.dart';
 
-/// Tela de Agenda Odontológica organizada por Clínica com Filtros, Estatísticas e Horários Livres.
 class AgendaScreen extends ConsumerStatefulWidget {
   const AgendaScreen({super.key});
 
@@ -15,27 +14,31 @@ class AgendaScreen extends ConsumerStatefulWidget {
 }
 
 class _AgendaScreenState extends ConsumerState<AgendaScreen> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(appointmentViewModelProvider);
     final notifier = ref.read(appointmentViewModelProvider.notifier);
     
-    final slots = state.timeSlots;
     final stats = notifier.getDayStats();
+    
+    // Filtro inteligente de itens
+    final List<dynamic> displayItems = state.selectedClinic == null 
+        ? (state.appointments.value ?? []) 
+        : state.timeSlots;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF1F5F9), // Cinza claro para fundo
       appBar: AppBar(
         title: const Text('Agenda por Clínica'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.grid_view),
-            tooltip: 'Visão Institucional',
-            onPressed: () => context.push('/dashboard/agenda/institutional'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: () => _showFilterBottomSheet(context),
-          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => notifier.refresh(),
@@ -44,15 +47,52 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
       ),
       body: Column(
         children: [
-          _buildClinicSelector(state, notifier),
-          _buildDateSelector(state.selectedDate, notifier),
-          _buildStatsBar(stats),
+          // CABEÇALHO: Seleção de Clínica e Data
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+            ),
+            child: Column(
+              children: [
+                _buildClinicSelector(state, notifier),
+                const SizedBox(height: 16),
+                _buildDateNavigator(state.selectedDate, notifier),
+              ],
+            ),
+          ),
+          
+          // BARRA DE ESTATÍSTICAS
+          _buildSummaryDashboard(stats),
+          
           const Divider(height: 1),
+
+          // LISTA DE AGENDAMENTOS
           Expanded(
             child: state.appointments.when(
-              data: (_) => slots.isEmpty
+              data: (_) => displayItems.isEmpty
                   ? _buildEmptyState()
-                  : _buildTimeSlotList(slots, state.selectedClinic),
+                  : Scrollbar(
+                      controller: _scrollController,
+                      thumbVisibility: true,
+                      child: ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.all(16),
+                        itemCount: displayItems.length,
+                        itemBuilder: (context, index) {
+                          final item = displayItems[index];
+                          if (item is Appointment) {
+                            return _buildAppointmentCard(item, showClinic: state.selectedClinic == null);
+                          } else if (item is TimeSlot) {
+                            return item.isFree 
+                                ? _buildFreeSlotCard(item, state.selectedClinic)
+                                : _buildAppointmentCard(item.appointment!, showClinic: false);
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                    ),
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, stack) => _buildErrorState(err.toString(), notifier),
             ),
@@ -60,218 +100,176 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: const Color(0xFF006494),
         onPressed: () => context.push('/dashboard/agenda/add', extra: state.selectedClinic),
-        label: const Text('Novo Agendamento'),
-        icon: const Icon(Icons.add),
+        label: const Text('NOVO AGENDAMENTO', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        icon: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 
   Widget _buildClinicSelector(AppointmentState state, AppointmentViewModel notifier) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<Clinic?>(
           value: state.selectedClinic,
           isExpanded: true,
-          hint: const Text('Selecione uma Clínica'),
+          icon: const Icon(Icons.expand_more, color: Color(0xFF006494)),
           items: [
-            // Opção de Visão Geral adicionada no topo
             const DropdownMenuItem<Clinic?>(
               value: null,
               child: Row(
                 children: [
-                  Icon(Icons.dashboard_customize_outlined, size: 20, color: Colors.blueGrey),
+                  Icon(Icons.auto_awesome_motion, size: 20, color: Color(0xFF006494)),
                   SizedBox(width: 12),
-                  Text('VISÃO GERAL (TODAS AS CLÍNICAS)', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+                  Text('VISÃO GERAL (TODAS AS CLÍNICAS)', 
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF006494))),
                 ],
               ),
             ),
-            ...state.clinics.map((clinic) {
-              return DropdownMenuItem<Clinic?>(
-                value: clinic,
-                child: Row(
-                  children: [
-                    const Icon(Icons.local_hospital_outlined, size: 20, color: Color(0xFF006494)),
-                    const SizedBox(width: 12),
-                    Text(clinic.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              );
-            }),
+            ...state.clinics.map((clinic) => DropdownMenuItem<Clinic?>(
+              value: clinic,
+              child: Row(
+                children: [
+                  const Icon(Icons.local_hospital_outlined, size: 20, color: Colors.blueGrey),
+                  const SizedBox(width: 12),
+                  Text(clinic.name),
+                ],
+              ),
+            )),
           ],
-          onChanged: (clinic) {
-            notifier.selectClinic(clinic); // Agora pode receber null para visão geral
-          },
+          onChanged: (clinic) => notifier.selectClinic(clinic),
         ),
       ),
     );
   }
 
-  Widget _buildDateSelector(DateTime selectedDate, AppointmentViewModel notifier) {
-    // Formatação de data ajustada e capitalizada
-    final rawDate = DateFormat("EEEE, d 'de' MMMM", 'pt_BR').format(selectedDate);
-    final formattedDate = rawDate[0].toUpperCase() + rawDate.substring(1);
+  Widget _buildDateNavigator(DateTime selectedDate, AppointmentViewModel notifier) {
+    // Formatação de data com correção ortográfica
+    final dayOfWeek = DateFormat('EEEE', 'pt_BR').format(selectedDate);
+    final monthName = DateFormat('MMMM', 'pt_BR').format(selectedDate);
+    
+    // Capitalização das iniciais
+    final formattedDate = "${dayOfWeek[0].toUpperCase()}${dayOfWeek.substring(1)}, "
+                          "${selectedDate.day} de "
+                          "${monthName[0].toUpperCase()}${monthName.substring(1)}";
 
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        IconButton.filledTonal(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+          onPressed: () => notifier.selectDate(selectedDate.subtract(const Duration(days: 1))),
+        ),
+        InkWell(
+          onTap: () => _selectDate(context, selectedDate, notifier),
+          child: Column(
+            children: [
+              Text(formattedDate, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Color(0xFF1E293B))),
+              const Text('Toque para escolher outra data', style: TextStyle(fontSize: 10, color: Colors.blueGrey)),
+            ],
+          ),
+        ),
+        IconButton.filledTonal(
+          icon: const Icon(Icons.arrow_forward_ios, size: 18),
+          onPressed: () => notifier.selectDate(selectedDate.add(const Duration(days: 1))),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryDashboard(Map<String, dynamic> stats) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          IconButton(
-            icon: const Icon(Icons.chevron_left),
-            onPressed: () => notifier.selectDate(selectedDate.subtract(const Duration(days: 1))),
-          ),
-          InkWell(
-            onTap: () => _selectDate(context, selectedDate, notifier),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                formattedDate,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF006494)),
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.chevron_right),
-            onPressed: () => notifier.selectDate(selectedDate.add(const Duration(days: 1))),
-          ),
+          _StatTile(label: 'Agendados', value: '${stats['total']}', color: Colors.blue, icon: Icons.people_outline),
+          const SizedBox(width: 8),
+          _StatTile(label: 'Atendidos', value: '${stats['completed']}', color: Colors.green, icon: Icons.task_alt),
+          const SizedBox(width: 8),
+          _StatTile(label: 'Faltas', value: '${stats['missed']}', color: Colors.red, icon: Icons.person_off_outlined),
+          const SizedBox(width: 8),
+          _StatTile(label: 'Ocupação', value: '${(stats['occupancy'] * 100).toInt()}%', color: Colors.orange, icon: Icons.speed),
         ],
       ),
     );
   }
 
-  Widget _buildStatsBar(Map<String, dynamic> stats) {
+  Widget _buildFreeSlotCard(TimeSlot slot, Clinic? selectedClinic) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            _StatCard(label: 'Total', value: '${stats['total']}', color: Colors.blue, icon: Icons.people),
-            const SizedBox(width: 8),
-            _StatCard(label: 'Concluídos', value: '${stats['completed']}', color: Colors.green, icon: Icons.check_circle),
-            const SizedBox(width: 8),
-            _StatCard(label: 'Faltas', value: '${stats['missed']}', color: Colors.red, icon: Icons.person_off),
-            const SizedBox(width: 8),
-            _StatCard(label: 'Ocupação', value: '${(stats['occupancy'] * 100).toStringAsFixed(1)}%', color: Colors.orange, icon: Icons.pie_chart),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTimeSlotList(List<TimeSlot> slots, Clinic? selectedClinic) {
-    // Na visão geral, removemos os slots de "Horário Livre" para não poluir a tela
-    final displaySlots = selectedClinic == null 
-        ? slots.where((s) => !s.isFree).toList() 
-        : slots;
-
-    if (displaySlots.isEmpty) return _buildEmptyState();
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: displaySlots.length,
-      itemBuilder: (context, index) {
-        final slot = displaySlots[index];
-        if (slot.isFree) {
-          return _buildFreeSlot(slot, selectedClinic);
-        } else {
-          return _buildAppointmentSlot(slot.appointment!);
-        }
-      },
-    );
-  }
-
-  Widget _buildFreeSlot(TimeSlot slot, Clinic? selectedClinic) {
-    return Card(
-      elevation: 0,
-      color: Colors.grey.shade50,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
       margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.green.withOpacity(0.1)),
+      ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Text(
-          DateFormat('HH:mm').format(slot.startTime),
-          style: TextStyle(fontWeight: FontWeight.w500, color: Colors.grey.shade600),
+        leading: Container(
+          width: 50,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+          child: Text(DateFormat('HH:mm').format(slot.startTime), 
+            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
         ),
-        title: Text('Horário Livre', style: TextStyle(color: Colors.grey.shade600, fontStyle: FontStyle.italic)),
-        trailing: IconButton(
-          icon: const Icon(Icons.add_circle_outline, color: Color(0xFF006494)),
-          onPressed: () => context.push('/dashboard/agenda/add', extra: selectedClinic),
-        ),
+        title: const Text('Horário Disponível', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13)),
+        trailing: const Icon(Icons.add_circle_outline, color: Colors.green, size: 20),
+        onTap: () => context.push('/dashboard/agenda/add', extra: selectedClinic),
       ),
     );
   }
 
-  Widget _buildAppointmentSlot(Appointment appt) {
-    final apptJson = appt.toJson();
-    final studentName = apptJson['studentName']?.toString() ?? appt.doctorName;
-    final professorName = apptJson['professorName']?.toString() ?? "Supervisor Não Atribuído";
-
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
+  Widget _buildAppointmentCard(Appointment appt, {required bool showClinic}) {
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
       child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              DateFormat('HH:mm').format(appt.startTime),
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            Text(
-              DateFormat('HH:mm').format(appt.endTime),
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-            ),
-          ],
+        contentPadding: const EdgeInsets.all(12),
+        leading: Container(
+          width: 50,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(color: const Color(0xFF006494).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(DateFormat('HH:mm').format(appt.startTime), 
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF006494), fontSize: 15)),
+              Text(DateFormat('HH:mm').format(appt.endTime), style: const TextStyle(fontSize: 10, color: Colors.grey)),
+            ],
+          ),
         ),
-        title: Text(appt.patientName, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(appt.patientName.toUpperCase(), 
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
-            Text(appt.procedureName ?? 'Procedimento não informado', style: const TextStyle(color: Color(0xFF006494))),
-            Text('Aluno: $studentName', style: const TextStyle(fontSize: 12)),
-            Text('Prof: $professorName', style: const TextStyle(fontSize: 12)),
+            Text(appt.procedureName ?? 'Avaliação', style: const TextStyle(color: Colors.blueGrey, fontSize: 12)),
+            if (showClinic)
+              Text('Local: ${appt.clinicId}', style: const TextStyle(fontSize: 11, color: Color(0xFF006494), fontWeight: FontWeight.bold)),
+            Text('Responsável: ${appt.studentName ?? "Não inf."}', style: const TextStyle(fontSize: 11)),
           ],
         ),
         trailing: _buildStatusChip(appt.status),
-        onTap: () => _showAppointmentDetails(appt),
       ),
     );
   }
 
   Widget _buildStatusChip(AppointmentStatus status) {
-    Color color = switch (status) {
-      AppointmentStatus.scheduled => Colors.blue,
-      AppointmentStatus.confirmed => Colors.teal,
-      AppointmentStatus.inProgress => Colors.orange,
-      AppointmentStatus.completed => Colors.green,
-      AppointmentStatus.cancelled => Colors.red,
-      AppointmentStatus.missed => Colors.red.shade900,
-    };
-
+    final color = status == AppointmentStatus.scheduled ? Colors.blue : status == AppointmentStatus.completed ? Colors.green : Colors.red;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        status.displayName.toUpperCase(),
-        style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+      child: Text(status.displayName, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold)),
     );
   }
 
@@ -280,9 +278,9 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.event_available, size: 64, color: Colors.grey.shade300),
+          Icon(Icons.event_note, size: 64, color: Colors.grey.shade300),
           const SizedBox(height: 16),
-          const Text('Nenhum agendamento para este período.', style: TextStyle(color: Colors.grey)),
+          const Text('Nenhum agendamento para este dia.', style: TextStyle(color: Colors.grey, fontSize: 15)),
         ],
       ),
     );
@@ -293,295 +291,51 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+          const Icon(Icons.cloud_off, color: Colors.red, size: 48),
           const SizedBox(height: 16),
-          Text('Erro ao carregar agenda: $error'),
-          TextButton(
-            onPressed: () => notifier.refresh(),
-            child: const Text('Tentar novamente'),
-          ),
+          Text('Erro na conexão: $error', style: const TextStyle(color: Colors.red)),
+          TextButton(onPressed: () => notifier.refresh(), child: const Text('Tentar Novamente')),
         ],
       ),
-    );
-  }
-
-  void _showFilterBottomSheet(BuildContext context) {
-    final state = ref.read(appointmentViewModelProvider);
-    final notifier = ref.read(appointmentViewModelProvider.notifier);
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          top: 24,
-          left: 24,
-          right: 24,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Filtros Avançados', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 24),
-            const Text('Período do Dia', style: TextStyle(fontWeight: FontWeight.bold)),
-            Wrap(
-              spacing: 8,
-              children: AgendaDayPeriod.values.map((p) {
-                return ChoiceChip(
-                  label: Text(p.name == 'all' ? 'Todos' : p.name == 'morning' ? 'Manhã' : p.name == 'afternoon' ? 'Tarde' : 'Noite'),
-                  selected: state.period == p,
-                  onSelected: (val) {
-                    if (val) notifier.setFilters(period: p);
-                  },
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 16),
-            const Text('Situação', style: TextStyle(fontWeight: FontWeight.bold)),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  ...AppointmentStatus.values.map((status) {
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text(status.displayName),
-                        selected: state.filterStatus == status,
-                        onSelected: (val) {
-                          notifier.setFilters(status: val ? status : null);
-                        },
-                      ),
-                    );
-                  }),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: const InputDecoration(labelText: 'Aluno Responsável', prefixIcon: Icon(Icons.school)),
-              onChanged: (val) => notifier.setFilters(student: val.isEmpty ? null : val),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: const InputDecoration(labelText: 'Professor Supervisor', prefixIcon: Icon(Icons.person)),
-              onChanged: (val) => notifier.setFilters(professor: val.isEmpty ? null : val),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: const InputDecoration(labelText: 'Procedimento', prefixIcon: Icon(Icons.medical_services)),
-              onChanged: (val) => notifier.setFilters(procedure: val.isEmpty ? null : val),
-            ),
-            const SizedBox(height: 32),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      notifier.clearFilters();
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Limpar Tudo'),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Aplicar'),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showAppointmentDetails(Appointment appointment) {
-    final apptJson = appointment.toJson();
-    final studentName = apptJson['studentName']?.toString() ?? appointment.doctorName;
-    final professorName = apptJson['professorName']?.toString() ?? "Não informado";
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(child: Text(appointment.patientName, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold))),
-                _buildStatusChip(appointment.status),
-              ],
-            ),
-            const SizedBox(height: 24),
-            _buildInfoRow(Icons.access_time, 'Horário', '${DateFormat('HH:mm').format(appointment.startTime)} às ${DateFormat('HH:mm').format(appointment.endTime)}'),
-            const SizedBox(height: 12),
-            _buildInfoRow(Icons.medical_services_outlined, 'Procedimento', appointment.procedureName ?? 'Consulta de Avaliação'),
-            const SizedBox(height: 12),
-            _buildInfoRow(Icons.school_outlined, 'Aluno', studentName),
-            const SizedBox(height: 12),
-            _buildInfoRow(Icons.person_outline, 'Professor', professorName),
-            const SizedBox(height: 12),
-            if (appointment.notes != null && appointment.notes!.isNotEmpty)
-              _buildInfoRow(Icons.notes, 'Observações', appointment.notes!),
-            const SizedBox(height: 32),
-            const Text('Ações Disponíveis', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                if (appointment.status == AppointmentStatus.scheduled)
-                  _ActionButton(
-                    icon: Icons.check_circle_outline,
-                    label: 'Confirmar',
-                    onPressed: () {
-                      ref.read(appointmentViewModelProvider.notifier).updateStatus(appointment.id, AppointmentStatus.confirmed);
-                      Navigator.pop(context);
-                    },
-                  ),
-                if (appointment.status == AppointmentStatus.confirmed)
-                  _ActionButton(
-                    icon: Icons.play_circle_outline,
-                    label: 'Iniciar Atendimento',
-                    onPressed: () {
-                      ref.read(appointmentViewModelProvider.notifier).updateStatus(appointment.id, AppointmentStatus.inProgress);
-                      Navigator.pop(context);
-                    },
-                  ),
-                if (appointment.status == AppointmentStatus.inProgress)
-                  _ActionButton(
-                    icon: Icons.done_all,
-                    label: 'Concluir',
-                    onPressed: () {
-                      ref.read(appointmentViewModelProvider.notifier).updateStatus(appointment.id, AppointmentStatus.completed);
-                      Navigator.pop(context);
-                    },
-                  ),
-                _ActionButton(
-                  icon: Icons.cancel_outlined,
-                  label: 'Cancelar',
-                  isDanger: true,
-                  onPressed: () {
-                    ref.read(appointmentViewModelProvider.notifier).updateStatus(appointment.id, AppointmentStatus.cancelled);
-                    Navigator.pop(context);
-                  },
-                ),
-                _ActionButton(
-                  icon: Icons.person_off_outlined,
-                  label: 'Ausência',
-                  isDanger: true,
-                  onPressed: () {
-                    ref.read(appointmentViewModelProvider.notifier).updateStatus(appointment.id, AppointmentStatus.missed);
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 20, color: Colors.blueGrey),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-              Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
   Future<void> _selectDate(BuildContext context, DateTime selectedDate, AppointmentViewModel notifier) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-      locale: const Locale('pt', 'BR'),
+    final picked = await showDatePicker(
+      context: context, 
+      initialDate: selectedDate, 
+      firstDate: DateTime(2000), 
+      lastDate: DateTime(2100), 
+      locale: const Locale('pt', 'BR')
     );
-    if (picked != null && picked != selectedDate) {
-      notifier.selectDate(picked);
-    }
+    if (picked != null) notifier.selectDate(picked);
   }
 }
 
-class _StatCard extends StatelessWidget {
+class _StatTile extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
   final IconData icon;
-
-  const _StatCard({required this.label, required this.value, required this.color, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.1)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 18, color: color),
-          const SizedBox(height: 4),
-          Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 18)),
-          Text(label, style: TextStyle(color: color.withOpacity(0.8), fontSize: 10, fontWeight: FontWeight.w500)),
-        ],
-      ),
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onPressed;
-  final bool isDanger;
-
-  const _ActionButton({
-    required this.icon,
-    required this.label,
-    required this.onPressed,
-    this.isDanger = false,
-  });
+  const _StatTile({required this.label, required this.value, required this.color, required this.icon});
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: (MediaQuery.of(context).size.width - 64) / 2,
-      child: OutlinedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, size: 18),
-        label: Text(label),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: isDanger ? Colors.red : null,
-          side: isDanger ? const BorderSide(color: Colors.red) : null,
-          padding: const EdgeInsets.symmetric(vertical: 12),
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.1)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(height: 4),
+            Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 16)),
+            Text(label, style: const TextStyle(color: Colors.blueGrey, fontSize: 8, fontWeight: FontWeight.bold)),
+          ],
         ),
       ),
     );

@@ -56,14 +56,25 @@ class _InstitutionalAgendaScreenState extends ConsumerState<InstitutionalAgendaS
   }
 
   Widget _buildDateHeader(DateTime selectedDate, AppointmentViewModel notifier) {
+    // Formatação de data com correção ortográfica e capitalização
+    final dayOfWeek = DateFormat('EEEE', 'pt_BR').format(selectedDate);
+    final monthName = DateFormat('MMMM', 'pt_BR').format(selectedDate);
+    
+    final formattedDate = "${dayOfWeek[0].toUpperCase()}${dayOfWeek.substring(1)}, "
+                          "${selectedDate.day} de "
+                          "${monthName[0].toUpperCase()}${monthName.substring(1)}";
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
-      color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.1),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          IconButton(
-            icon: const Icon(Icons.chevron_left),
+          IconButton.filledTonal(
+            icon: const Icon(Icons.arrow_back_ios_new, size: 18),
             onPressed: () {
               final newDate = selectedDate.subtract(const Duration(days: 1));
               notifier.selectDate(newDate);
@@ -73,15 +84,20 @@ class _InstitutionalAgendaScreenState extends ConsumerState<InstitutionalAgendaS
           InkWell(
             onTap: () => _selectDate(context, selectedDate, notifier),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                DateFormat('EEEE, d de MMMM', 'pt_BR').format(selectedDate),
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF006494)),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                children: [
+                  Text(
+                    formattedDate,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF006494)),
+                  ),
+                  const Text('Clique para alterar a data', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                ],
               ),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.chevron_right),
+          IconButton.filledTonal(
+            icon: const Icon(Icons.arrow_forward_ios, size: 18),
             onPressed: () {
               final newDate = selectedDate.add(const Duration(days: 1));
               notifier.selectDate(newDate);
