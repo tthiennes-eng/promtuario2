@@ -51,13 +51,13 @@ class OdontogramWidget extends ConsumerWidget {
           const Text('Arcada Superior', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey, letterSpacing: 1.2)),
           const SizedBox(height: 24),
           _buildQuadrantRow(context, ref, [18, 17, 16, 15, 14, 13, 12, 11], [21, 22, 23, 24, 25, 26, 27, 28], odontogram),
-          const SizedBox(height: 48),
+          const SizedBox(height: 32),
           const Divider(height: 1, thickness: 1, color: Colors.grey),
-          const SizedBox(height: 48),
+          const SizedBox(height: 32),
           _buildQuadrantRow(context, ref, [48, 47, 46, 45, 44, 43, 42, 41], [31, 32, 33, 34, 35, 36, 37, 38], odontogram),
           const SizedBox(height: 24),
           const Text('Arcada Inferior', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey, letterSpacing: 1.2)),
-          const SizedBox(height: 64),
+          const SizedBox(height: 48),
           _buildLegend(context),
         ],
       ),
@@ -69,27 +69,13 @@ class OdontogramWidget extends ConsumerWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         ...left.map((n) => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6.0), // Espaçamento entre dentes aumentado
-          child: _ToothTile(
-            number: n, 
-            toothConditions: _getConditionsForTooth(odontogram, n), 
-            ref: ref, 
-            patientId: patientId, 
-            getSurfaceLabel: _getSurfaceLabel, 
-            getConditionLabel: _getConditionLabel
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 5.0),
+          child: _ToothTile(number: n, toothConditions: _getConditionsForTooth(odontogram, n), ref: ref, patientId: patientId, getSurfaceLabel: _getSurfaceLabel, getConditionLabel: _getConditionLabel),
         )),
-        const SizedBox(width: 56), // Linha média maior
+        const SizedBox(width: 56),
         ...right.map((n) => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6.0), // Espaçamento entre dentes aumentado
-          child: _ToothTile(
-            number: n, 
-            toothConditions: _getConditionsForTooth(odontogram, n), 
-            ref: ref, 
-            patientId: patientId, 
-            getSurfaceLabel: _getSurfaceLabel, 
-            getConditionLabel: _getConditionLabel
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 5.0),
+          child: _ToothTile(number: n, toothConditions: _getConditionsForTooth(odontogram, n), ref: ref, patientId: patientId, getSurfaceLabel: _getSurfaceLabel, getConditionLabel: _getConditionLabel),
         )),
       ],
     );
@@ -101,32 +87,19 @@ class OdontogramWidget extends ConsumerWidget {
 
   Widget _buildLegend(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade300),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
-      ),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
       child: Wrap(
         spacing: 24,
-        runSpacing: 16,
+        runSpacing: 12,
         alignment: WrapAlignment.center,
         children: ConditionType.values.map((type) {
           return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 16, 
-                height: 16, 
-                decoration: BoxDecoration(
-                  color: _getConditionColor(type), 
-                  border: Border.all(color: Colors.grey.shade400),
-                  borderRadius: BorderRadius.circular(4),
-                )
-              ),
+              Container(width: 14, height: 14, decoration: BoxDecoration(color: _getConditionColor(type), border: Border.all(color: Colors.grey.shade400), borderRadius: BorderRadius.circular(2))),
               const SizedBox(width: 8),
-              Text(_getConditionLabel(type), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              Text(_getConditionLabel(type), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
             ],
           );
         }).toList(),
@@ -139,7 +112,7 @@ class OdontogramWidget extends ConsumerWidget {
       ConditionType.healthy => Colors.white,
       ConditionType.decayed => Colors.red.shade600,
       ConditionType.restored => Colors.blue.shade600,
-      ConditionType.missing => Colors.grey.shade500,
+      ConditionType.missing => Colors.grey.shade400,
       ConditionType.implant => Colors.purple.shade600,
       ConditionType.endodontic => Colors.orange.shade600,
       ConditionType.prosthesis => Colors.amber.shade600,
@@ -161,13 +134,13 @@ class _ToothTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(number.toString(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
-        const SizedBox(height: 8),
+        Text(number.toString(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+        const SizedBox(height: 6),
         GestureDetector(
           onTapDown: (details) => _handleTap(context, details.localPosition),
           child: CustomPaint(
-            size: const Size(44, 44), // Tamanho aumentado
-            painter: ToothPainter(conditions: toothConditions),
+            size: const Size(42, 42),
+            painter: ToothPainter(conditions: toothConditions, toothNumber: number),
           ),
         ),
       ],
@@ -175,7 +148,7 @@ class _ToothTile extends StatelessWidget {
   }
 
   void _handleTap(BuildContext context, Offset localPosition) {
-    const size = 44.0;
+    const size = 42.0;
     const padding = size * 0.25;
     ToothSurface? selectedSurface;
 
@@ -188,11 +161,13 @@ class _ToothTile extends StatelessWidget {
       selectedSurface = ToothSurface.lingual;
     } else {
       int quadrant = number ~/ 10;
-      bool isLeftArcade = (quadrant == 1 || quadrant == 4);
+      // Quadrantes 1 e 4 (Lado direito do paciente): Esquerda da tela é Distal, Direita é Mesial
+      // Quadrantes 2 e 3 (Lado esquerdo do paciente): Esquerda da tela é Mesial, Direita é Distal
+      bool isRightSide = (quadrant == 1 || quadrant == 4);
       if (localPosition.dx < padding) {
-        selectedSurface = isLeftArcade ? ToothSurface.distal : ToothSurface.mesial;
+        selectedSurface = isRightSide ? ToothSurface.distal : ToothSurface.mesial;
       } else if (localPosition.dx > size - padding) {
-        selectedSurface = isLeftArcade ? ToothSurface.mesial : ToothSurface.distal;
+        selectedSurface = isRightSide ? ToothSurface.mesial : ToothSurface.distal;
       }
     }
 
@@ -202,20 +177,18 @@ class _ToothTile extends StatelessWidget {
   }
 
   void _showFaceEditor(BuildContext context, ToothSurface surface) {
-    // Busca a condição atual para esta face
-    final currentCondition = toothConditions.firstWhere(
+    final existing = toothConditions.firstWhere(
       (c) => c.surfaces.contains(surface),
       orElse: () => ToothCondition(toothNumber: number, surfaces: [surface], condition: ConditionType.healthy),
     );
 
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) => _FaceActionSheet(
         toothNumber: number,
         surface: surface,
-        // Garante que estamos passando apenas a face atual, mantendo a independência
-        condition: currentCondition.copyWith(surfaces: [surface]),
+        condition: existing.copyWith(surfaces: [surface]),
         getSurfaceLabel: getSurfaceLabel,
         getConditionLabel: getConditionLabel,
         onSave: (updated) {
@@ -229,18 +202,34 @@ class _ToothTile extends StatelessWidget {
 
 class ToothPainter extends CustomPainter {
   final List<ToothCondition> conditions;
-  ToothPainter({required this.conditions});
+  final int toothNumber;
+  
+  ToothPainter({required this.conditions, required this.toothNumber});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final borderPaint = Paint()..color = Colors.black87..style = PaintingStyle.stroke..strokeWidth = 1.2;
+    final borderPaint = Paint()..color = Colors.black54..style = PaintingStyle.stroke..strokeWidth = 1.2;
     final padding = size.width * 0.25;
+    final quadrant = toothNumber ~/ 10;
+    final isRightSide = (quadrant == 1 || quadrant == 4);
 
+    // Oclusal sempre central
     _drawFace(canvas, [Offset(padding, padding), Offset(size.width - padding, padding), Offset(size.width - padding, size.height - padding), Offset(padding, size.height - padding)], ToothSurface.occlusal, borderPaint);
+    
+    // Vestibular e Lingual sempre em cima e embaixo
     _drawFace(canvas, [const Offset(0, 0), Offset(size.width, 0), Offset(size.width - padding, padding), Offset(padding, padding)], ToothSurface.buccal, borderPaint);
     _drawFace(canvas, [Offset(padding, size.height - padding), Offset(size.width - padding, size.height - padding), Offset(size.width, size.height), Offset(0, size.height)], ToothSurface.lingual, borderPaint);
-    _drawFace(canvas, [const Offset(0, 0), Offset(padding, padding), Offset(padding, size.height - padding), Offset(0, size.height)], ToothSurface.mesial, borderPaint);
-    _drawFace(canvas, [Offset(size.width - padding, padding), Offset(size.width, 0), Offset(size.width, size.height), Offset(size.width - padding, size.height - padding)], ToothSurface.distal, borderPaint);
+
+    // Mesial e Distal dependem do lado (Quadrante)
+    if (isRightSide) {
+      // Para Q1 e Q4: Mesial é na DIREITA do widget, Distal é na ESQUERDA do widget
+      _drawFace(canvas, [const Offset(0, 0), Offset(padding, padding), Offset(padding, size.height - padding), Offset(0, size.height)], ToothSurface.distal, borderPaint);
+      _drawFace(canvas, [Offset(size.width - padding, padding), Offset(size.width, 0), Offset(size.width, size.height), Offset(size.width - padding, size.height - padding)], ToothSurface.mesial, borderPaint);
+    } else {
+      // Para Q2 e Q3: Mesial é na ESQUERDA do widget, Distal é na DIREITA do widget
+      _drawFace(canvas, [const Offset(0, 0), Offset(padding, padding), Offset(padding, size.height - padding), Offset(0, size.height)], ToothSurface.mesial, borderPaint);
+      _drawFace(canvas, [Offset(size.width - padding, padding), Offset(size.width, 0), Offset(size.width, size.height), Offset(size.width - padding, size.height - padding)], ToothSurface.distal, borderPaint);
+    }
   }
 
   void _drawFace(Canvas canvas, List<Offset> points, ToothSurface surface, Paint borderPaint) {
@@ -293,35 +282,21 @@ class _FaceActionSheetState extends State<_FaceActionSheet> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            decoration: BoxDecoration(color: const Color(0xFF006494).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-            child: Text('Dente ${widget.toothNumber} • Face ${widget.getSurfaceLabel(widget.surface)}', 
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF006494))),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(color: Colors.blueGrey.shade50, borderRadius: BorderRadius.circular(10)),
+            child: Text('Dente ${widget.toothNumber} - Face ${widget.getSurfaceLabel(widget.surface)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blueGrey)),
           ),
           const SizedBox(height: 24),
           DropdownButtonFormField<ConditionType>(
             value: _type,
-            isExpanded: true,
             items: ConditionType.values.map((t) => DropdownMenuItem(value: t, child: Text(widget.getConditionLabel(t)))).toList(),
             onChanged: (v) => setState(() => _type = v!),
-            decoration: const InputDecoration(labelText: 'Diagnóstico Clínico', border: OutlineInputBorder()),
+            decoration: const InputDecoration(labelText: 'Condição Clínica', border: OutlineInputBorder()),
           ),
           const SizedBox(height: 16),
-          TextField(
-            controller: _obs, 
-            decoration: const InputDecoration(labelText: 'Notas Adicionais', border: OutlineInputBorder(), hintText: 'Descreva detalhes se necessário'),
-            maxLines: 2,
-          ),
+          TextField(controller: _obs, decoration: const InputDecoration(labelText: 'Observação da Face', border: OutlineInputBorder(), hintText: 'Opcional'), maxLines: 2),
           const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity, 
-            height: 56,
-            child: FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: const Color(0xFF006494), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              onPressed: () => widget.onSave(widget.condition.copyWith(condition: _type, observation: _obs.text)), 
-              child: const Text('CONFIRMAR DIAGNÓSTICO', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16))
-            )
-          ),
+          SizedBox(width: double.infinity, height: 50, child: FilledButton(style: FilledButton.styleFrom(backgroundColor: const Color(0xFF006494)), onPressed: () => widget.onSave(widget.condition.copyWith(condition: _type, observation: _obs.text)), child: const Text('SALVAR ALTERAÇÃO', style: TextStyle(fontWeight: FontWeight.bold)))),
         ],
       ),
     );
