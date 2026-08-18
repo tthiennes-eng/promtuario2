@@ -21,7 +21,13 @@ abstract class IProntuarioRepository {
   Future<List<Anamnese>> getAnamneses(String patientId);
   Future<Anamnese?> getAnamneseByPatientId(String patientId);
   Future<void> saveAnamnese(String patientId, Map<String, dynamic> responses);
-  
+
+  Future<Map<String, dynamic>?> getEndodontia(String patientId);
+  Future<void> saveEndodontia(String patientId, Map<String, dynamic> data);
+
+  Future<Map<String, dynamic>?> getPeriograma(String patientId);
+  Future<void> savePeriograma(String patientId, Map<String, dynamic> data);
+
   Future<List<TreatmentPlan>> getTreatmentPlans(String patientId);
   Future<void> saveTreatmentPlan(TreatmentPlan plan);
 

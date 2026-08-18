@@ -240,6 +240,92 @@ class ProntuarioRepository implements IProntuarioRepository {
   @override Future<void> saveAnamnese(String id, Map<String, dynamic> r) async {
     await _apiClient.instance.post('Prontuario/$id/anamnese', data: r);
   }
+
+  @override
+  Future<Map<String, dynamic>?> getEndodontia(String patientId) async {
+    // 1. Tenta recuperar localmente primeiro (Cache imediato)
+    try {
+      final local = await (_localDb.select(_localDb.odontogramLocal)
+            ..where((t) => t.patientId.equals('endo_$patientId')))
+          .getSingleOrNull();
+      if (local != null) return jsonDecode(local.dataJson);
+    } catch (_) {}
+
+    // 2. Busca na API
+    try {
+      final response = await _apiClient.instance.get('Prontuario/$patientId/endodontia');
+      if (response.data == null || response.data == "") return null;
+      
+      final data = response.data is String ? jsonDecode(response.data) : response.data;
+      await _saveLocalEndo(patientId, data);
+      return data;
+    } catch (_) { return null; }
+  }
+
+  @override
+  Future<void> saveEndodontia(String patientId, Map<String, dynamic> data) async {
+    // 1. Salva localmente marcando como não sincronizado
+    await _saveLocalEndo(patientId, data);
+
+    // 2. Envia para a API
+    try {
+      await _apiClient.instance.post('Prontuario/$patientId/endodontia', data: data);
+    } catch (e) {
+      debugPrint('Endodontia salva localmente. Erro ao sincronizar: $e');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getPeriograma(String patientId) async {
+    try {
+      final local = await (_localDb.select(_localDb.odontogramLocal)
+            ..where((t) => t.patientId.equals('peri_$patientId')))
+          .getSingleOrNull();
+      if (local != null) return jsonDecode(local.dataJson);
+    } catch (_) {}
+
+    try {
+      final response = await _apiClient.instance.get('Prontuario/$patientId/periograma');
+      if (response.data == null || response.data == "") return null;
+      final data = response.data is String ? jsonDecode(response.data) : response.data;
+      await _saveLocalPeri(patientId, data);
+      return data;
+    } catch (_) { return null; }
+  }
+
+  @override
+  Future<void> savePeriograma(String patientId, Map<String, dynamic> data) async {
+    await _saveLocalPeri(patientId, data);
+    try {
+      await _apiClient.instance.post('Prontuario/$patientId/periograma', data: data);
+    } catch (e) {
+      debugPrint('Periograma salvo localmente. Erro ao sincronizar: $e');
+    }
+  }
+
+  Future<void> _saveLocalPeri(String patientId, Map<String, dynamic> data) async {
+    await _localDb.into(_localDb.odontogramLocal).insertOnConflictUpdate(
+      drift_db.OdontogramLocalCompanion.insert(
+        patientId: 'peri_$patientId',
+        dataJson: jsonEncode(data),
+        lastUpdated: DateTime.now(),
+        isSynced: const Value(true),
+      ),
+    );
+  }
+
+  Future<void> _saveLocalEndo(String patientId, Map<String, dynamic> data) async {
+    // Reutiliza a tabela de Odontograma com prefixo no ID para persistência sem migração de banco
+    await _localDb.into(_localDb.odontogramLocal).insertOnConflictUpdate(
+      drift_db.OdontogramLocalCompanion.insert(
+        patientId: 'endo_$patientId',
+        dataJson: jsonEncode(data),
+        lastUpdated: DateTime.now(),
+        isSynced: const Value(true),
+      ),
+    );
+  }
+
   @override Future<List<Evolution>> getEvolutionHistory(String id) async => getEvolutions(id);
   @override Future<List<TreatmentPlan>> getTreatmentPlans(String id) async {
     try {

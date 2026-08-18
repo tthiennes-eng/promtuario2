@@ -21,6 +21,11 @@ import '../../features/prontuario/presentation/views/prescription_screen.dart';
 import '../../features/prontuario/presentation/views/certificate_screen.dart';
 import '../../features/prontuario/presentation/views/anamnese_screen.dart';
 import '../../features/prontuario/presentation/views/treatment_plan_screen.dart';
+import '../../features/prontuario/presentation/views/endodontia_screen.dart';
+import '../../features/prontuario/presentation/views/odontogram_screen.dart';
+import '../../features/prontuario/presentation/views/periograma_screen.dart';
+import '../../features/prontuario/presentation/views/evolution_screen.dart';
+import '../../features/prontuario/presentation/views/exams_screen.dart';
 import '../../features/reports/presentation/views/reports_screen.dart';
 import '../../features/settings/presentation/views/settings_screen.dart';
 import '../../features/notifications/presentation/views/notification_list_screen.dart';
@@ -61,9 +66,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: 'prontuario',
                 builder: (context, state) => ProntuarioScreen(patient: state.extra as Patient),
                 routes: [
+                  GoRoute(path: 'odontogram', builder: (context, state) => OdontogramScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
+                  GoRoute(path: 'evolution', builder: (context, state) => EvolutionScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
+                  GoRoute(path: 'exams', builder: (context, state) => ExamsScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
                   GoRoute(path: 'prescription', builder: (context, state) => PrescriptionScreen(patientId: state.uri.queryParameters['patientId']!)),
                   GoRoute(path: 'certificate', builder: (context, state) => CertificateScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
                   GoRoute(path: 'anamnese', builder: (context, state) => AnamneseScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
+                  GoRoute(path: 'periograma', builder: (context, state) => PeriogramaScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
+                  GoRoute(path: 'endodontia', builder: (context, state) => EndodontiaScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
                   GoRoute(path: 'treatment-plan', builder: (context, state) => TreatmentPlanScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
                 ],
               ),
