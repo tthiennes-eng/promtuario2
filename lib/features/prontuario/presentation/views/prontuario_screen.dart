@@ -2,11 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:promt/features/patients/domain/entities/patient.dart';
+import '../widgets/patient_menu_button.dart';
 
 class ProntuarioScreen extends ConsumerWidget {
   final Patient patient;
 
   const ProntuarioScreen({super.key, required this.patient});
+
+  void _handleMenuAction(BuildContext context, String actionId, Patient patient) {
+    final String base = '/dashboard/patients/prontuario';
+    final String query = '?patientId=${patient.id}&patientName=${patient.fullName}';
+    
+    switch (actionId) {
+      case 'anamnese': context.push('$base/anamnese$query', extra: patient); break;
+      case 'extraoral': context.push('$base/extraoral$query', extra: patient); break;
+      case 'intraoral': context.push('$base/intraoral$query', extra: patient); break;
+      case 'periograma': context.push('$base/periograma$query', extra: patient); break;
+      case 'endodontia': context.push('$base/endodontia$query', extra: patient); break;
+      case 'plano': context.push('$base/treatment-plan$query', extra: patient); break;
+      case 'receita': context.push('$base/prescription$query', extra: patient); break;
+      case 'atestado': context.push('$base/certificate$query', extra: patient); break;
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -20,6 +37,10 @@ class ProntuarioScreen extends ConsumerWidget {
             Text('Paciente ID: ${patient.id.substring(0, 8)}', style: const TextStyle(fontSize: 11, color: Colors.blueGrey)),
           ],
         ),
+        actions: [
+          PatientMenuButton(onActionSelected: (id) => _handleMenuAction(context, id, patient)),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -37,6 +58,8 @@ class ProntuarioScreen extends ConsumerWidget {
                 _buildMenuCard(context, "Odontograma", Icons.medical_services_outlined, '/dashboard/patients/prontuario/odontogram'),
                 _buildMenuCard(context, "Evolução Clínica", Icons.history_edu_outlined, '/dashboard/patients/prontuario/evolution'),
                 _buildMenuCard(context, "Anamnese", Icons.history, '/dashboard/patients/prontuario/anamnese'),
+                _buildMenuCard(context, "Exame Extraoral", Icons.face_retouching_natural, '/dashboard/patients/prontuario/extraoral'),
+                _buildMenuCard(context, "Exame Intraoral", Icons.medical_information, '/dashboard/patients/prontuario/intraoral'),
                 _buildMenuCard(context, "Periograma", Icons.table_chart_outlined, '/dashboard/patients/prontuario/periograma'),
                 _buildMenuCard(context, "Endodontia", Icons.healing, '/dashboard/patients/prontuario/endodontia'),
                 _buildMenuCard(context, "Plano de Tratamento", Icons.assignment_outlined, '/dashboard/patients/prontuario/treatment-plan'),

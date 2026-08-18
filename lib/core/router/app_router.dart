@@ -25,6 +25,8 @@ import '../../features/prontuario/presentation/views/endodontia_screen.dart';
 import '../../features/prontuario/presentation/views/odontogram_screen.dart';
 import '../../features/prontuario/presentation/views/periograma_screen.dart';
 import '../../features/prontuario/presentation/views/evolution_screen.dart';
+import '../../features/prontuario/presentation/views/exame_extraoral_screen.dart';
+import '../../features/prontuario/presentation/views/exame_intraoral_screen.dart';
 import '../../features/prontuario/presentation/views/exams_screen.dart';
 import '../../features/reports/presentation/views/reports_screen.dart';
 import '../../features/settings/presentation/views/settings_screen.dart';
@@ -72,6 +74,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(path: 'prescription', builder: (context, state) => PrescriptionScreen(patientId: state.uri.queryParameters['patientId']!)),
                   GoRoute(path: 'certificate', builder: (context, state) => CertificateScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
                   GoRoute(path: 'anamnese', builder: (context, state) => AnamneseScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
+                  GoRoute(path: 'extraoral', builder: (context, state) => ExameExtraoralScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
+                  GoRoute(path: 'intraoral', builder: (context, state) => ExameIntraoralScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
                   GoRoute(path: 'periograma', builder: (context, state) => PeriogramaScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
                   GoRoute(path: 'endodontia', builder: (context, state) => EndodontiaScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
                   GoRoute(path: 'treatment-plan', builder: (context, state) => TreatmentPlanScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),

@@ -9,6 +9,7 @@ import 'package:promt/features/users/presentation/viewmodels/user_management_vie
 import 'package:promt/features/procedures/presentation/viewmodels/clinics_viewmodel.dart';
 import 'package:promt/features/procedures/presentation/viewmodels/procedures_viewmodel.dart';
 import 'package:promt/features/agenda/domain/entities/appointment.dart';
+import 'package:promt/features/patients/domain/entities/patient.dart';
 import 'package:promt/features/auth/domain/entities/user.dart';
 import 'package:promt/features/procedures/domain/entities/clinic.dart';
 
@@ -147,22 +148,42 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                 children: [
                   Expanded(
                     child: patientsAsync.when(
-                      data: (patients) => DropdownButtonFormField<String>(
-                        value: _selectedPatientId,
-                        isExpanded: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Paciente', 
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.person_outline),
-                        ),
-                        items: patients.map((p) => DropdownMenuItem(value: p.id, child: Text(p.fullName))).toList(),
-                        onChanged: (val) {
-                          setState(() {
-                            _selectedPatientId = val;
-                            _selectedPatientName = patients.firstWhere((p) => p.id == val).fullName;
-                          });
+                      data: (patients) => Autocomplete<Patient>(
+                        displayStringForOption: (p) => p.fullName,
+                        initialValue: TextEditingValue(text: _selectedPatientName ?? ''),
+                        optionsBuilder: (textEditingValue) {
+                          if (textEditingValue.text.isEmpty) return const Iterable<Patient>.empty();
+                          return patients.where((p) => 
+                            p.fullName.toLowerCase().contains(textEditingValue.text.toLowerCase()) ||
+                            p.cpf.contains(textEditingValue.text)
+                          );
                         },
-                        validator: (v) => v == null ? 'Selecione o paciente' : null,
+                        onSelected: (p) => setState(() {
+                          _selectedPatientId = p.id;
+                          _selectedPatientName = p.fullName;
+                        }),
+                        fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                          return TextFormField(
+                            controller: controller,
+                            focusNode: focusNode,
+                            decoration: const InputDecoration(
+                              labelText: 'Pesquisar Paciente (Nome ou CPF)', 
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.person_search),
+                              hintText: 'Digite para buscar...',
+                            ),
+                            onChanged: (val) {
+                              // Se o usuário apagar o texto, limpa a seleção
+                              if (val.isEmpty) {
+                                setState(() {
+                                  _selectedPatientId = null;
+                                  _selectedPatientName = null;
+                                });
+                              }
+                            },
+                            validator: (v) => _selectedPatientId == null ? 'Selecione um paciente da lista' : null,
+                          );
+                        },
                       ),
                       loading: () => const LinearProgressIndicator(),
                       error: (_, __) => const Text('Erro ao carregar pacientes'),
