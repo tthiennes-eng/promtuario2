@@ -16,14 +16,15 @@ class ApiClient {
     String baseUrl;
     // Adicionada a barra '/' ao final de todas as baseUrls
     if (kIsWeb) {
-      baseUrl = 'http://localhost:5000/api/';
+      baseUrl = 'http://192.168.0.3:5000/api/';
     } else {
       switch (defaultTargetPlatform) {
         case TargetPlatform.android:
           baseUrl = 'http://10.0.2.2:5000/api/';
           break;
         default:
-          baseUrl = 'http://localhost:5000/api/';
+          // Força o uso do IP do servidor mesmo rodando neste computador
+          baseUrl = 'http://192.168.0.3:5000/api/'; 
       }
     }
 

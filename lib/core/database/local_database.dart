@@ -35,7 +35,7 @@ class Patients extends Table {
   TextColumn get gender => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   BoolColumn get lgpdConsent => boolean().withDefault(const Constant(false))();
-  BoolColumn get isSynced => boolean().withDefault(const Constant(true))();
+  BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
   TextColumn get street => text().nullable()();
   TextColumn get number => text().nullable()();
   TextColumn get neighborhood => text().nullable()();
@@ -114,7 +114,7 @@ class AnamneseLocal extends Table {
   TextColumn get patientId => text()();
   TextColumn get responsesJson => text()();
   DateTimeColumn get lastUpdated => dateTime()();
-  BoolColumn get isSynced => boolean().withDefault(const Constant(true))();
+  BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {patientId};
@@ -137,7 +137,7 @@ class AppointmentsLocal extends Table {
   TextColumn get procedureName => text().nullable()();
   TextColumn get notes => text().nullable()();
   TextColumn get clinicId => text().withDefault(const Constant(''))();
-  BoolColumn get isSynced => boolean().withDefault(const Constant(true))();
+  BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -169,7 +169,7 @@ class TreatmentItemsLocal extends Table {
   TextColumn get procedureName => text()();
   IntColumn get toothNumber => integer().nullable()();
   TextColumn get status => text()();
-  BoolColumn get isSynced => boolean().withDefault(const Constant(true))();
+  BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};

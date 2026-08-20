@@ -205,7 +205,7 @@
       <UseUtf8Encoding>Always</UseUtf8Encoding>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/Thiago/AndroidStudioProjects/promtuario2/windows/flutter/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
-"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/Thiago/AndroidStudioProjects/promtuario2/windows -BC:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64 --check-stamp-file C:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64/flutter/CMakeFiles/generate.stamp
+"C:\Program Files\Microsoft Visual Studio\18\Insiders\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/Thiago/AndroidStudioProjects/promtuario2/windows -BC:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64 --check-stamp-file C:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64/flutter/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -218,7 +218,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
       <Message Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">Building Custom Rule C:/Users/Thiago/AndroidStudioProjects/promtuario2/windows/flutter/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">setlocal
-"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/Thiago/AndroidStudioProjects/promtuario2/windows -BC:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64 --check-stamp-file C:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64/flutter/CMakeFiles/generate.stamp
+"C:\Program Files\Microsoft Visual Studio\18\Insiders\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/Thiago/AndroidStudioProjects/promtuario2/windows -BC:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64 --check-stamp-file C:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64/flutter/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -231,7 +231,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">false</LinkObjects>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/Thiago/AndroidStudioProjects/promtuario2/windows/flutter/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
-"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/Thiago/AndroidStudioProjects/promtuario2/windows -BC:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64 --check-stamp-file C:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64/flutter/CMakeFiles/generate.stamp
+"C:\Program Files\Microsoft Visual Studio\18\Insiders\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/Thiago/AndroidStudioProjects/promtuario2/windows -BC:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64 --check-stamp-file C:/Users/Thiago/AndroidStudioProjects/promtuario2/build/windows/x64/flutter/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone

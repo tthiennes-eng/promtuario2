@@ -19,7 +19,7 @@ class SyncService {
     _syncTimer?.cancel();
     unawaited(syncAll());
     _syncTimer =
-        Timer.periodic(const Duration(minutes: 5), (_) => unawaited(syncAll()));
+        Timer.periodic(const Duration(seconds: 10), (_) => unawaited(syncAll()));
   }
 
   Future<void> syncAll() async {

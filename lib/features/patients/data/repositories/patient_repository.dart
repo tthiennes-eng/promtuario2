@@ -4,10 +4,12 @@ import 'package:promt/core/network/api_client.dart';
 import 'package:promt/core/database/local_database.dart' as drift_db;
 import 'package:promt/features/patients/domain/entities/patient.dart' as entity;
 import 'package:promt/features/patients/domain/repositories/i_patient_repository.dart';
+import 'package:uuid/uuid.dart';
 
 class PatientRepository implements IPatientRepository {
   final ApiClient _apiClient;
   final drift_db.AppDatabase _localDb;
+  final _uuid = const Uuid();
 
   PatientRepository(this._apiClient, this._localDb);
 
@@ -21,6 +23,7 @@ class PatientRepository implements IPatientRepository {
 
       if (response.data != null) {
         final data = response.data;
+        // O servidor agora retorna 'items' em minúsculo devido à configuração do JSON
         final List<dynamic> items = data is Map ? (data['items'] ?? []) : data;
         final apiPatients = items.map((json) => _mapJsonToEntity(json)).toList();
         await _updateLocalCache(apiPatients);
@@ -28,39 +31,41 @@ class PatientRepository implements IPatientRepository {
     } catch (e) {
       debugPrint('Erro ao buscar pacientes na API: $e');
     }
-    // Agora passa o query para o filtro local
     return getLocalPatients(query: query);
   }
 
   @override
   Future<List<entity.Patient>> getLocalPatients({String? query}) async {
     final selectQuery = _localDb.select(_localDb.patients);
-    
     if (query != null && query.isNotEmpty) {
       selectQuery.where((t) => t.fullName.contains(query) | t.cpf.contains(query));
     }
-    
     selectQuery.orderBy([(t) => OrderingTerm(expression: t.fullName)]);
-    
     final results = await selectQuery.get();
     return results.map((row) => _mapSchemaToEntity(row)).toList();
   }
 
   @override
   Future<entity.Patient> createPatient(entity.Patient patient) async {
-    await _saveLocal(patient, false);
+    final id = patient.id.isEmpty ? _uuid.v4() : patient.id;
+    final patientWithId = patient.copyWith(id: id);
+
+    // Salva localmente marcando como NÃO SINCRONIZADO
+    await _saveLocal(patientWithId, false);
 
     try {
-      final response = await _apiClient.instance.post('patients', data: _mapEntityToJson(patient));
+      // Envia para a API com os nomes de campos que o C# espera (camelCase)
+      final response = await _apiClient.instance.post('patients', data: _mapEntityToJson(patientWithId));
+      
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final syncedPatient = _mapJsonToEntity(response.data);
-        await _saveLocal(syncedPatient, true);
-        return syncedPatient;
+        // Se a API aceitou, marca como sincronizado localmente
+        await _saveLocal(patientWithId, true);
+        return _mapJsonToEntity(response.data);
       }
     } catch (e) {
       debugPrint('Erro na sincronização imediata: $e');
     }
-    return patient;
+    return patientWithId;
   }
 
   @override
@@ -87,16 +92,15 @@ class PatientRepository implements IPatientRepository {
 
   entity.Patient _mapJsonToEntity(Map<String, dynamic> json) {
     return entity.Patient(
-      id: json['id'] ?? '',
-      fullName: json['fullName'] ?? json['nome_completo'] ?? 'Sem Nome',
+      id: json['id']?.toString() ?? '',
+      fullName: json['fullName'] ?? 'Sem Nome',
       cpf: json['cpf'] ?? '',
-      birthDate: DateTime.parse(json['birthDate'] ?? json['data_nascimento'] ?? DateTime.now().toIso8601String()),
+      birthDate: DateTime.parse(json['birthDate'] ?? DateTime.now().toIso8601String()),
       email: json['email'],
-      phone: json['phone'] ?? json['telefone'],
-      gender: json['gender'] ?? json['sexo'],
-      lgpdConsent: json['lgpdConsent'] ?? json['consentimento_lgpd'] ?? false,
-      createdAt: DateTime.parse(json['createdAt'] ?? json['criado_em'] ?? DateTime.now().toIso8601String()),
-      address: json['address'] != null ? entity.PatientAddress.fromJson(json['address']) : null,
+      phone: json['phone'],
+      gender: json['gender'],
+      lgpdConsent: json['lgpdConsent'] ?? false,
+      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
     );
   }
 
@@ -112,18 +116,11 @@ class PatientRepository implements IPatientRepository {
       lgpdConsent: row.lgpdConsent,
       isSynced: row.isSynced,
       createdAt: row.createdAt,
-      address: row.street != null ? entity.PatientAddress(
-        street: row.street!,
-        number: row.number!,
-        neighborhood: row.neighborhood!,
-        city: row.city!,
-        state: row.state!,
-        zipCode: row.zipCode!,
-      ) : null,
     );
   }
 
   Map<String, dynamic> _mapEntityToJson(entity.Patient patient) {
+    // NOMES EXATOS DAS PROPRIEDADES NO C# (com a primeira letra minúscula devido ao JSON Policy)
     return {
       'id': patient.id,
       'fullName': patient.fullName,
@@ -131,9 +128,10 @@ class PatientRepository implements IPatientRepository {
       'email': patient.email,
       'phone': patient.phone,
       'birthDate': patient.birthDate.toIso8601String(),
+      'gender': patient.gender,
       'lgpdConsent': patient.lgpdConsent,
+      'isActive': true,
       'createdAt': patient.createdAt.toIso8601String(),
-      'address': patient.address?.toJson(),
     };
   }
 
@@ -150,12 +148,6 @@ class PatientRepository implements IPatientRepository {
         gender: Value(patient.gender),
         lgpdConsent: Value(patient.lgpdConsent),
         isSynced: Value(isSynced),
-        street: Value(patient.address?.street),
-        number: Value(patient.address?.number),
-        neighborhood: Value(patient.address?.neighborhood),
-        city: Value(patient.address?.city),
-        state: Value(patient.address?.state),
-        zipCode: Value(patient.address?.zipCode),
       ),
     );
   }
