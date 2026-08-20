@@ -3,28 +3,65 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../security/storage_service.dart';
 
+/// Provider que gerencia o IP do servidor.
+final serverIpProvider = StateNotifierProvider<ServerIpNotifier, String>((ref) {
+  final storage = ref.watch(storageServiceProvider);
+  return ServerIpNotifier(storage);
+});
+
+class ServerIpNotifier extends StateNotifier<String> {
+  final StorageService _storage;
+  
+  // IP padrão inicial conforme solicitado.
+  static const defaultIp = '192.168.0.3';
+
+  ServerIpNotifier(this._storage) : super(defaultIp) {
+    _loadIp();
+  }
+
+  Future<void> _loadIp() async {
+    final savedIp = await _storage.getServerIp();
+    if (savedIp != null && savedIp.isNotEmpty) {
+      state = savedIp;
+    }
+  }
+
+  Future<void> updateIp(String newIp) async {
+    await _storage.saveServerIp(newIp);
+    state = newIp;
+  }
+}
+
 final apiClientProvider = Provider((ref) {
   final storage = ref.watch(storageServiceProvider);
-  return ApiClient(storage);
+  final serverIp = ref.watch(serverIpProvider);
+  return ApiClient(storage, serverIp);
 });
 
 class ApiClient {
   final StorageService _storage;
+  final String _serverIp;
   late final Dio _dio;
 
-  ApiClient(this._storage) {
+  ApiClient(this._storage, this._serverIp) {
     String baseUrl;
-    // Adicionada a barra '/' ao final de todas as baseUrls
+    
     if (kIsWeb) {
-      baseUrl = 'http://192.168.0.3:5000/api/';
+      // No Web o IP configurado é usado.
+      baseUrl = 'http://$_serverIp:5000/api/';
     } else {
       switch (defaultTargetPlatform) {
         case TargetPlatform.android:
-          baseUrl = 'http://10.0.2.2:5000/api/';
+          // Se for localhost (127.0.0.1) no Android emulador, usamos o alias 10.0.2.2.
+          // Se for um IP real da rede, usamos o IP configurado.
+          if (_serverIp == 'localhost' || _serverIp == '127.0.0.1') {
+            baseUrl = 'http://10.0.2.2:5000/api/';
+          } else {
+            baseUrl = 'http://$_serverIp:5000/api/';
+          }
           break;
         default:
-          // Força o uso do IP do servidor mesmo rodando neste computador
-          baseUrl = 'http://192.168.0.3:5000/api/'; 
+          baseUrl = 'http://$_serverIp:5000/api/';
       }
     }
 

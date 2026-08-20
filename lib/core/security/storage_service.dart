@@ -10,6 +10,7 @@ class StorageService {
 
   static const _accessTokenKey = 'access_token';
   static const _refreshTokenKey = 'refresh_token';
+  static const _serverIpKey = 'server_ip';
 
   /// Salva os tokens de autenticação.
   Future<void> saveTokens({required String access, required String refresh}) async {
@@ -22,6 +23,14 @@ class StorageService {
 
   /// Recupera o Refresh Token.
   Future<String?> getRefreshToken() async => await _storage.read(key: _refreshTokenKey);
+
+  /// Salva o IP do servidor.
+  Future<void> saveServerIp(String ip) async {
+    await _storage.write(key: _serverIpKey, value: ip);
+  }
+
+  /// Recupera o IP do servidor.
+  Future<String?> getServerIp() async => await _storage.read(key: _serverIpKey);
 
   /// Remove todos os dados de sessão.
   Future<void> clearSession() async {

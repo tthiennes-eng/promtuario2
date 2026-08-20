@@ -120,18 +120,18 @@ class PatientRepository implements IPatientRepository {
   }
 
   Map<String, dynamic> _mapEntityToJson(entity.Patient patient) {
-    // NOMES EXATOS DAS PROPRIEDADES NO C# (com a primeira letra minúscula devido ao JSON Policy)
+    // NOMES EXATOS DAS PROPRIEDADES NO C# (PascalCase conforme configurado no Program.cs)
     return {
-      'id': patient.id,
-      'fullName': patient.fullName,
-      'cpf': patient.cpf,
-      'email': patient.email,
-      'phone': patient.phone,
-      'birthDate': patient.birthDate.toIso8601String(),
-      'gender': patient.gender,
-      'lgpdConsent': patient.lgpdConsent,
-      'isActive': true,
-      'createdAt': patient.createdAt.toIso8601String(),
+      'Id': patient.id,
+      'FullName': patient.fullName,
+      'CPF': patient.cpf,
+      'Email': patient.email,
+      'Phone': patient.phone,
+      'BirthDate': patient.birthDate.toIso8601String(),
+      'Gender': patient.gender,
+      'LgpdConsent': patient.lgpdConsent,
+      'IsActive': true,
+      'CreatedAt': patient.createdAt.toIso8601String(),
     };
   }
 
