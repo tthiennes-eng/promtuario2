@@ -1,7 +1,9 @@
+using DentalClinic.Api.Hubs;
 using DentalClinic.Core.Domain.Entities;
 using DentalClinic.Core.Domain.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace DentalClinic.Api.Controllers;
 
@@ -12,11 +14,16 @@ public class PatientsController : ControllerBase
 {
     private readonly IPatientRepository _patientRepository;
     private readonly ILogger<PatientsController> _logger;
+    private readonly IHubContext<ClinicHub> _hubContext;
 
-    public PatientsController(IPatientRepository patientRepository, ILogger<PatientsController> logger)
+    public PatientsController(
+        IPatientRepository patientRepository,
+        ILogger<PatientsController> logger,
+        IHubContext<ClinicHub> hubContext)
     {
         _patientRepository = patientRepository;
         _logger = logger;
+        _hubContext = hubContext;
     }
 
     [HttpGet]
@@ -51,6 +58,12 @@ public class PatientsController : ControllerBase
         try
         {
             await _patientRepository.AddAsync(patient);
+
+            // Notifica em tempo real todos os terminais conectados na rede
+            // local para que a lista de pacientes seja atualizada sem
+            // depender de o usuário reabrir a tela manualmente.
+            await _hubContext.Clients.All.SendAsync("PatientCreated", patient);
+
             return CreatedAtAction(nameof(GetById), new { id = patient.Id }, patient);
         }
         catch (Exception ex)
@@ -68,6 +81,10 @@ public class PatientsController : ControllerBase
         if (existing == null) return NotFound();
 
         await _patientRepository.UpdateAsync(patient);
+
+        // Notifica os demais terminais para que sincronizem o cache local.
+        await _hubContext.Clients.All.SendAsync("PatientUpdated", patient);
+
         return NoContent();
     }
 }
