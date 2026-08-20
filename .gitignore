@@ -1,1 +1,31 @@
-Nothing should be ignored based on the provided file changes. The only modified file is a source code file (.cs), which should not be ignored. No build artifacts, dependencies, or temporary files are present in the changes.
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+*.g.dart.bak
+.pub-cache/
+.pub/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# .NET
+backend/**/bin/
+backend/**/obj/
+*.user
+
+# Plataformas nativas (artefatos de build)
+windows/flutter/ephemeral/
+linux/flutter/ephemeral/
+macos/Flutter/ephemeral/
+ios/Flutter/ephemeral/
+android/.gradle/
+android/app/build/
+
+# Segredos / configs locais
+appsettings.Development.json
+appsettings.Local.json
