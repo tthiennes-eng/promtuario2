@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 import 'package:promt/features/auth/domain/entities/user.dart';
 import 'package:promt/core/providers/providers.dart';
 import 'package:promt/core/network/realtime_service.dart';
@@ -68,10 +69,25 @@ class AuthViewModel extends StateNotifier<AuthState> {
       ref.read(realtimeServiceProvider).init();
       ref.read(auditRepositoryProvider).registerAccess(user.id, 'USER_LOGIN');
       
+    } on DioException catch (e) {
+      String message = 'Falha na autenticação. Verifique suas credenciais.';
+      
+      if (e.type == DioExceptionType.connectionTimeout || 
+          e.type == DioExceptionType.connectionError || 
+          e.type == DioExceptionType.receiveTimeout) {
+        message = 'Não foi possível conectar ao servidor. Verifique o IP configurado e a rede.';
+      } else if (e.response?.statusCode == 401) {
+        message = 'E-mail ou senha inválidos.';
+      }
+
+      state = state.copyWith(
+        isLoading: false, 
+        errorMessage: message
+      );
     } catch (e) {
       state = state.copyWith(
         isLoading: false, 
-        errorMessage: 'Falha na autenticação. Verifique suas credenciais.'
+        errorMessage: 'Ocorreu um erro inesperado. Tente novamente mais tarde.'
       );
     }
   }

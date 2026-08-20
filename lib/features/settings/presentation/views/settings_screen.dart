@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/presentation/viewmodels/auth_viewmodel.dart';
 import '../../../../core/theme/theme_viewmodel.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/widgets/server_ip_dialog.dart';
 
 /// Tela de Configurações do Sistema e Perfil.
 /// Agora integrada ao ThemeViewModel para controle real de aparência.
@@ -54,7 +55,7 @@ class SettingsScreen extends ConsumerWidget {
                   title: const Text('IP do Servidor'),
                   subtitle: Text(serverIp),
                   trailing: const Icon(Icons.edit_outlined),
-                  onTap: () => _showIpDialog(context, ref, serverIp),
+                  onTap: () => showServerIpDialog(context, ref),
                 ),
                 const Divider(height: 1),
                 ListTile(
@@ -97,43 +98,6 @@ class SettingsScreen extends ConsumerWidget {
       ThemeMode.light => 'Modo Claro',
       ThemeMode.dark => 'Modo Escuro',
     };
-  }
-
-  void _showIpDialog(BuildContext context, WidgetRef ref, String currentIp) {
-    final controller = TextEditingController(text: currentIp);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Configurar Servidor'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'IP ou Host do Servidor',
-            hintText: 'ex: 192.168.0.3',
-          ),
-          keyboardType: TextInputType.url,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final newIp = controller.text.trim();
-              if (newIp.isNotEmpty) {
-                ref.read(serverIpProvider.notifier).updateIp(newIp);
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('IP do servidor atualizado!')),
-                );
-              }
-            },
-            child: const Text('Salvar'),
-          ),
-        ],
-      ),
-    );
   }
 
   void _showThemeDialog(BuildContext context, WidgetRef ref) {

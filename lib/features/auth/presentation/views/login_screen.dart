@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../viewmodels/auth_viewmodel.dart';
+import '../../../../core/widgets/server_ip_dialog.dart';
 
 /// Tela de Login profissional com Material 3.
 /// Implementa validações rigorosas e integração completa com o backend.
@@ -52,6 +53,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final authState = ref.watch(authViewModelProvider);
 
     return Scaffold(
+      floatingActionButton: FloatingActionButton.small(
+        onPressed: () => showServerIpDialog(context, ref),
+        tooltip: 'Configurar Servidor',
+        child: const Icon(Icons.dns_outlined),
+      ),
       body: Row(
         children: [
           // Lado Esquerdo: Branding/Imagem (Visível apenas em telas grandes)
