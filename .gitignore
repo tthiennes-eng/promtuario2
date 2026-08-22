@@ -60,3 +60,8 @@ htmlcov/
 *.sln.docstates
 .vs/
 ```
+.dart_tool/
+bin/
+obj/
+**/bin/
+**/obj/
