@@ -7,7 +7,7 @@ public class PatientValidator : AbstractValidator<Patient>
 {
     public PatientValidator()
     {
-        // Regra para Nome: Sincronizado com propriedade FullName
+        // Regra para Nome: sincronizado com propriedade FullName
         RuleFor(x => x.FullName)
             .NotEmpty().WithMessage("O nome do paciente é obrigatório.")
             .MinimumLength(3).WithMessage("O nome deve ter pelo menos 3 caracteres.")
