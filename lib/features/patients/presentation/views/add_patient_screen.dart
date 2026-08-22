@@ -28,7 +28,6 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
   final _neighborhoodController = TextEditingController();
   final _cityController = TextEditingController();
   final _zipCodeController = TextEditingController();
-  final _duplaController = TextEditingController();
 
   DateTime? _selectedBirthDate;
   String _selectedGender = 'M'; // Padrão Masculino
@@ -61,8 +60,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
     for (var controller in [
       _nameController, _cpfController, _emailController, _phoneController,
       _birthDateController, _streetController, _numberController,
-      _neighborhoodController, _cityController, _zipCodeController,
-      _duplaController
+      _neighborhoodController, _cityController, _zipCodeController
     ]) {
       controller.dispose();
     }
@@ -97,10 +95,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
         if (widget.patient == null) {
           await ref.read(patientViewModelProvider.notifier).addPatient(patient);
         } else {
-          await ref.read(patientViewModelProvider.notifier).editPatient(
-            patient, 
-            duplaResponsavel: _duplaController.text.trim(),
-          );
+          await ref.read(patientViewModelProvider.notifier).editPatient(patient);
         }
         
         if (mounted) {
@@ -137,23 +132,6 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (isEditing) ...[
-                const Text('Responsável pela Alteração', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange, fontSize: 14)),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _duplaController,
-                  decoration: const InputDecoration(
-                    labelText: 'Dupla Responsável', 
-                    hintText: 'Quem está realizando esta alteração?',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.group_outlined),
-                  ),
-                  validator: (v) => v!.isEmpty ? 'Informe a dupla responsável pela auditoria' : null,
-                ),
-                const SizedBox(height: 24),
-                const Divider(),
-                const SizedBox(height: 24),
-              ],
               const Text('Informações Gerais', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF006494), fontSize: 16)),
               const SizedBox(height: 24),
               

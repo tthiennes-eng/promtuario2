@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:promt/features/patients/domain/entities/patient_change_log.dart';
-import 'package:promt/features/patients/presentation/viewmodels/patient_viewmodel.dart';
 import 'package:promt/core/providers/providers.dart';
 
 class PatientHistoryScreen extends ConsumerWidget {
@@ -72,9 +71,6 @@ class PatientHistoryScreen extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text('Dupla Responsável: ${log.duplaResponsavel}', 
-              style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
             const Divider(height: 24),
             ...changes.entries.map((e) {
               final val = e.value as Map<String, dynamic>;

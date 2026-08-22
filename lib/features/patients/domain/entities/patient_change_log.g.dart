@@ -13,7 +13,6 @@ _$PatientChangeLogImpl _$$PatientChangeLogImplFromJson(
       patientId: json['patientId'] as String,
       userId: json['userId'] as String,
       userName: json['userName'] as String,
-      duplaResponsavel: json['duplaResponsavel'] as String,
       timestamp: DateTime.parse(json['timestamp'] as String),
       changesJson: json['changesJson'] as String,
     );
@@ -25,7 +24,6 @@ Map<String, dynamic> _$$PatientChangeLogImplToJson(
       'patientId': instance.patientId,
       'userId': instance.userId,
       'userName': instance.userName,
-      'duplaResponsavel': instance.duplaResponsavel,
       'timestamp': instance.timestamp.toIso8601String(),
       'changesJson': instance.changesJson,
     };

@@ -10,7 +10,6 @@ class PatientChangeLog with _$PatientChangeLog {
     required String patientId,
     required String userId,
     required String userName,
-    required String duplaResponsavel,
     required DateTime timestamp,
     required String changesJson,
   }) = _PatientChangeLog;

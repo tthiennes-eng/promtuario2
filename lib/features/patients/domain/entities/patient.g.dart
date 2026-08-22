@@ -24,9 +24,6 @@ _$PatientImpl _$$PatientImplFromJson(Map<String, dynamic> json) =>
           : DateTime.parse(json['updatedAt'] as String),
       lgpdConsent: json['lgpdConsent'] as bool? ?? false,
       isSynced: json['isSynced'] as bool? ?? true,
-      classification: $enumDecodeNullable(
-              _$ClinicalClassificationEnumMap, json['classification']) ??
-          ClinicalClassification.satisfactory,
     );
 
 Map<String, dynamic> _$$PatientImplToJson(_$PatientImpl instance) =>
@@ -43,15 +40,7 @@ Map<String, dynamic> _$$PatientImplToJson(_$PatientImpl instance) =>
       'updatedAt': instance.updatedAt?.toIso8601String(),
       'lgpdConsent': instance.lgpdConsent,
       'isSynced': instance.isSynced,
-      'classification':
-          _$ClinicalClassificationEnumMap[instance.classification]!,
     };
-
-const _$ClinicalClassificationEnumMap = {
-  ClinicalClassification.healthy: 'healthy',
-  ClinicalClassification.satisfactory: 'satisfactory',
-  ClinicalClassification.unsatisfactory: 'unsatisfactory',
-};
 
 _$PatientAddressImpl _$$PatientAddressImplFromJson(Map<String, dynamic> json) =>
     _$PatientAddressImpl(

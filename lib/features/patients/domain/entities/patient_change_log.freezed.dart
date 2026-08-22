@@ -24,7 +24,6 @@ mixin _$PatientChangeLog {
   String get patientId => throw _privateConstructorUsedError;
   String get userId => throw _privateConstructorUsedError;
   String get userName => throw _privateConstructorUsedError;
-  String get duplaResponsavel => throw _privateConstructorUsedError;
   DateTime get timestamp => throw _privateConstructorUsedError;
   String get changesJson => throw _privateConstructorUsedError;
 
@@ -49,7 +48,6 @@ abstract class $PatientChangeLogCopyWith<$Res> {
       String patientId,
       String userId,
       String userName,
-      String duplaResponsavel,
       DateTime timestamp,
       String changesJson});
 }
@@ -73,7 +71,6 @@ class _$PatientChangeLogCopyWithImpl<$Res, $Val extends PatientChangeLog>
     Object? patientId = null,
     Object? userId = null,
     Object? userName = null,
-    Object? duplaResponsavel = null,
     Object? timestamp = null,
     Object? changesJson = null,
   }) {
@@ -93,10 +90,6 @@ class _$PatientChangeLogCopyWithImpl<$Res, $Val extends PatientChangeLog>
       userName: null == userName
           ? _value.userName
           : userName // ignore: cast_nullable_to_non_nullable
-              as String,
-      duplaResponsavel: null == duplaResponsavel
-          ? _value.duplaResponsavel
-          : duplaResponsavel // ignore: cast_nullable_to_non_nullable
               as String,
       timestamp: null == timestamp
           ? _value.timestamp
@@ -123,7 +116,6 @@ abstract class _$$PatientChangeLogImplCopyWith<$Res>
       String patientId,
       String userId,
       String userName,
-      String duplaResponsavel,
       DateTime timestamp,
       String changesJson});
 }
@@ -145,7 +137,6 @@ class __$$PatientChangeLogImplCopyWithImpl<$Res>
     Object? patientId = null,
     Object? userId = null,
     Object? userName = null,
-    Object? duplaResponsavel = null,
     Object? timestamp = null,
     Object? changesJson = null,
   }) {
@@ -165,10 +156,6 @@ class __$$PatientChangeLogImplCopyWithImpl<$Res>
       userName: null == userName
           ? _value.userName
           : userName // ignore: cast_nullable_to_non_nullable
-              as String,
-      duplaResponsavel: null == duplaResponsavel
-          ? _value.duplaResponsavel
-          : duplaResponsavel // ignore: cast_nullable_to_non_nullable
               as String,
       timestamp: null == timestamp
           ? _value.timestamp
@@ -190,7 +177,6 @@ class _$PatientChangeLogImpl implements _PatientChangeLog {
       required this.patientId,
       required this.userId,
       required this.userName,
-      required this.duplaResponsavel,
       required this.timestamp,
       required this.changesJson});
 
@@ -206,15 +192,13 @@ class _$PatientChangeLogImpl implements _PatientChangeLog {
   @override
   final String userName;
   @override
-  final String duplaResponsavel;
-  @override
   final DateTime timestamp;
   @override
   final String changesJson;
 
   @override
   String toString() {
-    return 'PatientChangeLog(id: $id, patientId: $patientId, userId: $userId, userName: $userName, duplaResponsavel: $duplaResponsavel, timestamp: $timestamp, changesJson: $changesJson)';
+    return 'PatientChangeLog(id: $id, patientId: $patientId, userId: $userId, userName: $userName, timestamp: $timestamp, changesJson: $changesJson)';
   }
 
   @override
@@ -228,8 +212,6 @@ class _$PatientChangeLogImpl implements _PatientChangeLog {
             (identical(other.userId, userId) || other.userId == userId) &&
             (identical(other.userName, userName) ||
                 other.userName == userName) &&
-            (identical(other.duplaResponsavel, duplaResponsavel) ||
-                other.duplaResponsavel == duplaResponsavel) &&
             (identical(other.timestamp, timestamp) ||
                 other.timestamp == timestamp) &&
             (identical(other.changesJson, changesJson) ||
@@ -238,8 +220,8 @@ class _$PatientChangeLogImpl implements _PatientChangeLog {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, patientId, userId, userName,
-      duplaResponsavel, timestamp, changesJson);
+  int get hashCode => Object.hash(
+      runtimeType, id, patientId, userId, userName, timestamp, changesJson);
 
   /// Create a copy of PatientChangeLog
   /// with the given fields replaced by the non-null parameter values.
@@ -264,7 +246,6 @@ abstract class _PatientChangeLog implements PatientChangeLog {
       required final String patientId,
       required final String userId,
       required final String userName,
-      required final String duplaResponsavel,
       required final DateTime timestamp,
       required final String changesJson}) = _$PatientChangeLogImpl;
 
@@ -279,8 +260,6 @@ abstract class _PatientChangeLog implements PatientChangeLog {
   String get userId;
   @override
   String get userName;
-  @override
-  String get duplaResponsavel;
   @override
   DateTime get timestamp;
   @override

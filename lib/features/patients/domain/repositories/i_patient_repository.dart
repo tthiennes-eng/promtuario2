@@ -6,7 +6,7 @@ abstract class IPatientRepository {
   Future<Patient> getPatientById(String id);
   Future<List<PatientChangeLog>> getPatientHistory(String patientId);
   Future<Patient> createPatient(Patient patient);
-  Future<void> updatePatient(Patient patient, {String? duplaResponsavel});
+  Future<void> updatePatient(Patient patient);
   Future<void> syncPatients();
   Future<List<Patient>> getLocalPatients({String? query});
 }

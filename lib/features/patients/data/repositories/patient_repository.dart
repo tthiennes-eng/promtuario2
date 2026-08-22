@@ -71,7 +71,7 @@ class PatientRepository implements IPatientRepository {
   }
 
   @override
-  Future<void> updatePatient(entity.Patient patient, {String? duplaResponsavel}) async {
+  Future<void> updatePatient(entity.Patient patient) async {
     // Salva localmente marcando como NÃO SINCRONIZADO até confirmar com a API.
     await _saveLocal(patient, false);
 
@@ -80,7 +80,6 @@ class PatientRepository implements IPatientRepository {
         'patients/${patient.id}',
         data: {
           'Patient': _mapEntityToJson(patient),
-          'DuplaResponsavel': duplaResponsavel ?? 'Não informada',
         },
       );
 

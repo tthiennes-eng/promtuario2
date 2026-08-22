@@ -32,8 +32,6 @@ mixin _$Patient {
   DateTime? get updatedAt => throw _privateConstructorUsedError;
   bool get lgpdConsent => throw _privateConstructorUsedError;
   bool get isSynced => throw _privateConstructorUsedError;
-  ClinicalClassification get classification =>
-      throw _privateConstructorUsedError;
 
   /// Serializes this Patient to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -61,8 +59,7 @@ abstract class $PatientCopyWith<$Res> {
       DateTime createdAt,
       DateTime? updatedAt,
       bool lgpdConsent,
-      bool isSynced,
-      ClinicalClassification classification});
+      bool isSynced});
 
   $PatientAddressCopyWith<$Res>? get address;
 }
@@ -94,7 +91,6 @@ class _$PatientCopyWithImpl<$Res, $Val extends Patient>
     Object? updatedAt = freezed,
     Object? lgpdConsent = null,
     Object? isSynced = null,
-    Object? classification = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -145,10 +141,6 @@ class _$PatientCopyWithImpl<$Res, $Val extends Patient>
           ? _value.isSynced
           : isSynced // ignore: cast_nullable_to_non_nullable
               as bool,
-      classification: null == classification
-          ? _value.classification
-          : classification // ignore: cast_nullable_to_non_nullable
-              as ClinicalClassification,
     ) as $Val);
   }
 
@@ -186,8 +178,7 @@ abstract class _$$PatientImplCopyWith<$Res> implements $PatientCopyWith<$Res> {
       DateTime createdAt,
       DateTime? updatedAt,
       bool lgpdConsent,
-      bool isSynced,
-      ClinicalClassification classification});
+      bool isSynced});
 
   @override
   $PatientAddressCopyWith<$Res>? get address;
@@ -218,7 +209,6 @@ class __$$PatientImplCopyWithImpl<$Res>
     Object? updatedAt = freezed,
     Object? lgpdConsent = null,
     Object? isSynced = null,
-    Object? classification = null,
   }) {
     return _then(_$PatientImpl(
       id: null == id
@@ -269,10 +259,6 @@ class __$$PatientImplCopyWithImpl<$Res>
           ? _value.isSynced
           : isSynced // ignore: cast_nullable_to_non_nullable
               as bool,
-      classification: null == classification
-          ? _value.classification
-          : classification // ignore: cast_nullable_to_non_nullable
-              as ClinicalClassification,
     ));
   }
 }
@@ -292,8 +278,7 @@ class _$PatientImpl implements _Patient {
       required this.createdAt,
       this.updatedAt,
       this.lgpdConsent = false,
-      this.isSynced = true,
-      this.classification = ClinicalClassification.satisfactory});
+      this.isSynced = true});
 
   factory _$PatientImpl.fromJson(Map<String, dynamic> json) =>
       _$$PatientImplFromJson(json);
@@ -324,13 +309,10 @@ class _$PatientImpl implements _Patient {
   @override
   @JsonKey()
   final bool isSynced;
-  @override
-  @JsonKey()
-  final ClinicalClassification classification;
 
   @override
   String toString() {
-    return 'Patient(id: $id, fullName: $fullName, cpf: $cpf, birthDate: $birthDate, email: $email, phone: $phone, gender: $gender, address: $address, createdAt: $createdAt, updatedAt: $updatedAt, lgpdConsent: $lgpdConsent, isSynced: $isSynced, classification: $classification)';
+    return 'Patient(id: $id, fullName: $fullName, cpf: $cpf, birthDate: $birthDate, email: $email, phone: $phone, gender: $gender, address: $address, createdAt: $createdAt, updatedAt: $updatedAt, lgpdConsent: $lgpdConsent, isSynced: $isSynced)';
   }
 
   @override
@@ -355,9 +337,7 @@ class _$PatientImpl implements _Patient {
             (identical(other.lgpdConsent, lgpdConsent) ||
                 other.lgpdConsent == lgpdConsent) &&
             (identical(other.isSynced, isSynced) ||
-                other.isSynced == isSynced) &&
-            (identical(other.classification, classification) ||
-                other.classification == classification));
+                other.isSynced == isSynced));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -375,8 +355,7 @@ class _$PatientImpl implements _Patient {
       createdAt,
       updatedAt,
       lgpdConsent,
-      isSynced,
-      classification);
+      isSynced);
 
   /// Create a copy of Patient
   /// with the given fields replaced by the non-null parameter values.
@@ -407,8 +386,7 @@ abstract class _Patient implements Patient {
       required final DateTime createdAt,
       final DateTime? updatedAt,
       final bool lgpdConsent,
-      final bool isSynced,
-      final ClinicalClassification classification}) = _$PatientImpl;
+      final bool isSynced}) = _$PatientImpl;
 
   factory _Patient.fromJson(Map<String, dynamic> json) = _$PatientImpl.fromJson;
 
@@ -436,8 +414,6 @@ abstract class _Patient implements Patient {
   bool get lgpdConsent;
   @override
   bool get isSynced;
-  @override
-  ClinicalClassification get classification;
 
   /// Create a copy of Patient
   /// with the given fields replaced by the non-null parameter values.
