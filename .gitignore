@@ -1,54 +1,68 @@
-```
-# Build artifacts
-bin/
-obj/
-*.dll
+# Build artifacts and binaries
 *.exe
-*.pdb
+*.dll
 *.so
-*.dylib
-*.jar
-*.war
-*.class
-*.o
+*.a
 *.obj
 *.out
+*.pyc
+*.class
+*.o
 
 # Dependencies
-packages/
 node_modules/
-bower_components/
-vendor/
+venv/
+.venv/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+target/
+.gradle/
 
-# Logs
-*.log
-logs/
-
-# Environment specific
-.env
-.env.local
-.env.*
-!env.example
-
-# OS generated files
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# Testing
-test-results/
-coverage/
-
-# IDE
-.vs/
+# IDE and editor files
 .vscode/
 .idea/
 *.swp
 *.swo
+*.tmp
 
-# Distribution
+# System files
+.DS_Store
+Thumbs.db
+.env
+.env.local
+*.env.*
+
+# Logs
+*.log
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Distribution / build artifacts
 dist/
 build/
-target/
-out/
-```
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
