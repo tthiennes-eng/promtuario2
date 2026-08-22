@@ -12,7 +12,7 @@ final serverIpProvider = StateNotifierProvider<ServerIpNotifier, String>((ref) {
 class ServerIpNotifier extends StateNotifier<String> {
   final StorageService _storage;
   
-  // IP padrão inicialconforme solicitado.
+  // IP padrão inicial conforme solicitado.
   static const defaultIp = '192.168.0.3';
 
   ServerIpNotifier(this._storage) : super(defaultIp) {
