@@ -1,67 +1,83 @@
-```
-# Compiled and build artifacts
-*.pyc
-__pycache__/
-*.o
-*.obj
-*.dll
-*.exe
-*.so
-*.a
-*.out
-
-# Dependencies
-.venv/
-venv/
-node_modules/
-packages/
-lib/
-target/
-build/
-dist/
-bin/
-
-# Logs and temp files
+# Miscellaneous
+*.class
 *.log
-*.tmp
+*.pyc
 *.swp
-*.swo
-
-# Environment
-.env
-.env.local
-*.env.*
-
-# Editors
-.vscode/
-.idea/
-*.userprefs
-Thumbs.db
 .DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
 
-# Coverage
-coverage/
-htmlcov/
-.coverage
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
 
-# Python specific
-*.py[cod]
-*$py.class
-*.so
-.Python
-*.egg-info/
-.eggs/
+# The .vscode/ directory contains launch.json, which defines how a project
+# can be launched. It is often useful to share this file with other developers
+# of a project, so it is not ignored by default.
+# .vscode/
 
-# Dotnet specific
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/DerivedData/
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+**/.pub-cache/
+**/.pub/
+**/pubspec.lock
+
+# Dotnet / Visual Studio related
 **/bin/
 **/obj/
 **/out/
 *.user
 *.sln.docstates
 .vs/
-```
-.dart_tool/
-bin/
-obj/
-**/bin/
-**/obj/
+UserSecretsId
+[Bb]in/
+[Oo]bj/
+
+# Android related
+**/android/**/generated/
+**/android/app/src/main/res/values/strings.xml
+**/android/local.properties
+**/android/key.properties
+**/android/gradle/wrapper/gradle-wrapper.properties
+**/android/.gradle/
+**/android/captures/
+**/android/*.iml
+**/android/local.properties
+**/android/.externalNativeBuild
+**/android/.cxx
+**/android/*.keystore
+!**/android/app/src/main/res/values/strings.xml
+
+# Executables
+*.exe
+*.dll
+*.pdb
+*.app
+*.ipa
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS related
+Thumbs.db
+ehthumbs.db
+Desktop.ini
