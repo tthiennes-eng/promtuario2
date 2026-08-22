@@ -12,65 +12,111 @@ namespace DentalClinic.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_agendamentos_usuarios_UserId",
-                table: "agendamentos");
+            // Verificar e remover chaves estrangeiras apenas se existirem
+            migrationBuilder.Sql(@"
+                DO $$ BEGIN
+                    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'FK_agendamentos_usuarios_UserId') THEN
+                        ALTER TABLE agendamentos DROP CONSTRAINT ""FK_agendamentos_usuarios_UserId"";
+                    END IF;
+                END $$;");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_anamneses_pacientes_PatientId",
-                table: "anamneses");
+            migrationBuilder.Sql(@"
+                DO $$ BEGIN
+                    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'FK_anamneses_pacientes_PatientId') THEN
+                        ALTER TABLE anamneses DROP CONSTRAINT ""FK_anamneses_pacientes_PatientId"";
+                    END IF;
+                END $$;");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_anamneses_usuarios_CriadoPorId",
-                table: "anamneses");
+            migrationBuilder.Sql(@"
+                DO $$ BEGIN
+                    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'FK_anamneses_usuarios_CriadoPorId') THEN
+                        ALTER TABLE anamneses DROP CONSTRAINT ""FK_anamneses_usuarios_CriadoPorId"";
+                    END IF;
+                END $$;");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_Attachments_MedicalRecords_MedicalRecordId",
-                table: "Attachments");
+            migrationBuilder.Sql(@"
+                DO $$ BEGIN
+                    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'FK_Attachments_MedicalRecords_MedicalRecordId') THEN
+                        ALTER TABLE ""Attachments"" DROP CONSTRAINT ""FK_Attachments_MedicalRecords_MedicalRecordId"";
+                    END IF;
+                END $$;");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_Attachments_usuarios_UserId",
-                table: "Attachments");
+            migrationBuilder.Sql(@"
+                DO $$ BEGIN
+                    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'FK_Attachments_usuarios_UserId') THEN
+                        ALTER TABLE ""Attachments"" DROP CONSTRAINT ""FK_Attachments_usuarios_UserId"";
+                    END IF;
+                END $$;");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_evolucoes_clinicas_MedicalRecords_MedicalRecordId",
-                table: "evolucoes_clinicas");
+            migrationBuilder.Sql(@"
+                DO $$ BEGIN
+                    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'FK_evolucoes_clinicas_MedicalRecords_MedicalRecordId') THEN
+                        ALTER TABLE evolucoes_clinicas DROP CONSTRAINT ""FK_evolucoes_clinicas_MedicalRecords_MedicalRecordId"";
+                    END IF;
+                END $$;");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_evolucoes_clinicas_clinicas_ClinicId",
-                table: "evolucoes_clinicas");
+            migrationBuilder.Sql(@"
+                DO $$ BEGIN
+                    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'FK_evolucoes_clinicas_clinicas_ClinicId') THEN
+                        ALTER TABLE evolucoes_clinicas DROP CONSTRAINT ""FK_evolucoes_clinicas_clinicas_ClinicId"";
+                    END IF;
+                END $$;");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_evolucoes_clinicas_pacientes_PatientId",
-                table: "evolucoes_clinicas");
+            migrationBuilder.Sql(@"
+                DO $$ BEGIN
+                    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'FK_evolucoes_clinicas_pacientes_PatientId') THEN
+                        ALTER TABLE evolucoes_clinicas DROP CONSTRAINT ""FK_evolucoes_clinicas_pacientes_PatientId"";
+                    END IF;
+                END $$;");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_evolucoes_clinicas_usuarios_ProfessorId",
-                table: "evolucoes_clinicas");
+            migrationBuilder.Sql(@"
+                DO $$ BEGIN
+                    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'FK_evolucoes_clinicas_usuarios_ProfessorId') THEN
+                        ALTER TABLE evolucoes_clinicas DROP CONSTRAINT ""FK_evolucoes_clinicas_usuarios_ProfessorId"";
+                    END IF;
+                END $$;");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_evolucoes_clinicas_usuarios_StudentId",
-                table: "evolucoes_clinicas");
+            migrationBuilder.Sql(@"
+                DO $$ BEGIN
+                    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'FK_evolucoes_clinicas_usuarios_StudentId') THEN
+                        ALTER TABLE evolucoes_clinicas DROP CONSTRAINT ""FK_evolucoes_clinicas_usuarios_StudentId"";
+                    END IF;
+                END $$;");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_evolucoes_clinicas_usuarios_UserId",
-                table: "evolucoes_clinicas");
+            migrationBuilder.Sql(@"
+                DO $$ BEGIN
+                    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'FK_evolucoes_clinicas_usuarios_UserId') THEN
+                        ALTER TABLE evolucoes_clinicas DROP CONSTRAINT ""FK_evolucoes_clinicas_usuarios_UserId"";
+                    END IF;
+                END $$;");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_lista_espera_clinicas_ClinicId",
-                table: "lista_espera");
+            migrationBuilder.Sql(@"
+                DO $$ BEGIN
+                    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'FK_lista_espera_clinicas_ClinicId') THEN
+                        ALTER TABLE lista_espera DROP CONSTRAINT ""FK_lista_espera_clinicas_ClinicId"";
+                    END IF;
+                END $$;");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_lista_espera_pacientes_PatientId",
-                table: "lista_espera");
+            migrationBuilder.Sql(@"
+                DO $$ BEGIN
+                    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'FK_lista_espera_pacientes_PatientId') THEN
+                        ALTER TABLE lista_espera DROP CONSTRAINT ""FK_lista_espera_pacientes_PatientId"";
+                    END IF;
+                END $$;");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_odontogramas_pacientes_PatientId",
-                table: "odontogramas");
+            migrationBuilder.Sql(@"
+                DO $$ BEGIN
+                    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'FK_odontogramas_pacientes_PatientId') THEN
+                        ALTER TABLE odontogramas DROP CONSTRAINT ""FK_odontogramas_pacientes_PatientId"";
+                    END IF;
+                END $$;");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_TreatmentItems_MedicalRecords_MedicalRecordId",
-                table: "TreatmentItems");
+            migrationBuilder.Sql(@"
+                DO $$ BEGIN
+                    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'FK_TreatmentItems_MedicalRecords_MedicalRecordId') THEN
+                        ALTER TABLE ""TreatmentItems"" DROP CONSTRAINT ""FK_TreatmentItems_MedicalRecords_MedicalRecordId"";
+                    END IF;
+                END $$;");
 
             migrationBuilder.DropIndex(
                 name: "IX_TreatmentItems_MedicalRecordId",
