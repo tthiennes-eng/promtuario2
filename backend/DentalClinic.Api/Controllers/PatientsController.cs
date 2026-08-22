@@ -4,6 +4,8 @@ using DentalClinic.Core.Domain.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using System.Security.Claims;
+using System.Text.Json;
 
 namespace DentalClinic.Api.Controllers;
 
@@ -13,15 +15,18 @@ namespace DentalClinic.Api.Controllers;
 public class PatientsController : ControllerBase
 {
     private readonly IPatientRepository _patientRepository;
+    private readonly IPatientChangeLogRepository _patientChangeLogRepository;
     private readonly ILogger<PatientsController> _logger;
     private readonly IHubContext<ClinicHub> _hubContext;
 
     public PatientsController(
         IPatientRepository patientRepository,
+        IPatientChangeLogRepository patientChangeLogRepository,
         ILogger<PatientsController> logger,
         IHubContext<ClinicHub> hubContext)
     {
         _patientRepository = patientRepository;
+        _patientChangeLogRepository = patientChangeLogRepository;
         _logger = logger;
         _hubContext = hubContext;
     }
@@ -80,11 +85,99 @@ public class PatientsController : ControllerBase
         var existing = await _patientRepository.GetByIdAsync(id);
         if (existing == null) return NotFound();
 
+        // Comparar campos e gerar log de alterações se houver mudanças
+        var changes = new Dictionary<string, object>();
+        
+        if (existing.FullName != patient.FullName)
+            changes["FullName"] = new { old = existing.FullName, @new = patient.FullName };
+        
+        if (existing.CPF != patient.CPF)
+            changes["CPF"] = new { old = existing.CPF, @new = patient.CPF };
+        
+        if (existing.Email != patient.Email)
+            changes["Email"] = new { old = existing.Email, @new = patient.Email };
+        
+        if (existing.Phone != patient.Phone)
+            changes["Phone"] = new { old = existing.Phone, @new = patient.Phone };
+        
+        if (existing.BirthDate != patient.BirthDate)
+            changes["BirthDate"] = new { old = existing.BirthDate, @new = patient.BirthDate };
+        
+        if (existing.Gender != patient.Gender)
+            changes["Gender"] = new { old = existing.Gender, @new = patient.Gender };
+        
+        // Comparar endereço (objeto complexo)
+        var existingAddressJson = JsonSerializer.Serialize(existing.Address);
+        var newAddressJson = JsonSerializer.Serialize(patient.Address);
+        if (existingAddressJson != newAddressJson)
+            changes["Address"] = new { old = existing.Address, @new = patient.Address };
+        
+        if (existing.LgpdConsent != patient.LgpdConsent)
+            changes["LgpdConsent"] = new { old = existing.LgpdConsent, @new = patient.LgpdConsent };
+        
+        if (existing.IsActive != patient.IsActive)
+            changes["IsActive"] = new { old = existing.IsActive, @new = patient.IsActive };
+
+        // Persistir alterações do paciente
         await _patientRepository.UpdateAsync(patient);
+
+        // Se houver mudanças, criar log de alteração
+        if (changes.Count > 0)
+        {
+            try
+            {
+                // Resolver usuário logado conforme padrão do AuditFilter
+                var userIdClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userNameClaim = HttpContext.User.FindFirst(ClaimTypes.Name)?.Value 
+                    ?? HttpContext.User.Identity?.Name 
+                    ?? "Usuário Desconhecido";
+
+                if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var userId))
+                {
+                    var changeLog = new PatientChangeLog
+                    {
+                        PatientId = patient.Id,
+                        UserId = userId,
+                        UserName = userNameClaim,
+                        Timestamp = DateTime.UtcNow,
+                        ChangesJson = JsonSerializer.Serialize(changes)
+                    };
+
+                    await _patientChangeLogRepository.CreateAsync(changeLog);
+                    await _patientChangeLogRepository.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Falha ao criar log de alteração do paciente {PatientId}", patient.Id);
+                // Não falha a operação principal se o log falhar
+            }
+        }
 
         // Notifica os demais terminais para que sincronizem o cache local.
         await _hubContext.Clients.All.SendAsync("PatientUpdated", patient);
 
         return NoContent();
+    }
+
+    /// <summary>
+    /// Retorna o histórico de alterações de um paciente específico.
+    /// </summary>
+    [HttpGet("{id}/history")]
+    public async Task<IActionResult> GetHistory(Guid id)
+    {
+        var logs = await _patientChangeLogRepository.GetByPatientIdAsync(id);
+        
+        // Retorna no formato esperado pelo Flutter:
+        // id, patientId, userId, userName, timestamp, changesJson
+        return Ok(logs.Select(l => new
+        {
+            id = l.Id.ToString(),
+            patientId = l.PatientId.ToString(),
+            userId = l.UserId.ToString(),
+            userName = l.UserName,
+            timestamp = l.Timestamp,
+            changesJson = l.ChangesJson
+        }));
     }
 }
