@@ -13,6 +13,8 @@ _$DashboardStatsModelImpl _$$DashboardStatsModelImplFromJson(
       appointmentsToday: (json['appointmentsToday'] as num).toInt(),
       proceduresThisMonth: (json['proceduresThisMonth'] as num).toInt(),
       pendingAlerts: (json['pendingAlerts'] as num).toInt(),
+      totalCapacity: (json['totalCapacity'] as num).toInt(),
+      bookedSlots: (json['bookedSlots'] as num).toInt(),
       growthData: (json['growthData'] as List<dynamic>)
           .map((e) => MonthlyGrowthModel.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -25,6 +27,8 @@ Map<String, dynamic> _$$DashboardStatsModelImplToJson(
       'appointmentsToday': instance.appointmentsToday,
       'proceduresThisMonth': instance.proceduresThisMonth,
       'pendingAlerts': instance.pendingAlerts,
+      'totalCapacity': instance.totalCapacity,
+      'bookedSlots': instance.bookedSlots,
       'growthData': instance.growthData,
     };
 

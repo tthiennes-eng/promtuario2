@@ -33,6 +33,8 @@ import '../../features/settings/presentation/views/settings_screen.dart';
 import '../../features/notifications/presentation/views/notification_list_screen.dart';
 import '../../features/audit/presentation/views/audit_log_screen.dart';
 
+import '../../features/patients/presentation/views/patient_history_screen.dart';
+
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authViewModelProvider);
 
@@ -63,7 +65,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'patients',
             builder: (context, state) => const PatientListScreen(),
             routes: [
-              GoRoute(path: 'add', builder: (context, state) => const AddPatientScreen()),
+              GoRoute(path: 'add', builder: (context, state) => AddPatientScreen(patient: state.extra as Patient?)),
               GoRoute(
                 path: 'prontuario',
                 builder: (context, state) => ProntuarioScreen(patient: state.extra as Patient),
@@ -79,6 +81,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(path: 'periograma', builder: (context, state) => PeriogramaScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
                   GoRoute(path: 'endodontia', builder: (context, state) => EndodontiaScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
                   GoRoute(path: 'treatment-plan', builder: (context, state) => TreatmentPlanScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
+                  GoRoute(path: 'history', builder: (context, state) => PatientHistoryScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
                 ],
               ),
             ],

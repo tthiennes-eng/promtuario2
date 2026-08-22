@@ -598,7 +598,7 @@ class $PatientsTable extends Patients with TableInfo<$PatientsTable, Patient> {
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('CHECK ("is_synced" IN (0, 1))'),
-      defaultValue: const Constant(true));
+      defaultValue: const Constant(false));
   static const VerificationMeta _streetMeta = const VerificationMeta('street');
   @override
   late final GeneratedColumn<String> street = GeneratedColumn<String>(
@@ -3068,7 +3068,7 @@ class $AnamneseLocalTable extends AnamneseLocal
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('CHECK ("is_synced" IN (0, 1))'),
-      defaultValue: const Constant(true));
+      defaultValue: const Constant(false));
   @override
   List<GeneratedColumn> get $columns =>
       [patientId, responsesJson, lastUpdated, isSynced];
@@ -3429,7 +3429,7 @@ class $AppointmentsLocalTable extends AppointmentsLocal
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('CHECK ("is_synced" IN (0, 1))'),
-      defaultValue: const Constant(true));
+      defaultValue: const Constant(false));
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -4759,7 +4759,7 @@ class $TreatmentItemsLocalTable extends TreatmentItemsLocal
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('CHECK ("is_synced" IN (0, 1))'),
-      defaultValue: const Constant(true));
+      defaultValue: const Constant(false));
   @override
   List<GeneratedColumn> get $columns =>
       [id, planId, procedureName, toothNumber, status, isSynced];

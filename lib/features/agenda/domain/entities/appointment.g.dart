@@ -23,6 +23,15 @@ _$AppointmentImpl _$$AppointmentImplFromJson(Map<String, dynamic> json) =>
       procedureName: json['procedureName'] as String?,
       notes: json['notes'] as String?,
       clinicId: json['clinicId'] as String,
+      arrivalTime: json['arrivalTime'] == null
+          ? null
+          : DateTime.parse(json['arrivalTime'] as String),
+      actualStartTime: json['actualStartTime'] == null
+          ? null
+          : DateTime.parse(json['actualStartTime'] as String),
+      actualEndTime: json['actualEndTime'] == null
+          ? null
+          : DateTime.parse(json['actualEndTime'] as String),
     );
 
 Map<String, dynamic> _$$AppointmentImplToJson(_$AppointmentImpl instance) =>
@@ -42,6 +51,9 @@ Map<String, dynamic> _$$AppointmentImplToJson(_$AppointmentImpl instance) =>
       'procedureName': instance.procedureName,
       'notes': instance.notes,
       'clinicId': instance.clinicId,
+      'arrivalTime': instance.arrivalTime?.toIso8601String(),
+      'actualStartTime': instance.actualStartTime?.toIso8601String(),
+      'actualEndTime': instance.actualEndTime?.toIso8601String(),
     };
 
 const _$AppointmentStatusEnumMap = {

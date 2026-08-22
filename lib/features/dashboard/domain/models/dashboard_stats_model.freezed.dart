@@ -24,6 +24,8 @@ mixin _$DashboardStatsModel {
   int get appointmentsToday => throw _privateConstructorUsedError;
   int get proceduresThisMonth => throw _privateConstructorUsedError;
   int get pendingAlerts => throw _privateConstructorUsedError;
+  int get totalCapacity => throw _privateConstructorUsedError;
+  int get bookedSlots => throw _privateConstructorUsedError;
   List<MonthlyGrowthModel> get growthData => throw _privateConstructorUsedError;
 
   /// Serializes this DashboardStatsModel to a JSON map.
@@ -47,6 +49,8 @@ abstract class $DashboardStatsModelCopyWith<$Res> {
       int appointmentsToday,
       int proceduresThisMonth,
       int pendingAlerts,
+      int totalCapacity,
+      int bookedSlots,
       List<MonthlyGrowthModel> growthData});
 }
 
@@ -69,6 +73,8 @@ class _$DashboardStatsModelCopyWithImpl<$Res, $Val extends DashboardStatsModel>
     Object? appointmentsToday = null,
     Object? proceduresThisMonth = null,
     Object? pendingAlerts = null,
+    Object? totalCapacity = null,
+    Object? bookedSlots = null,
     Object? growthData = null,
   }) {
     return _then(_value.copyWith(
@@ -87,6 +93,14 @@ class _$DashboardStatsModelCopyWithImpl<$Res, $Val extends DashboardStatsModel>
       pendingAlerts: null == pendingAlerts
           ? _value.pendingAlerts
           : pendingAlerts // ignore: cast_nullable_to_non_nullable
+              as int,
+      totalCapacity: null == totalCapacity
+          ? _value.totalCapacity
+          : totalCapacity // ignore: cast_nullable_to_non_nullable
+              as int,
+      bookedSlots: null == bookedSlots
+          ? _value.bookedSlots
+          : bookedSlots // ignore: cast_nullable_to_non_nullable
               as int,
       growthData: null == growthData
           ? _value.growthData
@@ -109,6 +123,8 @@ abstract class _$$DashboardStatsModelImplCopyWith<$Res>
       int appointmentsToday,
       int proceduresThisMonth,
       int pendingAlerts,
+      int totalCapacity,
+      int bookedSlots,
       List<MonthlyGrowthModel> growthData});
 }
 
@@ -129,6 +145,8 @@ class __$$DashboardStatsModelImplCopyWithImpl<$Res>
     Object? appointmentsToday = null,
     Object? proceduresThisMonth = null,
     Object? pendingAlerts = null,
+    Object? totalCapacity = null,
+    Object? bookedSlots = null,
     Object? growthData = null,
   }) {
     return _then(_$DashboardStatsModelImpl(
@@ -148,6 +166,14 @@ class __$$DashboardStatsModelImplCopyWithImpl<$Res>
           ? _value.pendingAlerts
           : pendingAlerts // ignore: cast_nullable_to_non_nullable
               as int,
+      totalCapacity: null == totalCapacity
+          ? _value.totalCapacity
+          : totalCapacity // ignore: cast_nullable_to_non_nullable
+              as int,
+      bookedSlots: null == bookedSlots
+          ? _value.bookedSlots
+          : bookedSlots // ignore: cast_nullable_to_non_nullable
+              as int,
       growthData: null == growthData
           ? _value._growthData
           : growthData // ignore: cast_nullable_to_non_nullable
@@ -164,6 +190,8 @@ class _$DashboardStatsModelImpl implements _DashboardStatsModel {
       required this.appointmentsToday,
       required this.proceduresThisMonth,
       required this.pendingAlerts,
+      required this.totalCapacity,
+      required this.bookedSlots,
       required final List<MonthlyGrowthModel> growthData})
       : _growthData = growthData;
 
@@ -178,6 +206,10 @@ class _$DashboardStatsModelImpl implements _DashboardStatsModel {
   final int proceduresThisMonth;
   @override
   final int pendingAlerts;
+  @override
+  final int totalCapacity;
+  @override
+  final int bookedSlots;
   final List<MonthlyGrowthModel> _growthData;
   @override
   List<MonthlyGrowthModel> get growthData {
@@ -188,7 +220,7 @@ class _$DashboardStatsModelImpl implements _DashboardStatsModel {
 
   @override
   String toString() {
-    return 'DashboardStatsModel(totalPatients: $totalPatients, appointmentsToday: $appointmentsToday, proceduresThisMonth: $proceduresThisMonth, pendingAlerts: $pendingAlerts, growthData: $growthData)';
+    return 'DashboardStatsModel(totalPatients: $totalPatients, appointmentsToday: $appointmentsToday, proceduresThisMonth: $proceduresThisMonth, pendingAlerts: $pendingAlerts, totalCapacity: $totalCapacity, bookedSlots: $bookedSlots, growthData: $growthData)';
   }
 
   @override
@@ -204,6 +236,10 @@ class _$DashboardStatsModelImpl implements _DashboardStatsModel {
                 other.proceduresThisMonth == proceduresThisMonth) &&
             (identical(other.pendingAlerts, pendingAlerts) ||
                 other.pendingAlerts == pendingAlerts) &&
+            (identical(other.totalCapacity, totalCapacity) ||
+                other.totalCapacity == totalCapacity) &&
+            (identical(other.bookedSlots, bookedSlots) ||
+                other.bookedSlots == bookedSlots) &&
             const DeepCollectionEquality()
                 .equals(other._growthData, _growthData));
   }
@@ -216,6 +252,8 @@ class _$DashboardStatsModelImpl implements _DashboardStatsModel {
       appointmentsToday,
       proceduresThisMonth,
       pendingAlerts,
+      totalCapacity,
+      bookedSlots,
       const DeepCollectionEquality().hash(_growthData));
 
   /// Create a copy of DashboardStatsModel
@@ -241,6 +279,8 @@ abstract class _DashboardStatsModel implements DashboardStatsModel {
           required final int appointmentsToday,
           required final int proceduresThisMonth,
           required final int pendingAlerts,
+          required final int totalCapacity,
+          required final int bookedSlots,
           required final List<MonthlyGrowthModel> growthData}) =
       _$DashboardStatsModelImpl;
 
@@ -255,6 +295,10 @@ abstract class _DashboardStatsModel implements DashboardStatsModel {
   int get proceduresThisMonth;
   @override
   int get pendingAlerts;
+  @override
+  int get totalCapacity;
+  @override
+  int get bookedSlots;
   @override
   List<MonthlyGrowthModel> get growthData;
 

@@ -7,7 +7,8 @@ import 'package:promt/features/patients/domain/entities/patient.dart';
 import 'package:promt/features/patients/presentation/viewmodels/patient_viewmodel.dart';
 
 class AddPatientScreen extends ConsumerStatefulWidget {
-  const AddPatientScreen({super.key});
+  final Patient? patient;
+  const AddPatientScreen({super.key, this.patient});
 
   @override
   ConsumerState<AddPatientScreen> createState() => _AddPatientScreenState();
@@ -27,16 +28,41 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
   final _neighborhoodController = TextEditingController();
   final _cityController = TextEditingController();
   final _zipCodeController = TextEditingController();
+  final _duplaController = TextEditingController();
 
   DateTime? _selectedBirthDate;
   String _selectedGender = 'M'; // Padrão Masculino
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.patient != null) {
+      final p = widget.patient!;
+      _nameController.text = p.fullName;
+      _cpfController.text = p.cpf;
+      _emailController.text = p.email ?? '';
+      _phoneController.text = p.phone ?? '';
+      _selectedBirthDate = p.birthDate;
+      _birthDateController.text = DateFormat('dd/MM/yyyy').format(p.birthDate);
+      _selectedGender = p.gender == 'Feminino' ? 'F' : 'M';
+      
+      if (p.address != null) {
+        _streetController.text = p.address!.street;
+        _numberController.text = p.address!.number;
+        _neighborhoodController.text = p.address!.neighborhood;
+        _cityController.text = p.address!.city;
+        _zipCodeController.text = p.address!.zipCode;
+      }
+    }
+  }
 
   @override
   void dispose() {
     for (var controller in [
       _nameController, _cpfController, _emailController, _phoneController,
       _birthDateController, _streetController, _numberController,
-      _neighborhoodController, _cityController, _zipCodeController
+      _neighborhoodController, _cityController, _zipCodeController,
+      _duplaController
     ]) {
       controller.dispose();
     }
@@ -48,8 +74,8 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
       setState(() => _isLoading = true);
 
       try {
-        final newPatient = Patient(
-          id: const Uuid().v4(),
+        final patient = Patient(
+          id: widget.patient?.id ?? const Uuid().v4(),
           fullName: _nameController.text.trim(),
           cpf: _cpfController.text.replaceAll(RegExp(r'[^\d]'), ''),
           birthDate: _selectedBirthDate!,
@@ -64,16 +90,26 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
             state: 'SP',
             zipCode: _zipCodeController.text.trim(),
           ),
-          createdAt: DateTime.now(),
-          lgpdConsent: true, // Consentimento implícito
+          createdAt: widget.patient?.createdAt ?? DateTime.now(),
+          lgpdConsent: true,
         );
 
-        await ref.read(patientViewModelProvider.notifier).addPatient(newPatient);
+        if (widget.patient == null) {
+          await ref.read(patientViewModelProvider.notifier).addPatient(patient);
+        } else {
+          await ref.read(patientViewModelProvider.notifier).editPatient(
+            patient, 
+            duplaResponsavel: _duplaController.text.trim(),
+          );
+        }
         
         if (mounted) {
           context.pop();
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Paciente cadastrado com sucesso!'), backgroundColor: Colors.green),
+            SnackBar(
+              content: Text(widget.patient == null ? 'Paciente cadastrado!' : 'Alterações salvas!'), 
+              backgroundColor: Colors.green
+            ),
           );
         }
       } catch (e) {
@@ -90,8 +126,10 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.patient != null;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Admitir Novo Paciente')),
+      appBar: AppBar(title: Text(isEditing ? 'Editar Paciente' : 'Admitir Novo Paciente')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
@@ -99,6 +137,23 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (isEditing) ...[
+                const Text('Responsável pela Alteração', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange, fontSize: 14)),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _duplaController,
+                  decoration: const InputDecoration(
+                    labelText: 'Dupla Responsável', 
+                    hintText: 'Quem está realizando esta alteração?',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.group_outlined),
+                  ),
+                  validator: (v) => v!.isEmpty ? 'Informe a dupla responsável pela auditoria' : null,
+                ),
+                const SizedBox(height: 24),
+                const Divider(),
+                const SizedBox(height: 24),
+              ],
               const Text('Informações Gerais', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF006494), fontSize: 16)),
               const SizedBox(height: 24),
               
@@ -214,7 +269,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                   onPressed: _isLoading ? null : _submitForm,
                   child: _isLoading 
                     ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
-                    : const Text('FINALIZAR ADMISSÃO', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    : Text(isEditing ? 'SALVAR ALTERAÇÕES' : 'FINALIZAR ADMISSÃO', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],

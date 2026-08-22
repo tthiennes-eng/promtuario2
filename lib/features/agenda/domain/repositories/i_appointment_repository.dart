@@ -15,6 +15,10 @@ abstract class IAppointmentRepository {
   /// Atualiza o status de um agendamento (ex: Confirmar, Cancelar).
   Future<void> updateAppointmentStatus(String id, AppointmentStatus status);
 
+  Future<void> registerArrival(String id);
+  Future<void> registerStart(String id);
+  Future<void> registerFinish(String id);
+
   /// Reagenda uma consulta para novo horário.
   Future<void> rescheduleAppointment(String id, DateTime newStart, DateTime newEnd);
 

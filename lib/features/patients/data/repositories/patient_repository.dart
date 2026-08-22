@@ -5,6 +5,7 @@ import 'package:promt/core/network/api_client.dart';
 import 'package:promt/core/database/local_database.dart' as drift_db;
 import 'package:promt/features/patients/domain/entities/patient.dart' as entity;
 import 'package:promt/features/patients/domain/repositories/i_patient_repository.dart';
+import 'package:promt/features/patients/domain/entities/patient_change_log.dart';
 import 'package:uuid/uuid.dart';
 
 class PatientRepository implements IPatientRepository {
@@ -70,13 +71,18 @@ class PatientRepository implements IPatientRepository {
   }
 
   @override
-  Future<void> updatePatient(entity.Patient patient) async {
+  Future<void> updatePatient(entity.Patient patient, {String? duplaResponsavel}) async {
     // Salva localmente marcando como NÃO SINCRONIZADO até confirmar com a API.
     await _saveLocal(patient, false);
 
     try {
-      final response = await _apiClient.instance
-          .put('patients/${patient.id}', data: _mapEntityToJson(patient));
+      final response = await _apiClient.instance.put(
+        'patients/${patient.id}',
+        data: {
+          'Patient': _mapEntityToJson(patient),
+          'DuplaResponsavel': duplaResponsavel ?? 'Não informada',
+        },
+      );
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         // API aceitou a atualização: marca como sincronizado.
@@ -217,4 +223,18 @@ class PatientRepository implements IPatientRepository {
   }
 
   @override Future<entity.Patient> getPatientById(String id) async => (await getLocalPatients()).firstWhere((p) => p.id == id);
+
+  @override
+  Future<List<PatientChangeLog>> getPatientHistory(String patientId) async {
+    try {
+      final response = await _apiClient.instance.get('patients/$patientId/history');
+      if (response.data != null) {
+        final List<dynamic> list = response.data;
+        return list.map((json) => PatientChangeLog.fromJson(json)).toList();
+      }
+    } catch (e) {
+      debugPrint('Erro ao buscar histórico: $e');
+    }
+    return [];
+  }
 }

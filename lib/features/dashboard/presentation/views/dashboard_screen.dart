@@ -116,12 +116,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         'route': '/dashboard/reports',
       });
       items.add({
-        'label': 'Clínicas',
-        'icon': Icons.local_hospital_outlined,
-        'selectedIcon': Icons.local_hospital,
-        'route': '/dashboard/clinics',
-      });
-      items.add({
         'label': 'Usuários',
         'icon': Icons.manage_accounts_outlined,
         'selectedIcon': Icons.manage_accounts,
@@ -217,15 +211,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: screenWidth > 1200 ? 4 : (screenWidth > 800 ? 2 : 1),
+              crossAxisCount: screenWidth > 1200 ? 5 : (screenWidth > 800 ? 3 : 2),
               mainAxisSpacing: 16,
               crossAxisSpacing: 16,
-              childAspectRatio: screenWidth > 800 ? 1.5 : 2.5,
+              childAspectRatio: screenWidth > 800 ? 1.5 : 2.0,
               children: [
                 _buildStatCard('Pacientes', stats.totalPatients.toString(), Icons.group, Colors.blue),
                 _buildStatCard('Consultas', stats.appointmentsToday.toString(), Icons.event_note, Colors.green),
                 _buildStatCard('Atendimentos', stats.proceduresThisMonth.toString(), Icons.medical_information, Colors.orange),
-                _buildStatCard('Alertas', stats.pendingAlerts.toString(), Icons.warning_amber, Colors.red),
+                _buildStatCard('Vagas/Ocupação', '${stats.bookedSlots}/${stats.totalCapacity}', Icons.pie_chart, Colors.purple),
+                _buildStatCard('Alertas (Alergia)', stats.pendingAlerts.toString(), Icons.warning_amber, Colors.red),
               ],
             ),
             const SizedBox(height: 32),
@@ -238,8 +233,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 _buildQuickAction('Agenda Clínica', Icons.calendar_month, Colors.blue, () => context.push('/dashboard/agenda')),
                 _buildQuickAction('Visão Institucional', Icons.grid_view, Colors.purple, () => context.push('/dashboard/agenda/institutional')),
                 _buildQuickAction('Lista de Pacientes', Icons.format_list_bulleted, Colors.indigo, () => context.push('/dashboard/patients')),
-                if (user?.role == UserRole.admin || user?.role == UserRole.coordenador)
-                  _buildQuickAction('Gestão de Clínicas', Icons.business, Colors.orange, () => context.push('/dashboard/clinics')),
                 if (user?.role == UserRole.admin)
                   _buildQuickAction('Auditoria', Icons.security, Colors.blueGrey, () => context.push('/dashboard/audit-logs')),
               ],

@@ -21,6 +21,9 @@ class Appointment with _$Appointment {
     String? procedureName,
     String? notes,
     required String clinicId,
+    DateTime? arrivalTime,
+    DateTime? actualStartTime,
+    DateTime? actualEndTime,
   }) = _Appointment;
 
   factory Appointment.fromJson(Map<String, dynamic> json) => _$AppointmentFromJson(json);

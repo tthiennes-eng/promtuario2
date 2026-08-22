@@ -10,6 +10,8 @@ class DashboardStatsModel with _$DashboardStatsModel {
     required int appointmentsToday,
     required int proceduresThisMonth,
     required int pendingAlerts,
+    required int totalCapacity,
+    required int bookedSlots,
     required List<MonthlyGrowthModel> growthData,
   }) = _DashboardStatsModel;
 

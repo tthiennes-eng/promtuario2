@@ -270,6 +270,21 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
     await refresh();
   }
 
+  Future<void> registerArrival(String id) async {
+    await ref.read(appointmentRepositoryProvider).registerArrival(id);
+    await refresh();
+  }
+
+  Future<void> registerStart(String id) async {
+    await ref.read(appointmentRepositoryProvider).registerStart(id);
+    await refresh();
+  }
+
+  Future<void> registerFinish(String id) async {
+    await ref.read(appointmentRepositoryProvider).registerFinish(id);
+    await refresh();
+  }
+
   Map<String, dynamic> getDayStats() {
     final list = state.appointments.value ?? [];
     double occupancy = 0.0;

@@ -20,6 +20,8 @@ class DashboardRepository implements IDashboardRepository {
         appointmentsToday: 0,
         proceduresThisMonth: 0,
         pendingAlerts: 0,
+        totalCapacity: 0,
+        bookedSlots: 0,
         growthData: [],
       );
     }

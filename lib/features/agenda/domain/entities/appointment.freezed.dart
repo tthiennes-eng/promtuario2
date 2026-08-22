@@ -35,6 +35,9 @@ mixin _$Appointment {
   String? get procedureName => throw _privateConstructorUsedError;
   String? get notes => throw _privateConstructorUsedError;
   String get clinicId => throw _privateConstructorUsedError;
+  DateTime? get arrivalTime => throw _privateConstructorUsedError;
+  DateTime? get actualStartTime => throw _privateConstructorUsedError;
+  DateTime? get actualEndTime => throw _privateConstructorUsedError;
 
   /// Serializes this Appointment to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -67,7 +70,10 @@ abstract class $AppointmentCopyWith<$Res> {
       AppointmentStatus status,
       String? procedureName,
       String? notes,
-      String clinicId});
+      String clinicId,
+      DateTime? arrivalTime,
+      DateTime? actualStartTime,
+      DateTime? actualEndTime});
 }
 
 /// @nodoc
@@ -100,6 +106,9 @@ class _$AppointmentCopyWithImpl<$Res, $Val extends Appointment>
     Object? procedureName = freezed,
     Object? notes = freezed,
     Object? clinicId = null,
+    Object? arrivalTime = freezed,
+    Object? actualStartTime = freezed,
+    Object? actualEndTime = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -162,6 +171,18 @@ class _$AppointmentCopyWithImpl<$Res, $Val extends Appointment>
           ? _value.clinicId
           : clinicId // ignore: cast_nullable_to_non_nullable
               as String,
+      arrivalTime: freezed == arrivalTime
+          ? _value.arrivalTime
+          : arrivalTime // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      actualStartTime: freezed == actualStartTime
+          ? _value.actualStartTime
+          : actualStartTime // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      actualEndTime: freezed == actualEndTime
+          ? _value.actualEndTime
+          : actualEndTime // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
     ) as $Val);
   }
 }
@@ -189,7 +210,10 @@ abstract class _$$AppointmentImplCopyWith<$Res>
       AppointmentStatus status,
       String? procedureName,
       String? notes,
-      String clinicId});
+      String clinicId,
+      DateTime? arrivalTime,
+      DateTime? actualStartTime,
+      DateTime? actualEndTime});
 }
 
 /// @nodoc
@@ -220,6 +244,9 @@ class __$$AppointmentImplCopyWithImpl<$Res>
     Object? procedureName = freezed,
     Object? notes = freezed,
     Object? clinicId = null,
+    Object? arrivalTime = freezed,
+    Object? actualStartTime = freezed,
+    Object? actualEndTime = freezed,
   }) {
     return _then(_$AppointmentImpl(
       id: null == id
@@ -282,6 +309,18 @@ class __$$AppointmentImplCopyWithImpl<$Res>
           ? _value.clinicId
           : clinicId // ignore: cast_nullable_to_non_nullable
               as String,
+      arrivalTime: freezed == arrivalTime
+          ? _value.arrivalTime
+          : arrivalTime // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      actualStartTime: freezed == actualStartTime
+          ? _value.actualStartTime
+          : actualStartTime // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      actualEndTime: freezed == actualEndTime
+          ? _value.actualEndTime
+          : actualEndTime // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
     ));
   }
 }
@@ -304,7 +343,10 @@ class _$AppointmentImpl implements _Appointment {
       required this.status,
       this.procedureName,
       this.notes,
-      required this.clinicId});
+      required this.clinicId,
+      this.arrivalTime,
+      this.actualStartTime,
+      this.actualEndTime});
 
   factory _$AppointmentImpl.fromJson(Map<String, dynamic> json) =>
       _$$AppointmentImplFromJson(json);
@@ -339,10 +381,16 @@ class _$AppointmentImpl implements _Appointment {
   final String? notes;
   @override
   final String clinicId;
+  @override
+  final DateTime? arrivalTime;
+  @override
+  final DateTime? actualStartTime;
+  @override
+  final DateTime? actualEndTime;
 
   @override
   String toString() {
-    return 'Appointment(id: $id, patientId: $patientId, patientName: $patientName, doctorId: $doctorId, doctorName: $doctorName, studentId: $studentId, studentName: $studentName, professorId: $professorId, professorName: $professorName, startTime: $startTime, endTime: $endTime, status: $status, procedureName: $procedureName, notes: $notes, clinicId: $clinicId)';
+    return 'Appointment(id: $id, patientId: $patientId, patientName: $patientName, doctorId: $doctorId, doctorName: $doctorName, studentId: $studentId, studentName: $studentName, professorId: $professorId, professorName: $professorName, startTime: $startTime, endTime: $endTime, status: $status, procedureName: $procedureName, notes: $notes, clinicId: $clinicId, arrivalTime: $arrivalTime, actualStartTime: $actualStartTime, actualEndTime: $actualEndTime)';
   }
 
   @override
@@ -375,7 +423,13 @@ class _$AppointmentImpl implements _Appointment {
                 other.procedureName == procedureName) &&
             (identical(other.notes, notes) || other.notes == notes) &&
             (identical(other.clinicId, clinicId) ||
-                other.clinicId == clinicId));
+                other.clinicId == clinicId) &&
+            (identical(other.arrivalTime, arrivalTime) ||
+                other.arrivalTime == arrivalTime) &&
+            (identical(other.actualStartTime, actualStartTime) ||
+                other.actualStartTime == actualStartTime) &&
+            (identical(other.actualEndTime, actualEndTime) ||
+                other.actualEndTime == actualEndTime));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -396,7 +450,10 @@ class _$AppointmentImpl implements _Appointment {
       status,
       procedureName,
       notes,
-      clinicId);
+      clinicId,
+      arrivalTime,
+      actualStartTime,
+      actualEndTime);
 
   /// Create a copy of Appointment
   /// with the given fields replaced by the non-null parameter values.
@@ -430,7 +487,10 @@ abstract class _Appointment implements Appointment {
       required final AppointmentStatus status,
       final String? procedureName,
       final String? notes,
-      required final String clinicId}) = _$AppointmentImpl;
+      required final String clinicId,
+      final DateTime? arrivalTime,
+      final DateTime? actualStartTime,
+      final DateTime? actualEndTime}) = _$AppointmentImpl;
 
   factory _Appointment.fromJson(Map<String, dynamic> json) =
       _$AppointmentImpl.fromJson;
@@ -465,6 +525,12 @@ abstract class _Appointment implements Appointment {
   String? get notes;
   @override
   String get clinicId;
+  @override
+  DateTime? get arrivalTime;
+  @override
+  DateTime? get actualStartTime;
+  @override
+  DateTime? get actualEndTime;
 
   /// Create a copy of Appointment
   /// with the given fields replaced by the non-null parameter values.

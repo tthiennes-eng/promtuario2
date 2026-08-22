@@ -84,13 +84,28 @@ class AppointmentRepository implements IAppointmentRepository {
     try {
       await _apiClient.instance.patch(
         '/appointments/$id/status',
-        data: {'status': status.name},
+        data: {'status': status.index + 1}, // C# enum starts at 1
       );
       await _updateLocalStatus(id, status, true);
     } catch (e) {
       _logger.warning('Falha ao atualizar status remotamente: $e');
       await _updateLocalStatus(id, status, false);
     }
+  }
+
+  @override
+  Future<void> registerArrival(String id) async {
+    await _apiClient.instance.patch('/appointments/$id/arrival');
+  }
+
+  @override
+  Future<void> registerStart(String id) async {
+    await _apiClient.instance.patch('/appointments/$id/start');
+  }
+
+  @override
+  Future<void> registerFinish(String id) async {
+    await _apiClient.instance.patch('/appointments/$id/finish');
   }
 
   @override

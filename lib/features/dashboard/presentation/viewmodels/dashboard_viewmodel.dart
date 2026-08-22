@@ -20,6 +20,8 @@ class DashboardViewModel extends StateNotifier<AsyncValue<DashboardStatsModel>> 
         appointmentsToday: 8,
         proceduresThisMonth: 45,
         pendingAlerts: 2,
+        totalCapacity: 200,
+        bookedSlots: 150,
         growthData: [
           MonthlyGrowthModel(month: 'Jan', count: 10),
           MonthlyGrowthModel(month: 'Fev', count: 15),

@@ -64,9 +64,9 @@ class PatientViewModel extends StateNotifier<AsyncValue<List<Patient>>> {
   /// Atualiza um paciente já cadastrado. Antes desta correção, edições
   /// não eram enviadas ao servidor (updatePatient era um método vazio),
   /// então nunca chegavam aos outros computadores da rede.
-  Future<void> editPatient(Patient patient) async {
+  Future<void> editPatient(Patient patient, {String? duplaResponsavel}) async {
     final repository = ref.read(patientRepositoryProvider);
-    await repository.updatePatient(patient);
+    await repository.updatePatient(patient, duplaResponsavel: duplaResponsavel);
     await refresh();
   }
 }

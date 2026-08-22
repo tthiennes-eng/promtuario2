@@ -166,18 +166,42 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
   }
 
   Widget _buildAppointmentCard(Appointment appt, {required bool showClinic}) {
+    final now = DateTime.now();
+    final bool isLate = appt.status == AppointmentStatus.scheduled && appt.startTime.isBefore(now);
+    
+    int? delayMinutes;
+    if (appt.actualStartTime != null) {
+      delayMinutes = appt.actualStartTime!.difference(appt.startTime).inMinutes;
+    } else if (appt.arrivalTime != null) {
+      delayMinutes = appt.arrivalTime!.difference(appt.startTime).inMinutes;
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
+      decoration: BoxDecoration(
+        color: Colors.white, 
+        borderRadius: BorderRadius.circular(12), 
+        border: Border.all(color: isLate ? Colors.red.shade200 : Colors.grey.shade200, width: isLate ? 2 : 1)
+      ),
       child: ListTile(
         contentPadding: const EdgeInsets.all(12),
         leading: Container(
           width: 50,
           alignment: Alignment.center,
-          decoration: BoxDecoration(color: const Color(0xFF006494).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [Text(DateFormat('HH:mm').format(appt.startTime), style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF006494), fontSize: 15)), Text(DateFormat('HH:mm').format(appt.endTime), style: const TextStyle(fontSize: 10, color: Colors.grey))]),
+          decoration: BoxDecoration(color: (isLate ? Colors.red : const Color(0xFF006494)).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [Text(DateFormat('HH:mm').format(appt.startTime), style: TextStyle(fontWeight: FontWeight.bold, color: isLate ? Colors.red : const Color(0xFF006494), fontSize: 15)), Text(DateFormat('HH:mm').format(appt.endTime), style: const TextStyle(fontSize: 10, color: Colors.grey))]),
         ),
-        title: Text(appt.patientName.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
+        title: Row(
+          children: [
+            Expanded(child: Text(appt.patientName.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)))),
+            if (delayMinutes != null && delayMinutes > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(4)),
+                child: Text('+$delayMinutes min', style: TextStyle(color: Colors.red.shade900, fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+          ],
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -185,6 +209,8 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
             Text(appt.procedureName ?? 'Avaliação', style: const TextStyle(color: Colors.blueGrey, fontSize: 12)),
             if (showClinic) Text('Local: ${appt.clinicId}', style: const TextStyle(fontSize: 11, color: Color(0xFF006494), fontWeight: FontWeight.bold)),
             Text('Responsável: ${appt.studentName ?? "Não inf."}', style: const TextStyle(fontSize: 11)),
+            if (appt.arrivalTime != null) 
+              Text('Chegada: ${DateFormat('HH:mm').format(appt.arrivalTime!)}', style: const TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)),
           ],
         ),
         trailing: _buildStatusChip(appt.status),
@@ -226,9 +252,18 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                if (appt.status == AppointmentStatus.scheduled) _ActionBtn(icon: Icons.check_circle, label: 'Confirmar', color: Colors.teal, onPressed: () { notifier.updateStatus(appt.id, AppointmentStatus.confirmed); Navigator.pop(context); }),
-                if (appt.status == AppointmentStatus.confirmed) _ActionBtn(icon: Icons.play_arrow, label: 'Iniciar', color: Colors.orange, onPressed: () { notifier.updateStatus(appt.id, AppointmentStatus.inProgress); Navigator.pop(context); }),
-                if (appt.status == AppointmentStatus.inProgress) _ActionBtn(icon: Icons.done_all, label: 'Finalizar', color: Colors.green, onPressed: () { notifier.updateStatus(appt.id, AppointmentStatus.completed); Navigator.pop(context); }),
+                if (appt.arrivalTime == null && appt.status != AppointmentStatus.completed && appt.status != AppointmentStatus.cancelled)
+                  _ActionBtn(icon: Icons.hail, label: 'Registrar Chegada', color: Colors.indigo, onPressed: () { notifier.registerArrival(appt.id); Navigator.pop(context); }),
+                
+                if (appt.status == AppointmentStatus.scheduled || appt.status == AppointmentStatus.confirmed) 
+                  _ActionBtn(icon: Icons.play_arrow, label: 'Iniciar Atendimento', color: Colors.orange, onPressed: () { notifier.registerStart(appt.id); Navigator.pop(context); }),
+                
+                if (appt.status == AppointmentStatus.inProgress) 
+                  _ActionBtn(icon: Icons.done_all, label: 'Finalizar Atendimento', color: Colors.green, onPressed: () { notifier.registerFinish(appt.id); Navigator.pop(context); }),
+                
+                if (appt.status == AppointmentStatus.scheduled) 
+                  _ActionBtn(icon: Icons.check_circle, label: 'Confirmar', color: Colors.teal, onPressed: () { notifier.updateStatus(appt.id, AppointmentStatus.confirmed); Navigator.pop(context); }),
+                
                 _ActionBtn(icon: Icons.person_off, label: 'Falta', color: Colors.red, onPressed: () { notifier.updateStatus(appt.id, AppointmentStatus.missed); Navigator.pop(context); }),
                 _ActionBtn(icon: Icons.cancel, label: 'Cancelar', color: Colors.grey, onPressed: () { notifier.updateStatus(appt.id, AppointmentStatus.cancelled); Navigator.pop(context); }),
               ],

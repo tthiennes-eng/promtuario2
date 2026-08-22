@@ -18,9 +18,24 @@ class Patient with _$Patient {
     DateTime? updatedAt,
     @Default(false) bool lgpdConsent,
     @Default(true) bool isSynced,
+    @Default(ClinicalClassification.satisfactory) ClinicalClassification classification,
   }) = _Patient;
 
   factory Patient.fromJson(Map<String, dynamic> json) => _$PatientFromJson(json);
+}
+
+enum ClinicalClassification {
+  healthy,      // Hígido
+  satisfactory, // Satisfatório
+  unsatisfactory; // Insatisfatório
+
+  String get displayName {
+    return switch (this) {
+      healthy => 'Hígido',
+      satisfactory => 'Satisfatório',
+      unsatisfactory => 'Insatisfatório',
+    };
+  }
 }
 
 @freezed

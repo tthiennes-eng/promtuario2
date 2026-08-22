@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:promt/features/patients/domain/entities/patient.dart';
+import 'package:promt/features/patients/presentation/viewmodels/patient_viewmodel.dart';
+import 'package:promt/features/prontuario/presentation/viewmodels/endodontia_viewmodel.dart';
 import '../widgets/patient_menu_button.dart';
 
 class ProntuarioScreen extends ConsumerWidget {
@@ -27,17 +29,30 @@ class ProntuarioScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final anamneseAsync = ref.watch(endodontiaViewModelProvider("anamnese_${patient.id}"));
+
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(patient.fullName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Row(
+              children: [
+                Text(patient.fullName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(width: 8),
+                _buildClassificationBadge(patient.classification),
+              ],
+            ),
             Text('Paciente ID: ${patient.id.substring(0, 8)}', style: const TextStyle(fontSize: 11, color: Colors.blueGrey)),
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_note),
+            tooltip: 'Editar Dados Cadastrais',
+            onPressed: () => context.push('/dashboard/patients/add', extra: patient),
+          ),
           PatientMenuButton(onActionSelected: (id) => _handleMenuAction(context, id, patient)),
           const SizedBox(width: 8),
         ],
@@ -47,6 +62,13 @@ class ProntuarioScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            anamneseAsync.maybeWhen(
+              data: (data) => _buildAllergyAlert(data),
+              orElse: () => const SizedBox.shrink(),
+            ),
+            const SizedBox(height: 16),
+            _buildClassificationSelector(context, ref),
+            const SizedBox(height: 24),
             _buildSectionTitle("PRONTUÁRIO E FICHAS CLÍNICAS"),
             GridView.count(
               shrinkWrap: true,
@@ -63,6 +85,7 @@ class ProntuarioScreen extends ConsumerWidget {
                 _buildMenuCard(context, "Periograma", Icons.table_chart_outlined, '/dashboard/patients/prontuario/periograma'),
                 _buildMenuCard(context, "Endodontia", Icons.healing, '/dashboard/patients/prontuario/endodontia'),
                 _buildMenuCard(context, "Plano de Tratamento", Icons.assignment_outlined, '/dashboard/patients/prontuario/treatment-plan'),
+                _buildMenuCard(context, "Histórico de Alterações", Icons.history_toggle_off, '/dashboard/patients/prontuario/history'),
               ],
             ),
             const SizedBox(height: 32),
@@ -89,6 +112,86 @@ class ProntuarioScreen extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16, left: 4),
       child: Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 1.1)),
+    );
+  }
+
+  Widget _buildClassificationBadge(ClinicalClassification classification) {
+    final color = switch (classification) {
+      ClinicalClassification.healthy => Colors.green,
+      ClinicalClassification.satisfactory => Colors.blue,
+      ClinicalClassification.unsatisfactory => Colors.orange,
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4), border: Border.all(color: color.withOpacity(0.5))),
+      child: Text(classification.displayName.toUpperCase(), style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  Widget _buildClassificationSelector(BuildContext context, WidgetRef ref) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          children: [
+            const Icon(Icons.assignment_ind_outlined, size: 20, color: Colors.blueGrey),
+            const SizedBox(width: 12),
+            const Expanded(child: Text('Classificação Clínica Geral:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13))),
+            DropdownButton<ClinicalClassification>(
+              value: patient.classification,
+              underline: const SizedBox(),
+              items: ClinicalClassification.values.map((c) => DropdownMenuItem(value: c, child: Text(c.displayName, style: const TextStyle(fontSize: 13)))).toList(),
+              onChanged: (val) {
+                if (val != null) {
+                  ref.read(patientViewModelProvider.notifier).editPatient(patient.copyWith(classification: val), duplaResponsavel: 'Alteração de Classificação');
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAllergyAlert(Map<String, dynamic>? data) {
+    if (data == null) return const SizedBox.shrink();
+    
+    final sistemico = data['sistemico'];
+    if (sistemico == null) return const SizedBox.shrink();
+
+    final alergia = sistemico['alergia'];
+    final bool temAlergia = alergia?['sim'] ?? false;
+    final String qualAlergia = alergia?['qual'] ?? "";
+
+    if (!temAlergia) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.shade200, width: 2),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.warning_amber_rounded, color: Colors.red.shade900, size: 28),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('ALERTA DE SAÚDE / ALERGIA', style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold, fontSize: 14)),
+                const SizedBox(height: 4),
+                Text('O paciente informou alergia a: $qualAlergia', style: TextStyle(color: Colors.red.shade700, fontSize: 13)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

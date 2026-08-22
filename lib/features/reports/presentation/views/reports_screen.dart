@@ -63,6 +63,7 @@ class ReportsScreen extends ConsumerWidget {
           Row(
             children: [
               Expanded(
+                flex: 2,
                 child: DropdownButtonFormField<Clinic>(
                   value: state.selectedClinic,
                   decoration: const InputDecoration(
@@ -80,14 +81,34 @@ class ReportsScreen extends ConsumerWidget {
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _selectDateRange(context, state, notifier),
-                  icon: const Icon(Icons.date_range),
-                  label: Text('${DateFormat('dd/MM/yy').format(state.startDate)} - ${DateFormat('dd/MM/yy').format(state.endDate)}'),
-                  style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                flex: 1,
+                child: DropdownButtonFormField<int>(
+                  decoration: const InputDecoration(labelText: 'Período Acadêmico', border: OutlineInputBorder(), isDense: true),
+                  items: const [
+                    DropdownMenuItem(value: 0, child: Text('Personalizado')),
+                    DropdownMenuItem(value: 1, child: Text('1º Semestre')),
+                    DropdownMenuItem(value: 2, child: Text('2º Semestre')),
+                  ],
+                  onChanged: (val) {
+                    if (val == 1) {
+                      notifier.setPeriod(DateTime(DateTime.now().year, 1, 1), DateTime(DateTime.now().year, 6, 30));
+                    } else if (val == 2) {
+                      notifier.setPeriod(DateTime(DateTime.now().year, 7, 1), DateTime(DateTime.now().year, 12, 31));
+                    }
+                  },
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: () => _selectDateRange(context, state, notifier),
+            icon: const Icon(Icons.date_range),
+            label: Text('Intervalo: ${DateFormat('dd/MM/yy').format(state.startDate)} - ${DateFormat('dd/MM/yy').format(state.endDate)}'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              minimumSize: const Size(double.infinity, 48)
+            ),
           ),
         ],
       ),
