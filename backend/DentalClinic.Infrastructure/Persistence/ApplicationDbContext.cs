@@ -37,6 +37,19 @@ public class ApplicationDbContext : DbContext
         // Aplica automaticamente todas as configurações que implementam IEntityTypeConfiguration
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
+        // Configura Address como tipo sem chave (Value Object)
+        modelBuilder.Entity<Patient>()
+            .OwnsOne(p => p.Address, addressBuilder =>
+            {
+                addressBuilder.Property(a => a.Street).HasColumnName("endereco_rua");
+                addressBuilder.Property(a => a.Number).HasColumnName("endereco_numero");
+                addressBuilder.Property(a => a.Complement).HasColumnName("endereco_complemento");
+                addressBuilder.Property(a => a.Neighborhood).HasColumnName("endereco_bairro");
+                addressBuilder.Property(a => a.City).HasColumnName("endereco_cidade");
+                addressBuilder.Property(a => a.State).HasColumnName("endereco_estado");
+                addressBuilder.Property(a => a.ZipCode).HasColumnName("endereco_cep");
+            });
+
         // Configurações Adicionais para tipos complexos ou relacionamentos
         modelBuilder.Entity<Odontogram>()
             .Property(o => o.Teeth)
