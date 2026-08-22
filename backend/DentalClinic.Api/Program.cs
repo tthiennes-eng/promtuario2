@@ -147,16 +147,21 @@ using (var scope = app.Services.CreateScope())
         context.Database.Migrate();
 
         var adminEmail = "admin@odontoclinica.edu.br";
+        // Cria usuário sem usar Address para evitar erro de mapeamento
         var user = await context.Users.FirstOrDefaultAsync(u => u.EmailAddress.Value == adminEmail);
 
         if (user == null)
         {
-            user = new User(
-                "Administrador Inicial",
-                Email.Create(adminEmail),
-                hasher.HashPassword("admin123"),
-                DentalClinic.Core.Domain.Entities.UserRole.Admin
+            user = User.Create(
+                name: "Administrador Inicial",
+                email: adminEmail,
+                cpf: "",
+                dateOfBirth: null,
+                phone: null,
+                address: null, // Passa null para Address
+                role: DentalClinic.Core.Domain.Entities.UserRole.Admin
             );
+            user.SetPasswordHash(hasher.HashPassword("admin123"));
             user.ConfirmEmail();
             user.Activate();
             context.Users.Add(user);

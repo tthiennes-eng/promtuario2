@@ -50,6 +50,10 @@ public class ApplicationDbContext : DbContext
                 addressBuilder.Property(a => a.ZipCode).HasColumnName("endereco_cep");
             });
 
+        // Ignora Address em User pois está marcado como [NotMapped]
+        modelBuilder.Entity<User>()
+            .Ignore(u => u.Address);
+
         // Configurações Adicionais para tipos complexos ou relacionamentos
         modelBuilder.Entity<Odontogram>()
             .Property(o => o.Teeth)

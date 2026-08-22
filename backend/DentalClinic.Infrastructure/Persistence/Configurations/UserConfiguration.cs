@@ -62,5 +62,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         // Ignora a Role única se ela for apenas um helper da lista de Roles
         builder.Ignore(u => u.Role);
+        
+        // Ignora Address pois está marcado como [NotMapped] na entidade
+        builder.Ignore(u => u.Address);
     }
 }
