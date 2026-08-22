@@ -1,7 +1,6 @@
 using DentalClinic.Core.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System.Text.Json;
 
 namespace DentalClinic.Infrastructure.Persistence.Configurations;
 
@@ -42,14 +41,8 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
             .HasColumnName("sexo")
             .HasMaxLength(1);
 
-        // Mapeamento de Endereço (Objeto C# -> Coluna JSONB conforme SQL)
-        builder.Property(p => p.Address)
-            .HasColumnName("endereco_json")
-            .HasColumnType("jsonb")
-            .HasConversion(
-                v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null!),
-                v => JsonSerializer.Deserialize<DentalClinic.Core.Domain.ValueObjects.Address>(v, (JsonSerializerOptions)null!)
-            );
+        // Mapeamento de Endereço (Objeto C# -> Colunas normais)
+        // Configurado no ApplicationDbContext.OnModelCreating via OwnsOne
 
         builder.Property(p => p.LgpdConsent)
             .HasColumnName("consentimento_lgpd")
