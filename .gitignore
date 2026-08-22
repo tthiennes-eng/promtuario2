@@ -1,31 +1,120 @@
-# Flutter / Dart
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
-build/
-*.g.dart.bak
-.pub-cache/
-.pub/
+```
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Dd]epends/
+[Oo]bj/
 
-# IDE
-.idea/
-*.iml
+# User-specific files
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.cache
+*.dbmdl
+*.dbmdl.*
+
+# Visual Studio files
+.vs/
+*.VC.db
+*.VC.VC.opendb
+*.VC.opendb
+
+# Build results of an ATL project
+[Dd]ebugPS/
+[Rr]eleasePS/
+dlldata.c
+
+# Benchmark Results
+BenchmarkDotNet.Artifacts/
+
+# Ignore mstest test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# NUNIT
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+
+# Build results
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.pdb
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.log
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# OS generated files
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Icon?
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs_vista.db
+[Tt]humbnail.[Tt]humb
+
+# Visual Studio Code
 .vscode/
 
-# .NET
-backend/**/bin/
-backend/**/obj/
-*.user
+# Environment specific files
+.env
+.env.local
+.env.dev
+.env.test
+.env.prod
+.env.*
+!env.example
 
-# Plataformas nativas (artefatos de build)
-windows/flutter/ephemeral/
-linux/flutter/ephemeral/
-macos/Flutter/ephemeral/
-ios/Flutter/ephemeral/
-android/.gradle/
-android/app/build/
+# Dependencies
+node_modules/
+packages/
+bin/
+obj/
 
-# Segredos / configs locais
+# Logs
+*.log
+msbuild.log
+msbuild.err
+msbuild.wrn
+
+# Configuration files
 appsettings.Development.json
-appsettings.Local.json
+appsettings.Testing.json
+appsettings.Production.json
+
+# Publish folder
+publish/
+
+# Reports
+coverage/
+*.lcov
+```
