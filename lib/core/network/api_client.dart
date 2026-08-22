@@ -77,15 +77,25 @@ class ApiClient {
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         final token = await _storage.getAccessToken();
-        if (token != null) {
+        if (kDebugMode) {
+          debugPrint('🔑 Token recuperado para ${options.path}: ${token != null ? 'SIM (${token.substring(0, 20)}...)' : 'NÃO'}');
+        }
+        if (token != null && token.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $token';
+        } else {
+          if (kDebugMode) {
+            debugPrint('⚠️ Requisição ${options.path} enviada SEM token!');
+          }
         }
         return handler.next(options);
       },
       onError: (DioException e, handler) async {
         if (e.response?.statusCode == 401) {
+          if (kDebugMode) {
+            debugPrint('🚫 Erro 401 em ${e.requestOptions.path}. Tentando refresh...');
+          }
           final refreshToken = await _storage.getRefreshToken();
-          if (refreshToken != null) {
+          if (refreshToken != null && refreshToken.isNotEmpty) {
             try {
               final refreshResponse = await Dio(BaseOptions(baseUrl: _dio.options.baseUrl))
                   .post('auth/refresh', data: {'refreshToken': refreshToken});
@@ -98,9 +108,17 @@ class ApiClient {
                 final response = await _dio.fetch(e.requestOptions);
                 return handler.resolve(response);
               }
-            } catch (_) {
+            } catch (refreshError) {
+              if (kDebugMode) {
+                debugPrint('❌ Refresh falhou: $refreshError');
+              }
               await _storage.clearSession();
             }
+          } else {
+            if (kDebugMode) {
+              debugPrint('⚠️ Sem refresh token disponível. Limpando sessão.');
+            }
+            await _storage.clearSession();
           }
         }
         return handler.next(e);
