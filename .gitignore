@@ -1,31 +1,62 @@
-# Flutter / Dart
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
+```
+# Compiled and build artifacts
+*.pyc
+__pycache__/
+*.o
+*.obj
+*.dll
+*.exe
+*.so
+*.a
+*.out
+
+# Dependencies
+.venv/
+venv/
+node_modules/
+packages/
+lib/
+target/
 build/
-*.g.dart.bak
-.pub-cache/
-.pub/
+dist/
+bin/
 
-# IDE
-.idea/
-*.iml
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
 .vscode/
+.idea/
+*.userprefs
+Thumbs.db
+.DS_Store
 
-# .NET
-backend/**/bin/
-backend/**/obj/
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Python specific
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+
+# Dotnet specific
+**/bin/
+**/obj/
+**/out/
 *.user
-
-# Plataformas nativas (artefatos de build)
-windows/flutter/ephemeral/
-linux/flutter/ephemeral/
-macos/Flutter/ephemeral/
-ios/Flutter/ephemeral/
-android/.gradle/
-android/app/build/
-
-# Segredos / configs locais
-appsettings.Development.json
-appsettings.Local.json
+*.sln.docstates
+.vs/
+```

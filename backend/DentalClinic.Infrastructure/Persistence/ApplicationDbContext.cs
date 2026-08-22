@@ -30,6 +30,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Attachment> Attachments => Set<Attachment>();
     public DbSet<TreatmentItem> TreatmentItems => Set<TreatmentItem>();
     public DbSet<WaitListEntry> WaitListEntries => Set<WaitListEntry>();
+    public DbSet<PatientChangeLog> PatientChangeLogs => Set<PatientChangeLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

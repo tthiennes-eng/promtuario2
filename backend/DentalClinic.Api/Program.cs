@@ -39,6 +39,7 @@ builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<IWaitListRepository, WaitListRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IAnexoRepository, AnexoRepository>();
+builder.Services.AddScoped<IPatientChangeLogRepository, PatientChangeLogRepository>();
 
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<ITokenService, TokenService>();
