@@ -118,6 +118,9 @@ public class PatientsController : ControllerBase
         if (existing.IsActive != patient.IsActive)
             changes["IsActive"] = new { old = existing.IsActive, @new = patient.IsActive };
 
+        // Atualizar timestamp de modificação para sincronização
+        patient.LastModifiedAt = DateTime.UtcNow;
+
         // Persistir alterações do paciente
         await _patientRepository.UpdateAsync(patient);
 
@@ -179,5 +182,30 @@ public class PatientsController : ControllerBase
             timestamp = l.Timestamp,
             changesJson = l.ChangesJson
         }));
+    }
+    
+    /// <summary>
+    /// Endpoint para sincronização de pacientes entre dispositivos.
+    /// Retorna todos os pacientes modificados após a data informada.
+    /// </summary>
+    /// <param name="since">Data da última sincronização (UTC)</param>
+    /// <param name="page">Página (padrão: 1)</param>
+    /// <param name="pageSize">Tamanho da página (padrão: 50)</param>
+    [HttpGet("sync")]
+    public async Task<IActionResult> Sync(
+        [FromQuery] DateTime since,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50)
+    {
+        var patients = await _patientRepository.GetModifiedSinceAsync(since, page, pageSize);
+        
+        return Ok(new
+        {
+            Items = patients,
+            Total = patients.Count(),
+            Page = page,
+            PageSize = pageSize,
+            SyncedAt = DateTime.UtcNow
+        });
     }
 }
