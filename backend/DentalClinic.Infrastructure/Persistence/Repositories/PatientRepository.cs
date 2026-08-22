@@ -85,4 +85,14 @@ public class PatientRepository : IPatientRepository
             await UpdateAsync(patient);
         }
     }
+    
+    public async Task<IEnumerable<Patient>> GetModifiedSinceAsync(DateTime since, int page = 1, int pageSize = 50)
+    {
+        return await _context.Patients
+            .Where(p => p.LastModifiedAt > since)
+            .OrderByDescending(p => p.LastModifiedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
 }

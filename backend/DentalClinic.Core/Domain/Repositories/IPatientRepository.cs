@@ -17,4 +17,9 @@ public interface IPatientRepository
     /// Anonimiza os dados pessoais do paciente conforme a LGPD.
     /// </summary>
     Task AnonymizeAsync(Guid id);
+    
+    /// <summary>
+    /// Busca pacientes modificados após uma data específica (usado para sincronização entre dispositivos).
+    /// </summary>
+    Task<IEnumerable<Patient>> GetModifiedSinceAsync(DateTime since, int page = 1, int pageSize = 50);
 }

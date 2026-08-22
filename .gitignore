@@ -1,124 +1,48 @@
-```
-# Build results
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
-[Dd]epends/
-[Oo]bj/
-
-# User-specific files
-*.user
-*.userosscache
-*.suo
-*.userprefs
-*.cache
-*.dbmdl
-*.dbmdl.*
-
-# Visual Studio files
-.vs/
-*.VC.db
-*.VC.VC.opendb
-*.VC.opendb
-
-# Build results of an ATL project
-[Dd]ebugPS/
-[Rr]eleasePS/
-dlldata.c
-
-# Benchmark Results
-BenchmarkDotNet.Artifacts/
-
-# Ignore mstest test Results
-[Tt]est[Rr]esult*/
-[Bb]uild[Ll]og.*
-
-# NUNIT
-*.VisualState.xml
-TestResult.xml
-nunit-*.xml
-
-# Build results
-*_i.c
-*_p.c
-*_h.h
-*.ilk
-*.meta
-*.obj
-*.iobj
-*.pch
-*.pdb
-*.ipdb
-*.pgc
-*.pgd
-*.rsp
-*.sbr
-*.tlb
-*.tli
-*.tlh
-*.tmp
-*.tmp_proj
-*_wpftmp.csproj
-*.log
-*.vspscc
-*.vssscc
-.builds
-*.pidb
-*.svclog
-*.scc
-
-# OS generated files
-Thumbs.db
-Thumbs.db:encryptable
-ehthumbs.db
-Icon?
-.DS_Store
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs_vista.db
-[Tt]humbnail.[Tt]humb
-
-# Visual Studio Code
-.vscode/
-.idea/
-*.userprefs
-Thumbs.db
-.DS_Store
-
-# Environment specific files
-.env
-.env.local
-.env.dev
-.env.test
-.env.prod
-.env.*
-!env.example
-
-# Dependencies
-node_modules/
-packages/
+# Build artifacts
 bin/
 obj/
+*.dll
+*.exe
+*.pdb
+*.config
+
+# Dependencies
+packages/
+node_modules/
+bower_components/
 
 # Logs
 *.log
-msbuild.log
-msbuild.err
-msbuild.wrn
 
-# Configuration files
-appsettings.Development.json
-appsettings.Testing.json
-appsettings.Production.json
+# Environment specific
+.env
+.env.local
+.env.*
 
-# Publish folder
-publish/
+# OS generated files
+.DS_Store
+Thumbs.db
 
-# Reports
-coverage/
-*.lcov
-```
+# IDE specific
+.vs/
+.idea/
+*.userprefs
+*.userosscache
+*.suo
+*.user
+*.aps
+*.ncb
+*.opendb
+*.opensdf
+*.sdf
+*.vcxproj.filters
+
+# Testing
+TestResults/
+
+# NuGet
+*.nupkg
+.nuget/
+
+# Visual Studio Code
+.vscode/

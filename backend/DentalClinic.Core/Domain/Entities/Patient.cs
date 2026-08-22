@@ -35,6 +35,12 @@ public class Patient : Entity
     public bool LgpdConsent { get; set; }
 
     public bool IsActive { get; set; } = true;
+    
+    /// <summary>
+    /// Data da última modificação do paciente (usada para sincronização entre dispositivos).
+    /// Preenchido automaticamente pelo EF Core via configuração.
+    /// </summary>
+    public DateTime LastModifiedAt { get; set; } = DateTime.UtcNow;
 
     // Relacionamentos
     public ICollection<Appointment>? Appointments { get; set; }

@@ -57,9 +57,15 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
 
         builder.Property(p => p.CreatedAt).HasColumnName("criado_em");
         builder.Property(p => p.UpdatedAt).HasColumnName("atualizado_em");
+        
+        // Campo para sincronização entre dispositivos
+        builder.Property(p => p.LastModifiedAt)
+            .HasColumnName("ultima_modificacao")
+            .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
         builder.Ignore(p => p.IsActive);
 
         builder.HasIndex(p => p.FullName);
+        builder.HasIndex(p => p.LastModifiedAt);
     }
 }
