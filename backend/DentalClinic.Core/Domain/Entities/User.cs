@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using DentalClinic.Core.Domain.ValueObjects;
 
 namespace DentalClinic.Core.Domain.Entities;
@@ -24,6 +25,7 @@ public class User : Entity
     [MaxLength(20)]
     public string? Phone { get; set; }
 
+    [NotMapped]
     public Address? Address { get; set; }
 
     public UserRole Role { get; set; } = UserRole.Student;

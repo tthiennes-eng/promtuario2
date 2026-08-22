@@ -37,7 +37,7 @@ public class ApplicationDbContext : DbContext
         // Aplica automaticamente todas as configurações que implementam IEntityTypeConfiguration
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
-        // Configura Address como tipo sem chave (Value Object)
+        // Configura Address como tipo sem chave (Value Object) para Patient
         modelBuilder.Entity<Patient>()
             .OwnsOne(p => p.Address, addressBuilder =>
             {
