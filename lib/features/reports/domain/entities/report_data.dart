@@ -1,45 +1,64 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-part 'report_data.freezed.dart';
-part 'report_data.g.dart';
+// part 'report_data.freezed.dart';
+// part 'report_data.g.dart';
 
-@freezed
-class SpecialtyProduction with _$SpecialtyProduction {
-  const factory SpecialtyProduction({
-    required String specialty,
-    required int appointmentCount,
-    required double efficiencyRate,
-  }) = _SpecialtyProduction;
+class SpecialtyProduction {
+  final String specialty;
+  final int appointmentCount;
+  final double efficiencyRate;
 
-  factory SpecialtyProduction.fromJson(Map<String, dynamic> json) => _$SpecialtyProductionFromJson(json);
+  const SpecialtyProduction({
+    required this.specialty,
+    required this.appointmentCount,
+    required this.efficiencyRate,
+  });
+
+  factory SpecialtyProduction.fromJson(Map<String, dynamic> json) {
+    return SpecialtyProduction(
+      specialty: json['specialty'] as String? ?? '',
+      appointmentCount: json['appointmentCount'] as int? ?? 0,
+      efficiencyRate: (json['efficiencyRate'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
 }
 
-@freezed
-class ClinicPerformanceMetrics with _$ClinicPerformanceMetrics {
-  const factory ClinicPerformanceMetrics({
-    required double occupancyRate,
-    required double absenceRate,
-    required int totalProceduresThisMonth,
-    @Default(0) int totalScheduled,
-    @Default(0) int totalCompleted,
-    @Default(0) int totalCancelled,
-    @Default(0) int totalMissed,
-    @Default(0.0) double usageRate,
-    required List<MonthlyGrowth> growthHistory,
-    required List<SpecialtyProduction> specialtyProduction,
-    required DateTime startDate,
-    required DateTime endDate,
-  }) = _ClinicPerformanceMetrics;
+class ClinicPerformanceMetrics {
+  final int totalProceduresThisMonth;
+  final double occupancyRate;
+  final double absenceRate;
+  final List<SpecialtyProduction> specialtyProduction;
 
-  factory ClinicPerformanceMetrics.fromJson(Map<String, dynamic> json) => _$ClinicPerformanceMetricsFromJson(json);
+  const ClinicPerformanceMetrics({
+    required this.totalProceduresThisMonth,
+    required this.occupancyRate,
+    required this.absenceRate,
+    required this.specialtyProduction,
+  });
+
+  factory ClinicPerformanceMetrics.fromJson(Map<String, dynamic> json) {
+    return ClinicPerformanceMetrics(
+      totalProceduresThisMonth: json['totalProceduresThisMonth'] as int? ?? 0,
+      occupancyRate: (json['occupancyRate'] as num?)?.toDouble() ?? 0.0,
+      absenceRate: (json['absenceRate'] as num?)?.toDouble() ?? 0.0,
+      specialtyProduction: (json['specialtyProduction'] as List?)
+              ?.map((e) => SpecialtyProduction.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+    );
+  }
 }
 
-@freezed
-class MonthlyGrowth with _$MonthlyGrowth {
-  const factory MonthlyGrowth({
-    required String month,
-    required int count,
-  }) = _MonthlyGrowth;
+class MonthlyGrowth {
+  final String month;
+  final int patientCount;
 
-  factory MonthlyGrowth.fromJson(Map<String, dynamic> json) => _$MonthlyGrowthFromJson(json);
+  const MonthlyGrowth({required this.month, required this.patientCount});
+
+  factory MonthlyGrowth.fromJson(Map<String, dynamic> json) {
+    return MonthlyGrowth(
+      month: json['month'] as String? ?? '',
+      patientCount: json['patientCount'] as int? ?? 0,
+    );
+  }
 }

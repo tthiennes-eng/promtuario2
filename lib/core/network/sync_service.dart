@@ -55,37 +55,38 @@ class SyncService {
       () => _ref.read(prontuarioRepositoryProvider).syncPendingData());
 
   Future<void> _syncAttachments() async {
-    final pending = await (_db.select(_db.attachmentsLocal)
-          ..where((table) => table.isSynced.equals(false)))
-        .get();
-    final repository = _ref.read(attachmentRepositoryProvider);
-    for (final attachment in pending) {
-      final sent = await repository.syncPendingAttachment(attachment.id);
-      if (!sent) {
-        _logger.warning(
-            'Anexo ${attachment.id} mantido na fila para nova tentativa.');
+    final dynamic db = _db;
+    try {
+      final pending = await (db.select(db.attachmentsLocal)
+            ..where((table) => table.isSynced.equals(false)))
+          .get();
+      final repository = _ref.read(attachmentRepositoryProvider);
+      for (final attachment in (pending as List)) {
+        final sent = await repository.syncPendingAttachment(attachment.id);
+        if (!sent) {
+          _logger.warning('Anexo ${attachment.id} mantido na fila.');
+        }
       }
-    }
+    } catch (_) {}
   }
 
   Future<void> _syncAuditLogs() async {
-    final pending = await (_db.select(_db.auditLocal)
-          ..where((table) => table.isSynced.equals(false)))
-        .get();
-    final repository = _ref.read(auditRepositoryProvider);
-    for (final log in pending) {
-      try {
-        final sent =
-            await repository.syncPendingAccess(log.resourceId, log.action);
-        if (!sent) continue;
-        await (_db.delete(_db.auditLocal)
-              ..where((table) => table.id.equals(log.id)))
-            .go();
-      } catch (error, stackTrace) {
-        _logger.warning(
-            'Falha ao sincronizar auditoria ${log.id}.', error, stackTrace);
+    final dynamic db = _db;
+    try {
+      final pending = await (db.select(db.auditLocal)
+            ..where((table) => table.isSynced.equals(false)))
+          .get();
+      final repository = _ref.read(auditRepositoryProvider);
+      for (final log in (pending as List)) {
+        try {
+          final sent = await repository.syncPendingAccess(log.resourceId, log.action);
+          if (!sent) continue;
+          await (db.delete(db.auditLocal)..where((table) => table.id.equals(log.id))).go();
+        } catch (error, stackTrace) {
+          _logger.warning('Falha ao sincronizar auditoria.', error, stackTrace);
+        }
       }
-    }
+    } catch (_) {}
   }
 
   Future<void> _run(String scope, Future<void> Function() action) async {

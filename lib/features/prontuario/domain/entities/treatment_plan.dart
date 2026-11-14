@@ -1,53 +1,64 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-part 'treatment_plan.freezed.dart';
-part 'treatment_plan.g.dart';
+// part 'treatment_plan.freezed.dart';
+// part 'treatment_plan.g.dart';
 
 @freezed
-class TreatmentPlan with _$TreatmentPlan {
-  const factory TreatmentPlan({
-    required String id,
-    required String patientId,
-    required String description,
-    required List<TreatmentItem> items,
-    required String createdByUserId,
-    required TreatmentPlanStatus status,
-    required DateTime createdAt,
-    DateTime? updatedAt,
-  }) = _TreatmentPlan;
+class TreatmentPlan {
+  final String id;
+  final String patientId;
+  final String description;
+  final List<TreatmentItem> items;
+  final String status;
+  final DateTime createdAt;
 
-  factory TreatmentPlan.fromJson(Map<String, dynamic> json) => _$TreatmentPlanFromJson(json);
+  const TreatmentPlan({
+    required this.id,
+    required this.patientId,
+    required this.description,
+    required this.items,
+    required this.status,
+    required this.createdAt,
+  });
 
-  Map<String, dynamic> toJson() => _$$TreatmentPlanImplToJson(this as _$TreatmentPlanImpl);
+  factory TreatmentPlan.fromJson(Map<String, dynamic> json) {
+    return TreatmentPlan(
+      id: json['id'] as String? ?? '',
+      patientId: json['patientId'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      items: (json['items'] as List?)?.map((e) => TreatmentItem.fromJson(e as Map<String, dynamic>)).toList() ?? [],
+      status: json['status'] as String? ?? 'active',
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+    );
+  }
 }
 
 @freezed
-class TreatmentItem with _$TreatmentItem {
-  const factory TreatmentItem({
-    required String id,
-    required String procedureId,
-    required String procedureName,
-    int? toothNumber,
-    String? observation,
-    required TreatmentItemStatus status,
-  }) = _TreatmentItem;
+class TreatmentItem {
+  final String id;
+  final String procedureId;
+  final String procedureName;
+  final int? toothNumber;
+  final String status;
+  final String? observation;
 
-  factory TreatmentItem.fromJson(Map<String, dynamic> json) => _$TreatmentItemFromJson(json);
+  const TreatmentItem({
+    required this.id,
+    required this.procedureId,
+    required this.procedureName,
+    this.toothNumber,
+    required this.status,
+    this.observation,
+  });
 
-  Map<String, dynamic> toJson() => _$$TreatmentItemImplToJson(this as _$TreatmentItemImpl);
-}
-
-enum TreatmentPlanStatus {
-  @JsonValue('Draft') draft,
-  @JsonValue('Approved') approved,
-  @JsonValue('InProgress') inProgress,
-  @JsonValue('Completed') completed,
-  @JsonValue('Cancelled') cancelled,
-}
-
-enum TreatmentItemStatus {
-  @JsonValue('Pending') pending,
-  @JsonValue('InProgress') inProgress,
-  @JsonValue('Completed') completed,
-  @JsonValue('Cancelled') cancelled,
+  factory TreatmentItem.fromJson(Map<String, dynamic> json) {
+    return TreatmentItem(
+      id: json['id'] as String? ?? '',
+      procedureId: json['procedureId'] as String? ?? '',
+      procedureName: json['procedureName'] as String? ?? '',
+      toothNumber: json['toothNumber'] as int?,
+      status: json['status'] as String? ?? 'pending',
+      observation: json['observation'] as String?,
+    );
+  }
 }

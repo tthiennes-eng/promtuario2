@@ -28,7 +28,7 @@ class UserManagementRepository implements IUserManagementRepository {
 
       return users;
     } catch (e) {
-      // Offline: Busca no banco local
+      // Offline: Busca no banco local - Atualizado para usersLocal
       final localQuery = _localDb.select(_localDb.usersLocal);
       final results = await localQuery.get();
       
@@ -64,6 +64,7 @@ class UserManagementRepository implements IUserManagementRepository {
 
   void _updateLocalCache(List<User> users) async {
     for (var user in users) {
+      // Atualizado para usersLocal e UsersLocalCompanion
       await _localDb.into(_localDb.usersLocal).insertOnConflictUpdate(
         UsersLocalCompanion.insert(
           id: user.id,

@@ -1,52 +1,87 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-part 'odontogram.freezed.dart';
-part 'odontogram.g.dart';
+// part 'odontogram.freezed.dart';
+// part 'odontogram.g.dart';
 
-@freezed
-class ToothCondition with _$ToothCondition {
-  const factory ToothCondition({
-    required int toothNumber,
-    required List<ToothSurface> surfaces,
-    required ConditionType condition,
-    String? observation,
-    DateTime? lastUpdate,
-  }) = _ToothCondition;
+class ToothCondition {
+  final int toothNumber;
+  final List<ToothSurface> surfaces;
+  final ToothStatus condition;
+  final String? observation;
 
-  factory ToothCondition.fromJson(Map<String, dynamic> json) => _$ToothConditionFromJson(json);
+  const ToothCondition({
+    required this.toothNumber,
+    required this.surfaces,
+    required this.condition,
+    this.observation,
+  });
+
+  factory ToothCondition.fromJson(Map<String, dynamic> json) {
+    return ToothCondition(
+      toothNumber: json['toothNumber'] as int? ?? 0,
+      surfaces: (json['surfaces'] as List?)
+              ?.map((e) => ToothSurface.values.firstWhere((s) => s.name == e))
+              .toList() ??
+          [],
+      condition: ToothStatus.values.firstWhere(
+        (e) => e.name == json['condition'],
+        orElse: () => ToothStatus.higido,
+      ),
+      observation: json['observation'] as String?,
+    );
+  }
 }
 
-enum ToothSurface {
-  @JsonValue('Mesial') mesial,
-  @JsonValue('Distal') distal,
-  @JsonValue('Occlusal') occlusal,
-  @JsonValue('Buccal') buccal,
-  @JsonValue('Lingual') lingual,
-  @JsonValue('Palatal') palatal,
-  @JsonValue('Root') root
+class Odontogram {
+  final String id;
+  final String patientId;
+  final List<ToothCondition> teeth;
+  final DateTime updatedAt;
+  final String updatedBy;
+
+  const Odontogram({
+    required this.id,
+    required this.patientId,
+    required this.teeth,
+    required this.updatedAt,
+    required this.updatedBy,
+  });
+
+  factory Odontogram.fromJson(Map<String, dynamic> json) {
+    return Odontogram(
+      id: json['id'] as String? ?? '',
+      patientId: json['patientId'] as String? ?? '',
+      teeth: (json['teeth'] as List?)
+              ?.map((e) => ToothCondition.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : DateTime.now(),
+      updatedBy: json['updatedBy'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'patientId': patientId,
+      };
+
+  Odontogram copyWith({
+    String? id,
+    String? patientId,
+    List<ToothCondition>? teeth,
+    DateTime? updatedAt,
+    String? updatedBy,
+  }) {
+    return Odontogram(
+      id: id ?? this.id,
+      patientId: patientId ?? this.patientId,
+      teeth: teeth ?? this.teeth,
+      updatedAt: updatedAt ?? this.updatedAt,
+      updatedBy: updatedBy ?? this.updatedBy,
+    );
+  }
 }
 
-enum ConditionType {
-  @JsonValue('Healthy') healthy,
-  @JsonValue('Decayed') decayed,
-  @JsonValue('Restored') restored,
-  @JsonValue('Missing') missing,
-  @JsonValue('Implant') implant,
-  @JsonValue('Endodontic') endodontic,
-  @JsonValue('Prosthesis') prosthesis
-}
+enum ToothSurface { vestibular, lingual, oclusal, mesial, distal }
 
-@freezed
-class Odontogram with _$Odontogram {
-  const factory Odontogram({
-    required String id,
-    required String patientId,
-    required List<ToothCondition> teeth,
-    required DateTime updatedAt,
-    required String updatedBy,
-  }) = _Odontogram;
-
-  factory Odontogram.fromJson(Map<String, dynamic> json) => _$OdontogramFromJson(json);
-
-  Map<String, dynamic> toJson() => _$$OdontogramImplToJson(this as _$OdontogramImpl);
-}
+enum ToothStatus { higido, carie, restaurado, perdido, endodontia, implante }

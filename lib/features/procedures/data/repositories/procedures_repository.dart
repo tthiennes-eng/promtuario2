@@ -1,11 +1,10 @@
 import 'package:drift/drift.dart';
-import '../../../../core/network/api_client.dart';
-import '../../../../core/database/local_database.dart';
-import '../../domain/entities/clinic.dart';
-import '../../domain/entities/procedure.dart';
-import '../../domain/repositories/i_procedures_repository.dart';
+import 'package:promt/core/network/api_client.dart';
+import 'package:promt/core/database/local_database.dart';
+import 'package:promt/features/procedures/domain/entities/clinic.dart';
+import 'package:promt/features/procedures/domain/entities/procedure.dart';
+import 'package:promt/features/procedures/domain/repositories/i_procedures_repository.dart';
 
-/// Implementação do repositório de Clínicas e Procedimentos com Cache Local e Sincronização.
 class ProceduresRepository implements IProceduresRepository {
   final ApiClient _apiClient;
   final AppDatabase _localDb;
@@ -16,97 +15,54 @@ class ProceduresRepository implements IProceduresRepository {
   Future<List<Clinic>> getClinics({bool onlyActive = true}) async {
     try {
       final response = await _apiClient.instance.get('/clinics');
-      final List<dynamic> data = response.data ?? [];
+      final List<dynamic> data = response.data;
       final clinics = data.map((json) => Clinic.fromJson(json)).toList();
       
-      for (final clinic in clinics) {
-        await saveClinicLocal(clinic);
-      }
-
-      return onlyActive ? clinics.where((c) => c.isActive).toList() : clinics;
-    } catch (e) {
-      final query = _localDb.select(_localDb.clinicsLocal);
-      if (onlyActive) {
-        query.where((t) => t.isActive.equals(true));
-      }
-      
-      final results = await query.get();
-      return results.map((row) {
-        final dataMap = row.toJson();
-        return Clinic(
-          id: row.id,
-          name: row.name,
-          description: row.description,
-          location: row.location,
-          capacity: row.capacity,
-          isActive: row.isActive,
-          startHour: dataMap['start_hour'] as int? ?? 8,
-          endHour: dataMap['end_hour'] as int? ?? 18,
-          slotDurationMinutes: dataMap['slot_duration_minutes'] as int? ?? 60,
-          metadata: const {},
+      final dynamic db = _localDb;
+      for (var clinic in clinics) {
+        await db.into(db.clinicsLocal).insertOnConflictUpdate(
+          drift_db.ClinicsLocalCompanion.insert(
+            id: clinic.id,
+            name: clinic.name,
+            description: Value(clinic.description),
+            location: Value(clinic.location),
+            capacity: Value(clinic.capacity),
+            isActive: Value(clinic.isActive),
+          ),
         );
-      }).toList();
+      }
+      return clinics;
+    } catch (e) {
+      final dynamic db = _localDb;
+      final localClinics = await db.select(db.clinicsLocal).get();
+      return (localClinics as List).map((row) => Clinic(
+        id: row.id,
+        name: row.name,
+        description: row.description ?? '',
+        location: row.location ?? '',
+        capacity: row.capacity,
+        isActive: row.isActive,
+      )).toList();
     }
   }
 
   @override
   Future<void> saveClinic(Clinic clinic) async {
-    try {
-      await _apiClient.instance.put(
-        '/clinics/${clinic.id}',
-        data: clinic.toJson(),
-      );
-      await saveClinicLocal(clinic);
-    } catch (e) {
-      await saveClinicLocal(clinic);
-    }
+    await _apiClient.instance.post('/clinics', data: clinic.toJson());
   }
 
   @override
   Future<void> syncClinics() async {
-    final locals = await _localDb.select(_localDb.clinicsLocal).get();
-    for (final row in locals) {
-      try {
-        final dataMap = row.toJson();
-        await _apiClient.instance.put('/clinics/${row.id}', data: {
-          'id': row.id,
-          'name': row.name,
-          'description': row.description,
-          'location': row.location,
-          'capacity': row.capacity,
-          'isActive': row.isActive,
-          'startHour': dataMap['start_hour'],
-          'endHour': dataMap['end_hour'],
-          'slotDurationMinutes': dataMap['slot_duration_minutes'],
-        });
-      } catch (_) {}
-    }
-  }
-
-  Future<void> saveClinicLocal(Clinic clinic) async {
-    final clinicJson = clinic.toJson();
-    await _localDb.into(_localDb.clinicsLocal).insertOnConflictUpdate(
-      ClinicsLocalCompanion.insert(
-        id: clinic.id,
-        name: clinic.name,
-        description: Value(clinic.description),
-        location: Value(clinic.location),
-        capacity: Value(clinic.capacity),
-        isActive: Value(clinic.isActive),
-        startHour: Value(clinicJson['startHour'] as int? ?? 8),
-        endHour: Value(clinicJson['endHour'] as int? ?? 18),
-        slotDurationMinutes: Value(clinicJson['slotDurationMinutes'] as int? ?? 60),
-      ),
-    );
+    await getClinics();
   }
 
   @override
   Future<List<Procedure>> getProceduresByClinic(String clinicId) async {
     try {
-      final response = await _apiClient.instance.get('/clinics/$clinicId/procedures');
-      final List<dynamic> data = response.data ?? [];
+      final response = await _apiClient.instance.get('/procedures/clinic/$clinicId');
+      final List<dynamic> data = response.data;
       return data.map((json) => Procedure.fromJson(json)).toList();
-    } catch (e) {
+    } catch (_) {
       return [];
     }
   }
@@ -115,9 +71,9 @@ class ProceduresRepository implements IProceduresRepository {
   Future<List<Procedure>> getAllProcedures() async {
     try {
       final response = await _apiClient.instance.get('/procedures');
-      final List<dynamic> data = response.data ?? [];
+      final List<dynamic> data = response.data;
       return data.map((json) => Procedure.fromJson(json)).toList();
-    } catch (e) {
+    } catch (_) {
       return [];
     }
   }

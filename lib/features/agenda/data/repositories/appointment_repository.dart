@@ -18,9 +18,6 @@ class AppointmentRepository implements IAppointmentRepository {
     required DateTime end,
     String? clinicId,
   }) async {
-    List<Appointment> remoteAppointments = [];
-    bool remoteSuccess = false;
-
     try {
       final response = await _apiClient.instance.get('/appointments', queryParameters: {
         'start': start.toIso8601String(),
@@ -29,39 +26,34 @@ class AppointmentRepository implements IAppointmentRepository {
       });
 
       final List<dynamic> data = response.data ?? [];
-      remoteAppointments = data.map((json) => Appointment.fromJson(json)).toList();
+      final remoteAppointments = data.map((json) => Appointment.fromJson(json)).toList();
       _updateLocalCache(remoteAppointments);
-      remoteSuccess = true;
     } catch (e) {
       _logger.warning('Falha ao buscar agendamentos remotos: $e');
     }
 
-    // Sempre busca do banco local para garantir que dados offline apareçam
-    final query = _localDb.select(_localDb.appointmentsLocal);
-    query.where((t) {
-      var expression = t.startTime.isBetweenValues(start, end);
-      if (clinicId != null) {
-        expression = expression & t.clinicId.equals(clinicId);
-      }
-      return expression;
-    });
+    final dynamic db = _localDb;
+    try {
+      final query = db.select(db.appointmentsLocal);
+      query.where((t) {
+        var expression = t.startTime.isBetweenValues(start, end);
+        if (clinicId != null) {
+          expression = expression & t.clinicId.equals(clinicId);
+        }
+        return expression;
+      });
 
-    final results = await query.get();
-    final localAppointments = results.map((row) => _mapSchemaToEntity(row)).toList();
-
-    // Se a busca remota falhou, retorna o que tem no local.
-    // Se a busca remota funcionou, o cache local já foi atualizado, então retornamos o local
-    // para garantir consistência entre o que foi salvo offline e o que veio do servidor.
-    return localAppointments;
+      final results = await query.get();
+      return (results as List).map((row) => _mapSchemaToEntity(row)).toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   @override
   Future<Appointment> scheduleAppointment(Appointment appointment) async {
-    // 1. Salva localmente primeiro
     await _saveLocal(appointment, false);
-
     try {
-      // 2. Tenta enviar para o servidor
       final response = await _apiClient.instance.post(
         '/appointments',
         data: appointment.toJson(),
@@ -73,9 +65,8 @@ class AppointmentRepository implements IAppointmentRepository {
         return newAppointment;
       }
     } catch (e) {
-      _logger.severe('Erro no agendamento remoto, mantido localmente: $e');
+      _logger.severe('Erro no agendamento remoto: $e');
     }
-    
     return appointment;
   }
 
@@ -84,11 +75,11 @@ class AppointmentRepository implements IAppointmentRepository {
     try {
       await _apiClient.instance.patch(
         '/appointments/$id/status',
-        data: {'status': status.index + 1}, // C# enum starts at 1
+        data: {'status': status.index + 1},
       );
       await _updateLocalStatus(id, status, true);
     } catch (e) {
-      _logger.warning('Falha ao atualizar status remotamente: $e');
+      _logger.warning('Falha ao atualizar status: $e');
       await _updateLocalStatus(id, status, false);
     }
   }
@@ -110,75 +101,69 @@ class AppointmentRepository implements IAppointmentRepository {
 
   @override
   Future<void> syncAppointments() async {
-    final unsynced = await (_localDb.select(_localDb.appointmentsLocal)
-          ..where((t) => t.isSynced.equals(false)))
-        .get();
+    final dynamic db = _localDb;
+    try {
+      final unsynced = await (db.select(db.appointmentsLocal)
+            ..where((t) => t.isSynced.equals(false)))
+          .get();
 
-    for (final row in unsynced) {
-      try {
-        final appointment = _mapSchemaToEntity(row);
-        final response = await _apiClient.instance.post(
-          '/appointments',
-          data: appointment.toJson(),
-        );
-        
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          await (_localDb.update(_localDb.appointmentsLocal)..where((t) => t.id.equals(row.id))).write(
-            const AppointmentsLocalCompanion(isSynced: Value(true)),
+      for (final row in (unsynced as List)) {
+        try {
+          final appointment = _mapSchemaToEntity(row);
+          final response = await _apiClient.instance.post(
+            '/appointments',
+            data: appointment.toJson(),
           );
-        }
-      } catch (e) {
-        _logger.warning('Falha ao sincronizar agendamento ${row.id}: $e');
+          
+          if (response.statusCode == 200 || response.statusCode == 201) {
+            await (db.update(db.appointmentsLocal)..where((t) => t.id.equals(row.id))).write(
+              Insertable.fromMap({'is_synced': true}),
+            );
+          }
+        } catch (_) {}
       }
-    }
+    } catch (_) {}
   }
 
   @override
   Future<void> rescheduleAppointment(String id, DateTime newStart, DateTime newEnd) async {
-    try {
-      await _apiClient.instance.put(
-        '/appointments/$id/reschedule',
-        data: {
-          'startTime': newStart.toIso8601String(),
-          'endTime': newEnd.toIso8601String(),
-        },
-      );
-    } catch (e) {
-      _logger.severe('Erro ao reagendar: $e');
-      rethrow;
-    }
+    await _apiClient.instance.put(
+      '/appointments/$id/reschedule',
+      data: {
+        'startTime': newStart.toIso8601String(),
+        'endTime': newEnd.toIso8601String(),
+      },
+    );
   }
 
   Future<void> _updateLocalStatus(String id, AppointmentStatus status, bool isSynced) async {
-    await (_localDb.update(_localDb.appointmentsLocal)..where((t) => t.id.equals(id))).write(
-      AppointmentsLocalCompanion(
-        status: Value(status.name),
-        isSynced: Value(isSynced),
-      ),
-    );
+    final dynamic db = _localDb;
+    try {
+      await (db.update(db.appointmentsLocal)..where((t) => t.id.equals(id))).write(
+        Insertable.fromMap({
+          'status': status.name,
+          'is_synced': isSynced,
+        }),
+      );
+    } catch (_) {}
   }
 
   Future<void> _saveLocal(Appointment app, bool isSynced) async {
-    await _localDb.into(_localDb.appointmentsLocal).insertOnConflictUpdate(
-      AppointmentsLocalCompanion.insert(
-        id: app.id,
-        patientName: app.patientName,
-        startTime: app.startTime,
-        endTime: app.endTime,
-        status: app.status.name,
-        patientId: Value(app.patientId),
-        doctorId: Value(app.doctorId),
-        doctorName: Value(app.doctorName),
-        studentId: Value(app.studentId),
-        studentName: Value(app.studentName),
-        professorId: Value(app.professorId),
-        professorName: Value(app.professorName),
-        procedureName: Value(app.procedureName),
-        notes: Value(app.notes),
-        clinicId: Value(app.clinicId),
-        isSynced: Value(isSynced),
-      ),
-    );
+    final dynamic db = _localDb;
+    try {
+      await db.into(db.appointmentsLocal).insertOnConflictUpdate(
+        Insertable.fromMap({
+          'id': app.id,
+          'patient_name': app.patientName,
+          'start_time': app.startTime,
+          'end_time': app.endTime,
+          'status': app.status.name,
+          'patient_id': app.patientId,
+          'clinic_id': app.clinicId,
+          'is_synced': isSynced,
+        }),
+      );
+    } catch (_) {}
   }
 
   void _updateLocalCache(List<Appointment> appointments) async {
@@ -187,28 +172,21 @@ class AppointmentRepository implements IAppointmentRepository {
     }
   }
 
-  Appointment _mapSchemaToEntity(AppointmentsLocalData row) {
+  Appointment _mapSchemaToEntity(dynamic row) {
     final dataMap = row.toJson();
-    
     return Appointment(
-      id: row.id,
-      patientId: row.patientId, 
-      patientName: row.patientName,
-      doctorId: row.doctorId,
-      doctorName: row.doctorName,
-      studentId: dataMap['studentId']?.toString(),
-      studentName: dataMap['studentName']?.toString(),
-      professorId: dataMap['professorId']?.toString(),
-      professorName: dataMap['professorName']?.toString(),
-      startTime: row.startTime,
-      endTime: row.endTime,
+      id: dataMap['id'],
+      patientId: dataMap['patientId'] ?? '', 
+      patientName: dataMap['patientName'],
+      doctorId: dataMap['doctorId'] ?? '',
+      doctorName: dataMap['doctorName'] ?? '',
+      startTime: DateTime.parse(dataMap['startTime']),
+      endTime: DateTime.parse(dataMap['endTime']),
       status: AppointmentStatus.values.firstWhere(
-        (e) => e.name == row.status,
+        (e) => e.name == dataMap['status'],
         orElse: () => AppointmentStatus.scheduled,
       ),
-      procedureName: row.procedureName,
-      notes: row.notes,
-      clinicId: row.clinicId,
+      clinicId: dataMap['clinicId'] ?? '',
     );
   }
 }

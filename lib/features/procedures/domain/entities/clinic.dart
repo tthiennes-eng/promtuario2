@@ -1,29 +1,47 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-part 'clinic.freezed.dart';
-part 'clinic.g.dart';
+// part 'clinic.freezed.dart';
+// part 'clinic.g.dart';
 
 @freezed
-class Clinic with _$Clinic {
-  const factory Clinic({
-    required String id,
-    required String name,
-    String? description,
-    String? location,
-    @Default(1) int capacity,
-    @Default(true) bool isActive,
-    @Default(8) int startHour,
-    @Default(18) int endHour,
-    @Default(60) int slotDurationMinutes,
-    @Default({}) Map<String, dynamic> metadata,
-  }) = _Clinic;
+class Clinic {
+  final String id;
+  final String name;
+  final String description;
+  final String location;
+  final int capacity;
+  final bool isActive;
+  final Map<String, dynamic>? metadata;
 
-  factory Clinic.fromJson(Map<String, dynamic> json) => _$ClinicFromJson(json);
-}
+  const Clinic({
+    required this.id,
+    required this.name,
+    this.description = '',
+    this.location = '',
+    this.capacity = 1,
+    this.isActive = true,
+    this.metadata,
+  });
 
-/// Extensão para permitir acesso aos campos novos mesmo antes da regeneração do código.
-extension ClinicX on Clinic {
-  int get startHourSafe => (toJson()['startHour'] as num?)?.toInt() ?? 8;
-  int get endHourSafe => (toJson()['endHour'] as num?)?.toInt() ?? 18;
-  int get slotDurationMinutesSafe => (toJson()['slotDurationMinutes'] as num?)?.toInt() ?? 60;
+  factory Clinic.fromJson(Map<String, dynamic> json) {
+    return Clinic(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      location: json['location'] as String? ?? '',
+      capacity: json['capacity'] as int? ?? 1,
+      isActive: json['isActive'] as bool? ?? true,
+      metadata: json['metadata'] as Map<String, dynamic>?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'description': description,
+    'location': location,
+    'capacity': capacity,
+    'isActive': isActive,
+    'metadata': metadata,
+  };
 }

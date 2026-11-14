@@ -1,19 +1,43 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-part 'user.freezed.dart';
-part 'user.g.dart';
+// part 'user.freezed.dart';
+// part 'user.g.dart';
 
-@freezed
-class User with _$User {
-  const factory User({
-    required String id,
-    required String name,
-    required String email,
-    required UserRole role,
-    @Default(true) bool isActive,
-  }) = _User;
+class User {
+  final String id;
+  final String name;
+  final String email;
+  final UserRole role;
+  final bool isActive;
 
-  factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
+  const User({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.role,
+    this.isActive = true,
+  });
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      email: json['email'] as String? ?? '',
+      role: UserRole.values.firstWhere(
+        (e) => e.name == (json['role'] as String? ?? 'aluno'),
+        orElse: () => UserRole.aluno,
+      ),
+      isActive: json['isActive'] as bool? ?? true,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'email': email,
+    'role': role.name,
+    'isActive': isActive,
+  };
 }
 
 enum UserRole {
