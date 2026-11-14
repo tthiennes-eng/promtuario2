@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 part 'local_database.g.dart';
 
-// Definindo classes com nomes explícitos para evitar conflitos de nomes (InvalidType)
 @DataClassName('PatientLocal')
 class PatientsLocal extends Table {
   TextColumn get id => text()();
@@ -187,14 +186,11 @@ class AppDatabase extends _$AppDatabase {
   int get schemaVersion => 1;
 }
 
-LazyDatabase _openConnection() {
+QueryExecutor _openConnection() {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, 'db.sqlite'));
-    
-    // O crash 'InvalidType' vs 'FunctionType' no Dart 3.5 ocorre 
-    // frequentemente com NativeDatabase.createInBackground().
-    // Revertendo para NativeDatabase estável para permitir a compilação.
+    // Revertendo para NativeDatabase estável para evitar crash de FFI no Dart 3.5
     return NativeDatabase(file);
   });
 }

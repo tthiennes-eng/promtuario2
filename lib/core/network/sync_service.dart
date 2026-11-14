@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:promt/core/database/local_database.dart';
@@ -27,7 +26,7 @@ class SyncService {
     _isSynchronizing = true;
     try {
       _logger.info('Iniciando sincronização de dados pendentes.');
-      await _syncClinics(); // Adicionado sincronização de clínicas
+      await _syncClinics();
       await _syncPatients();
       await _syncAppointments();
       await _syncWaitList();

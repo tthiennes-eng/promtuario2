@@ -31,7 +31,6 @@ class ProntuarioRepository implements IProntuarioRepository {
 
   @override
   Future<Odontogram> getOdontogram(String patientId) async {
-    // 1. Tenta buscar localmente primeiro (cache offline)
     final local = await (_localDb.select(_localDb.odontogramLocal)
           ..where((t) => t.patientId.equals(patientId)))
         .getSingleOrNull();
@@ -40,7 +39,6 @@ class ProntuarioRepository implements IProntuarioRepository {
       return Odontogram.fromJson(jsonDecode(local.dataJson));
     }
 
-    // 2. Se não houver local, busca na API
     try {
       final response = await _apiClient.instance.get('Prontuario/$patientId/odontogram');
       if (response.data == null || response.data == 'null') return _initialOdontogram(patientId);
@@ -48,7 +46,6 @@ class ProntuarioRepository implements IProntuarioRepository {
       final jsonData = response.data is String ? jsonDecode(response.data) : response.data;
       final odontogram = Odontogram.fromJson(jsonData);
       
-      // Cacheia localmente
       await _saveLocalOdontogram(odontogram, true);
       return odontogram;
     } catch (_) {
@@ -66,12 +63,11 @@ class ProntuarioRepository implements IProntuarioRepository {
 
   @override
   Future<void> saveOdontogram(Odontogram odontogram) async {
-    // 1. Salva localmente marcando como não sincronizado
     await _saveLocalOdontogram(odontogram, false);
 
-    // 2. Tenta enviar para a API se o paciente estiver sincronizado
     try {
-      final patient = await (_localDb.select(_localDb.patients)
+      // CORREÇÃO: patients -> patientsLocal
+      final patient = await (_localDb.select(_localDb.patientsLocal)
             ..where((t) => t.id.equals(odontogram.patientId)))
           .getSingleOrNull();
 
@@ -112,15 +108,14 @@ class ProntuarioRepository implements IProntuarioRepository {
 
   @override
   Future<void> syncPendingData() async {
-    // 1. Sincroniza Odontogramas pendentes
     final pendingOdontograms = await (_localDb.select(_localDb.odontogramLocal)
           ..where((t) => t.isSynced.equals(false)))
         .get();
 
     for (final row in pendingOdontograms) {
       try {
-        // Verifica se o paciente já foi sincronizado primeiro
-        final patient = await (_localDb.select(_localDb.patients)
+        // CORREÇÃO: patients -> patientsLocal
+        final patient = await (_localDb.select(_localDb.patientsLocal)
               ..where((t) => t.id.equals(row.patientId)))
             .getSingleOrNull();
 
@@ -136,8 +131,6 @@ class ProntuarioRepository implements IProntuarioRepository {
         debugPrint('Falha ao sincronizar odontograma pendente do paciente ${row.patientId}: $e');
       }
     }
-    
-    // TODO: Implementar sincronização de Evoluções, Receitas etc.
   }
 
   @override
@@ -243,7 +236,6 @@ class ProntuarioRepository implements IProntuarioRepository {
 
   @override
   Future<Map<String, dynamic>?> getEndodontia(String patientId) async {
-    // 1. Tenta recuperar localmente primeiro (Cache imediato)
     try {
       final local = await (_localDb.select(_localDb.odontogramLocal)
             ..where((t) => t.patientId.equals('endo_$patientId')))
@@ -251,7 +243,6 @@ class ProntuarioRepository implements IProntuarioRepository {
       if (local != null) return jsonDecode(local.dataJson);
     } catch (_) {}
 
-    // 2. Busca na API
     try {
       final response = await _apiClient.instance.get('Prontuario/$patientId/endodontia');
       if (response.data == null || response.data == "") return null;
@@ -264,10 +255,7 @@ class ProntuarioRepository implements IProntuarioRepository {
 
   @override
   Future<void> saveEndodontia(String patientId, Map<String, dynamic> data) async {
-    // 1. Salva localmente marcando como não sincronizado
     await _saveLocalEndo(patientId, data);
-
-    // 2. Envia para a API
     try {
       await _apiClient.instance.post('Prontuario/$patientId/endodontia', data: data);
     } catch (e) {
@@ -315,7 +303,6 @@ class ProntuarioRepository implements IProntuarioRepository {
   }
 
   Future<void> _saveLocalEndo(String patientId, Map<String, dynamic> data) async {
-    // Reutiliza a tabela de Odontograma com prefixo no ID para persistência sem migração de banco
     await _localDb.into(_localDb.odontogramLocal).insertOnConflictUpdate(
       drift_db.OdontogramLocalCompanion.insert(
         patientId: 'endo_$patientId',

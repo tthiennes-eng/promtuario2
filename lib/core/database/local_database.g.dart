@@ -4,7 +4,7 @@ part of 'local_database.dart';
 
 // ignore_for_file: type=lint
 class $ClinicsLocalTable extends ClinicsLocal
-    with TableInfo<$ClinicsLocalTable, ClinicsLocalData> {
+    with TableInfo<$ClinicsLocalTable, ClinicLocal> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -101,7 +101,7 @@ class $ClinicsLocalTable extends ClinicsLocal
   String get actualTableName => $name;
   static const String $name = 'clinics_local';
   @override
-  VerificationContext validateIntegrity(Insertable<ClinicsLocalData> instance,
+  VerificationContext validateIntegrity(Insertable<ClinicLocal> instance,
       {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
@@ -160,9 +160,9 @@ class $ClinicsLocalTable extends ClinicsLocal
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  ClinicsLocalData map(Map<String, dynamic> data, {String? tablePrefix}) {
+  ClinicLocal map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return ClinicsLocalData(
+    return ClinicLocal(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
       name: attachedDatabase.typeMapping
@@ -192,8 +192,7 @@ class $ClinicsLocalTable extends ClinicsLocal
   }
 }
 
-class ClinicsLocalData extends DataClass
-    implements Insertable<ClinicsLocalData> {
+class ClinicLocal extends DataClass implements Insertable<ClinicLocal> {
   final String id;
   final String name;
   final String? description;
@@ -204,7 +203,7 @@ class ClinicsLocalData extends DataClass
   final int endHour;
   final int slotDurationMinutes;
   final String? metadataJson;
-  const ClinicsLocalData(
+  const ClinicLocal(
       {required this.id,
       required this.name,
       this.description,
@@ -258,10 +257,10 @@ class ClinicsLocalData extends DataClass
     );
   }
 
-  factory ClinicsLocalData.fromJson(Map<String, dynamic> json,
+  factory ClinicLocal.fromJson(Map<String, dynamic> json,
       {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return ClinicsLocalData(
+    return ClinicLocal(
       id: serializer.fromJson<String>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       description: serializer.fromJson<String?>(json['description']),
@@ -292,7 +291,7 @@ class ClinicsLocalData extends DataClass
     };
   }
 
-  ClinicsLocalData copyWith(
+  ClinicLocal copyWith(
           {String? id,
           String? name,
           Value<String?> description = const Value.absent(),
@@ -303,7 +302,7 @@ class ClinicsLocalData extends DataClass
           int? endHour,
           int? slotDurationMinutes,
           Value<String?> metadataJson = const Value.absent()}) =>
-      ClinicsLocalData(
+      ClinicLocal(
         id: id ?? this.id,
         name: name ?? this.name,
         description: description.present ? description.value : this.description,
@@ -316,8 +315,8 @@ class ClinicsLocalData extends DataClass
         metadataJson:
             metadataJson.present ? metadataJson.value : this.metadataJson,
       );
-  ClinicsLocalData copyWithCompanion(ClinicsLocalCompanion data) {
-    return ClinicsLocalData(
+  ClinicLocal copyWithCompanion(ClinicsLocalCompanion data) {
+    return ClinicLocal(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
       description:
@@ -338,7 +337,7 @@ class ClinicsLocalData extends DataClass
 
   @override
   String toString() {
-    return (StringBuffer('ClinicsLocalData(')
+    return (StringBuffer('ClinicLocal(')
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('description: $description, ')
@@ -359,7 +358,7 @@ class ClinicsLocalData extends DataClass
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is ClinicsLocalData &&
+      (other is ClinicLocal &&
           other.id == this.id &&
           other.name == this.name &&
           other.description == this.description &&
@@ -372,7 +371,7 @@ class ClinicsLocalData extends DataClass
           other.metadataJson == this.metadataJson);
 }
 
-class ClinicsLocalCompanion extends UpdateCompanion<ClinicsLocalData> {
+class ClinicsLocalCompanion extends UpdateCompanion<ClinicLocal> {
   final Value<String> id;
   final Value<String> name;
   final Value<String?> description;
@@ -411,7 +410,7 @@ class ClinicsLocalCompanion extends UpdateCompanion<ClinicsLocalData> {
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         name = Value(name);
-  static Insertable<ClinicsLocalData> custom({
+  static Insertable<ClinicLocal> custom({
     Expression<String>? id,
     Expression<String>? name,
     Expression<String>? description,
@@ -525,11 +524,12 @@ class ClinicsLocalCompanion extends UpdateCompanion<ClinicsLocalData> {
   }
 }
 
-class $PatientsTable extends Patients with TableInfo<$PatientsTable, Patient> {
+class $PatientsLocalTable extends PatientsLocal
+    with TableInfo<$PatientsLocalTable, PatientLocal> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $PatientsTable(this.attachedDatabase, [this._alias]);
+  $PatientsLocalTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
@@ -654,9 +654,9 @@ class $PatientsTable extends Patients with TableInfo<$PatientsTable, Patient> {
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'patients';
+  static const String $name = 'patients_local';
   @override
-  VerificationContext validateIntegrity(Insertable<Patient> instance,
+  VerificationContext validateIntegrity(Insertable<PatientLocal> instance,
       {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
@@ -743,9 +743,9 @@ class $PatientsTable extends Patients with TableInfo<$PatientsTable, Patient> {
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  Patient map(Map<String, dynamic> data, {String? tablePrefix}) {
+  PatientLocal map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Patient(
+    return PatientLocal(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
       fullName: attachedDatabase.typeMapping
@@ -782,12 +782,12 @@ class $PatientsTable extends Patients with TableInfo<$PatientsTable, Patient> {
   }
 
   @override
-  $PatientsTable createAlias(String alias) {
-    return $PatientsTable(attachedDatabase, alias);
+  $PatientsLocalTable createAlias(String alias) {
+    return $PatientsLocalTable(attachedDatabase, alias);
   }
 }
 
-class Patient extends DataClass implements Insertable<Patient> {
+class PatientLocal extends DataClass implements Insertable<PatientLocal> {
   final String id;
   final String fullName;
   final String cpf;
@@ -804,7 +804,7 @@ class Patient extends DataClass implements Insertable<Patient> {
   final String? city;
   final String? state;
   final String? zipCode;
-  const Patient(
+  const PatientLocal(
       {required this.id,
       required this.fullName,
       required this.cpf,
@@ -861,8 +861,8 @@ class Patient extends DataClass implements Insertable<Patient> {
     return map;
   }
 
-  PatientsCompanion toCompanion(bool nullToAbsent) {
-    return PatientsCompanion(
+  PatientsLocalCompanion toCompanion(bool nullToAbsent) {
+    return PatientsLocalCompanion(
       id: Value(id),
       fullName: Value(fullName),
       cpf: Value(cpf),
@@ -892,10 +892,10 @@ class Patient extends DataClass implements Insertable<Patient> {
     );
   }
 
-  factory Patient.fromJson(Map<String, dynamic> json,
+  factory PatientLocal.fromJson(Map<String, dynamic> json,
       {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Patient(
+    return PatientLocal(
       id: serializer.fromJson<String>(json['id']),
       fullName: serializer.fromJson<String>(json['fullName']),
       cpf: serializer.fromJson<String>(json['cpf']),
@@ -937,7 +937,7 @@ class Patient extends DataClass implements Insertable<Patient> {
     };
   }
 
-  Patient copyWith(
+  PatientLocal copyWith(
           {String? id,
           String? fullName,
           String? cpf,
@@ -954,7 +954,7 @@ class Patient extends DataClass implements Insertable<Patient> {
           Value<String?> city = const Value.absent(),
           Value<String?> state = const Value.absent(),
           Value<String?> zipCode = const Value.absent()}) =>
-      Patient(
+      PatientLocal(
         id: id ?? this.id,
         fullName: fullName ?? this.fullName,
         cpf: cpf ?? this.cpf,
@@ -973,8 +973,8 @@ class Patient extends DataClass implements Insertable<Patient> {
         state: state.present ? state.value : this.state,
         zipCode: zipCode.present ? zipCode.value : this.zipCode,
       );
-  Patient copyWithCompanion(PatientsCompanion data) {
-    return Patient(
+  PatientLocal copyWithCompanion(PatientsLocalCompanion data) {
+    return PatientLocal(
       id: data.id.present ? data.id.value : this.id,
       fullName: data.fullName.present ? data.fullName.value : this.fullName,
       cpf: data.cpf.present ? data.cpf.value : this.cpf,
@@ -999,7 +999,7 @@ class Patient extends DataClass implements Insertable<Patient> {
 
   @override
   String toString() {
-    return (StringBuffer('Patient(')
+    return (StringBuffer('PatientLocal(')
           ..write('id: $id, ')
           ..write('fullName: $fullName, ')
           ..write('cpf: $cpf, ')
@@ -1041,7 +1041,7 @@ class Patient extends DataClass implements Insertable<Patient> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is Patient &&
+      (other is PatientLocal &&
           other.id == this.id &&
           other.fullName == this.fullName &&
           other.cpf == this.cpf &&
@@ -1060,7 +1060,7 @@ class Patient extends DataClass implements Insertable<Patient> {
           other.zipCode == this.zipCode);
 }
 
-class PatientsCompanion extends UpdateCompanion<Patient> {
+class PatientsLocalCompanion extends UpdateCompanion<PatientLocal> {
   final Value<String> id;
   final Value<String> fullName;
   final Value<String> cpf;
@@ -1078,7 +1078,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
   final Value<String?> state;
   final Value<String?> zipCode;
   final Value<int> rowid;
-  const PatientsCompanion({
+  const PatientsLocalCompanion({
     this.id = const Value.absent(),
     this.fullName = const Value.absent(),
     this.cpf = const Value.absent(),
@@ -1097,7 +1097,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
     this.zipCode = const Value.absent(),
     this.rowid = const Value.absent(),
   });
-  PatientsCompanion.insert({
+  PatientsLocalCompanion.insert({
     required String id,
     required String fullName,
     required String cpf,
@@ -1120,7 +1120,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
         cpf = Value(cpf),
         birthDate = Value(birthDate),
         createdAt = Value(createdAt);
-  static Insertable<Patient> custom({
+  static Insertable<PatientLocal> custom({
     Expression<String>? id,
     Expression<String>? fullName,
     Expression<String>? cpf,
@@ -1160,7 +1160,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
     });
   }
 
-  PatientsCompanion copyWith(
+  PatientsLocalCompanion copyWith(
       {Value<String>? id,
       Value<String>? fullName,
       Value<String>? cpf,
@@ -1178,7 +1178,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
       Value<String?>? state,
       Value<String?>? zipCode,
       Value<int>? rowid}) {
-    return PatientsCompanion(
+    return PatientsLocalCompanion(
       id: id ?? this.id,
       fullName: fullName ?? this.fullName,
       cpf: cpf ?? this.cpf,
@@ -1258,7 +1258,7 @@ class PatientsCompanion extends UpdateCompanion<Patient> {
 
   @override
   String toString() {
-    return (StringBuffer('PatientsCompanion(')
+    return (StringBuffer('PatientsLocalCompanion(')
           ..write('id: $id, ')
           ..write('fullName: $fullName, ')
           ..write('cpf: $cpf, ')
@@ -5079,7 +5079,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $ClinicsLocalTable clinicsLocal = $ClinicsLocalTable(this);
-  late final $PatientsTable patients = $PatientsTable(this);
+  late final $PatientsLocalTable patientsLocal = $PatientsLocalTable(this);
   late final $UsersLocalTable usersLocal = $UsersLocalTable(this);
   late final $AttachmentsLocalTable attachmentsLocal =
       $AttachmentsLocalTable(this);
@@ -5100,7 +5100,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
         clinicsLocal,
-        patients,
+        patientsLocal,
         usersLocal,
         attachmentsLocal,
         odontogramLocal,
@@ -5268,17 +5268,17 @@ class $$ClinicsLocalTableAnnotationComposer
 class $$ClinicsLocalTableTableManager extends RootTableManager<
     _$AppDatabase,
     $ClinicsLocalTable,
-    ClinicsLocalData,
+    ClinicLocal,
     $$ClinicsLocalTableFilterComposer,
     $$ClinicsLocalTableOrderingComposer,
     $$ClinicsLocalTableAnnotationComposer,
     $$ClinicsLocalTableCreateCompanionBuilder,
     $$ClinicsLocalTableUpdateCompanionBuilder,
     (
-      ClinicsLocalData,
-      BaseReferences<_$AppDatabase, $ClinicsLocalTable, ClinicsLocalData>
+      ClinicLocal,
+      BaseReferences<_$AppDatabase, $ClinicsLocalTable, ClinicLocal>
     ),
-    ClinicsLocalData,
+    ClinicLocal,
     PrefetchHooks Function()> {
   $$ClinicsLocalTableTableManager(_$AppDatabase db, $ClinicsLocalTable table)
       : super(TableManagerState(
@@ -5352,19 +5352,20 @@ class $$ClinicsLocalTableTableManager extends RootTableManager<
 typedef $$ClinicsLocalTableProcessedTableManager = ProcessedTableManager<
     _$AppDatabase,
     $ClinicsLocalTable,
-    ClinicsLocalData,
+    ClinicLocal,
     $$ClinicsLocalTableFilterComposer,
     $$ClinicsLocalTableOrderingComposer,
     $$ClinicsLocalTableAnnotationComposer,
     $$ClinicsLocalTableCreateCompanionBuilder,
     $$ClinicsLocalTableUpdateCompanionBuilder,
     (
-      ClinicsLocalData,
-      BaseReferences<_$AppDatabase, $ClinicsLocalTable, ClinicsLocalData>
+      ClinicLocal,
+      BaseReferences<_$AppDatabase, $ClinicsLocalTable, ClinicLocal>
     ),
-    ClinicsLocalData,
+    ClinicLocal,
     PrefetchHooks Function()>;
-typedef $$PatientsTableCreateCompanionBuilder = PatientsCompanion Function({
+typedef $$PatientsLocalTableCreateCompanionBuilder = PatientsLocalCompanion
+    Function({
   required String id,
   required String fullName,
   required String cpf,
@@ -5383,7 +5384,8 @@ typedef $$PatientsTableCreateCompanionBuilder = PatientsCompanion Function({
   Value<String?> zipCode,
   Value<int> rowid,
 });
-typedef $$PatientsTableUpdateCompanionBuilder = PatientsCompanion Function({
+typedef $$PatientsLocalTableUpdateCompanionBuilder = PatientsLocalCompanion
+    Function({
   Value<String> id,
   Value<String> fullName,
   Value<String> cpf,
@@ -5403,9 +5405,9 @@ typedef $$PatientsTableUpdateCompanionBuilder = PatientsCompanion Function({
   Value<int> rowid,
 });
 
-class $$PatientsTableFilterComposer
-    extends Composer<_$AppDatabase, $PatientsTable> {
-  $$PatientsTableFilterComposer({
+class $$PatientsLocalTableFilterComposer
+    extends Composer<_$AppDatabase, $PatientsLocalTable> {
+  $$PatientsLocalTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -5461,9 +5463,9 @@ class $$PatientsTableFilterComposer
       column: $table.zipCode, builder: (column) => ColumnFilters(column));
 }
 
-class $$PatientsTableOrderingComposer
-    extends Composer<_$AppDatabase, $PatientsTable> {
-  $$PatientsTableOrderingComposer({
+class $$PatientsLocalTableOrderingComposer
+    extends Composer<_$AppDatabase, $PatientsLocalTable> {
+  $$PatientsLocalTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -5520,9 +5522,9 @@ class $$PatientsTableOrderingComposer
       column: $table.zipCode, builder: (column) => ColumnOrderings(column));
 }
 
-class $$PatientsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $PatientsTable> {
-  $$PatientsTableAnnotationComposer({
+class $$PatientsLocalTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PatientsLocalTable> {
+  $$PatientsLocalTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -5578,28 +5580,31 @@ class $$PatientsTableAnnotationComposer
       $composableBuilder(column: $table.zipCode, builder: (column) => column);
 }
 
-class $$PatientsTableTableManager extends RootTableManager<
+class $$PatientsLocalTableTableManager extends RootTableManager<
     _$AppDatabase,
-    $PatientsTable,
-    Patient,
-    $$PatientsTableFilterComposer,
-    $$PatientsTableOrderingComposer,
-    $$PatientsTableAnnotationComposer,
-    $$PatientsTableCreateCompanionBuilder,
-    $$PatientsTableUpdateCompanionBuilder,
-    (Patient, BaseReferences<_$AppDatabase, $PatientsTable, Patient>),
-    Patient,
+    $PatientsLocalTable,
+    PatientLocal,
+    $$PatientsLocalTableFilterComposer,
+    $$PatientsLocalTableOrderingComposer,
+    $$PatientsLocalTableAnnotationComposer,
+    $$PatientsLocalTableCreateCompanionBuilder,
+    $$PatientsLocalTableUpdateCompanionBuilder,
+    (
+      PatientLocal,
+      BaseReferences<_$AppDatabase, $PatientsLocalTable, PatientLocal>
+    ),
+    PatientLocal,
     PrefetchHooks Function()> {
-  $$PatientsTableTableManager(_$AppDatabase db, $PatientsTable table)
+  $$PatientsLocalTableTableManager(_$AppDatabase db, $PatientsLocalTable table)
       : super(TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$PatientsTableFilterComposer($db: db, $table: table),
+              $$PatientsLocalTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$PatientsTableOrderingComposer($db: db, $table: table),
+              $$PatientsLocalTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$PatientsTableAnnotationComposer($db: db, $table: table),
+              $$PatientsLocalTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<String> id = const Value.absent(),
             Value<String> fullName = const Value.absent(),
@@ -5619,7 +5624,7 @@ class $$PatientsTableTableManager extends RootTableManager<
             Value<String?> zipCode = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
-              PatientsCompanion(
+              PatientsLocalCompanion(
             id: id,
             fullName: fullName,
             cpf: cpf,
@@ -5657,7 +5662,7 @@ class $$PatientsTableTableManager extends RootTableManager<
             Value<String?> zipCode = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
-              PatientsCompanion.insert(
+              PatientsLocalCompanion.insert(
             id: id,
             fullName: fullName,
             cpf: cpf,
@@ -5683,17 +5688,20 @@ class $$PatientsTableTableManager extends RootTableManager<
         ));
 }
 
-typedef $$PatientsTableProcessedTableManager = ProcessedTableManager<
+typedef $$PatientsLocalTableProcessedTableManager = ProcessedTableManager<
     _$AppDatabase,
-    $PatientsTable,
-    Patient,
-    $$PatientsTableFilterComposer,
-    $$PatientsTableOrderingComposer,
-    $$PatientsTableAnnotationComposer,
-    $$PatientsTableCreateCompanionBuilder,
-    $$PatientsTableUpdateCompanionBuilder,
-    (Patient, BaseReferences<_$AppDatabase, $PatientsTable, Patient>),
-    Patient,
+    $PatientsLocalTable,
+    PatientLocal,
+    $$PatientsLocalTableFilterComposer,
+    $$PatientsLocalTableOrderingComposer,
+    $$PatientsLocalTableAnnotationComposer,
+    $$PatientsLocalTableCreateCompanionBuilder,
+    $$PatientsLocalTableUpdateCompanionBuilder,
+    (
+      PatientLocal,
+      BaseReferences<_$AppDatabase, $PatientsLocalTable, PatientLocal>
+    ),
+    PatientLocal,
     PrefetchHooks Function()>;
 typedef $$UsersLocalTableCreateCompanionBuilder = UsersLocalCompanion Function({
   required String id,
@@ -7614,8 +7622,8 @@ class $AppDatabaseManager {
   $AppDatabaseManager(this._db);
   $$ClinicsLocalTableTableManager get clinicsLocal =>
       $$ClinicsLocalTableTableManager(_db, _db.clinicsLocal);
-  $$PatientsTableTableManager get patients =>
-      $$PatientsTableTableManager(_db, _db.patients);
+  $$PatientsLocalTableTableManager get patientsLocal =>
+      $$PatientsLocalTableTableManager(_db, _db.patientsLocal);
   $$UsersLocalTableTableManager get usersLocal =>
       $$UsersLocalTableTableManager(_db, _db.usersLocal);
   $$AttachmentsLocalTableTableManager get attachmentsLocal =>

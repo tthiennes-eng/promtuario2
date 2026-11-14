@@ -37,7 +37,6 @@ class PatientRepository implements IPatientRepository {
 
   @override
   Future<List<entity.Patient>> getLocalPatients({String? query}) async {
-    // Atualizado para patientsLocal
     final selectQuery = _localDb.select(_localDb.patientsLocal);
     if (query != null && query.isNotEmpty) {
       selectQuery.where((t) => t.fullName.contains(query) | t.cpf.contains(query));
@@ -80,7 +79,6 @@ class PatientRepository implements IPatientRepository {
       );
 
       if (response.statusCode == 200 || response.statusCode == 204) {
-        // Atualizado para patientsLocal
         await (_localDb.update(_localDb.patientsLocal)
               ..where((t) => t.id.equals(patient.id)))
             .write(const drift_db.PatientsLocalCompanion(isSynced: Value(true)));
@@ -92,7 +90,6 @@ class PatientRepository implements IPatientRepository {
 
   @override
   Future<void> syncPatients() async {
-    // Atualizado para patientsLocal
     final pendingPatients = await (_localDb.select(_localDb.patientsLocal)
           ..where((t) => t.isSynced.equals(false)))
         .get();
@@ -116,7 +113,6 @@ class PatientRepository implements IPatientRepository {
         if (response.statusCode == 200 ||
             response.statusCode == 201 ||
             response.statusCode == 204) {
-          // Atualizado para patientsLocal
           await (_localDb.update(_localDb.patientsLocal)
                 ..where((t) => t.id.equals(row.id)))
               .write(const drift_db.PatientsLocalCompanion(isSynced: Value(true)));
@@ -153,8 +149,8 @@ class PatientRepository implements IPatientRepository {
     );
   }
 
-  // O tipo gerado para a tabela PatientsLocal é PatientsLocalData
-  entity.Patient _mapSchemaToEntity(drift_db.PatientsLocalData row) {
+  // TIPO CORRETO: drift_db.PatientLocal (definido no @DataClassName)
+  entity.Patient _mapSchemaToEntity(drift_db.PatientLocal row) {
     return entity.Patient(
       id: row.id,
       fullName: row.fullName,
@@ -185,7 +181,6 @@ class PatientRepository implements IPatientRepository {
   }
 
   Future<void> _saveLocal(entity.Patient patient, bool isSynced) async {
-    // Atualizado para patientsLocal e PatientsLocalCompanion
     await _localDb.into(_localDb.patientsLocal).insertOnConflictUpdate(
       drift_db.PatientsLocalCompanion.insert(
         id: patient.id,
