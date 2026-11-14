@@ -22,8 +22,8 @@ dependencies:
   go_router: ^13.2.0
 
   # Local Database
-  drift: ^2.16.0
-  sqlite3_flutter_libs: ^0.5.20
+  drift: '>=2.16.0 <2.26.0'
+  sqlite3_flutter_libs: '>=0.5.20 <0.5.25'
   ffi: ^2.1.0
 
   # Network
