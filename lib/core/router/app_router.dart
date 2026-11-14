@@ -32,7 +32,6 @@ import '../../features/reports/presentation/views/reports_screen.dart';
 import '../../features/settings/presentation/views/settings_screen.dart';
 import '../../features/notifications/presentation/views/notification_list_screen.dart';
 import '../../features/audit/presentation/views/audit_log_screen.dart';
-
 import '../../features/patients/presentation/views/patient_history_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -40,7 +39,8 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     initialLocation: '/splash',
-    refreshListenable: _RouterRefreshStream(ref.watch(authViewModelProvider.notifier).stream),
+    // Usamos um ValueNotifier simples para evitar InvalidType no compilador
+    refreshListenable: ValueNotifier<AuthState>(authState),
     redirect: (context, state) {
       final isSplash = state.matchedLocation == '/splash';
       final isLoggingIn = state.matchedLocation == '/login';
@@ -128,15 +128,3 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
-
-class _RouterRefreshStream extends ChangeNotifier {
-  _RouterRefreshStream(Stream<dynamic> stream) {
-    _subscription = stream.asBroadcastStream().listen((_) => notifyListeners());
-  }
-  late final dynamic _subscription;
-  @override
-  void dispose() {
-    _subscription.cancel();
-    super.dispose();
-  }
-}

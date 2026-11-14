@@ -25,7 +25,6 @@ class PatientRepository implements IPatientRepository {
 
       if (response.data != null) {
         final data = response.data;
-        // O servidor agora retorna 'items' em minúsculo devido à configuração do JSON
         final List<dynamic> items = data is Map ? (data['items'] ?? []) : data;
         final apiPatients = items.map((json) => _mapJsonToEntity(json)).toList();
         await _updateLocalCache(apiPatients);
@@ -38,7 +37,8 @@ class PatientRepository implements IPatientRepository {
 
   @override
   Future<List<entity.Patient>> getLocalPatients({String? query}) async {
-    final selectQuery = _localDb.select(_localDb.patients);
+    // Atualizado para patientsLocal
+    final selectQuery = _localDb.select(_localDb.patientsLocal);
     if (query != null && query.isNotEmpty) {
       selectQuery.where((t) => t.fullName.contains(query) | t.cpf.contains(query));
     }
@@ -52,15 +52,12 @@ class PatientRepository implements IPatientRepository {
     final id = patient.id.isEmpty ? _uuid.v4() : patient.id;
     final patientWithId = patient.copyWith(id: id);
 
-    // Salva localmente marcando como NÃO SINCRONIZADO
     await _saveLocal(patientWithId, false);
 
     try {
-      // Envia para a API com os nomes de campos que o C# espera (camelCase)
       final response = await _apiClient.instance.post('patients', data: _mapEntityToJson(patientWithId));
       
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Se a API aceitou, marca como sincronizado localmente
         await _saveLocal(patientWithId, true);
         return _mapJsonToEntity(response.data);
       }
@@ -72,7 +69,6 @@ class PatientRepository implements IPatientRepository {
 
   @override
   Future<void> updatePatient(entity.Patient patient) async {
-    // Salva localmente marcando como NÃO SINCRONIZADO até confirmar com a API.
     await _saveLocal(patient, false);
 
     try {
@@ -84,34 +80,26 @@ class PatientRepository implements IPatientRepository {
       );
 
       if (response.statusCode == 200 || response.statusCode == 204) {
-        // API aceitou a atualização: marca como sincronizado.
-        await (_localDb.update(_localDb.patients)
+        // Atualizado para patientsLocal
+        await (_localDb.update(_localDb.patientsLocal)
               ..where((t) => t.id.equals(patient.id)))
-            .write(const drift_db.PatientsCompanion(isSynced: Value(true)));
+            .write(const drift_db.PatientsLocalCompanion(isSynced: Value(true)));
       }
     } catch (e) {
-      // Sem conexão com o servidor agora: a alteração fica marcada como
-      // pendente (isSynced = false) e será reenviada pelo SyncService
-      // periódico (ver syncPatients()) assim que a rede voltar.
-      debugPrint('Erro ao atualizar paciente na API (ficará pendente de sync): $e');
+      debugPrint('Erro ao atualizar paciente na API: $e');
     }
   }
 
   @override
   Future<void> syncPatients() async {
-    // 1) Envia para o servidor tudo o que foi criado/editado localmente
-    //    enquanto o app estava offline (fila de pendências).
-    final pendingPatients = await (_localDb.select(_localDb.patients)
+    // Atualizado para patientsLocal
+    final pendingPatients = await (_localDb.select(_localDb.patientsLocal)
           ..where((t) => t.isSynced.equals(false)))
         .get();
 
     for (final row in pendingPatients) {
       try {
         final patientEntity = _mapSchemaToEntity(row);
-        // Se o registro já existe no servidor, PUT; senão, POST.
-        // Como o id é gerado localmente (uuid) tanto para criação quanto
-        // para edição, tentamos primeiro atualizar (PUT) e, se o servidor
-        // responder 404 (paciente ainda não existe lá), criamos com POST.
         Response response;
         try {
           response = await _apiClient.instance
@@ -128,18 +116,16 @@ class PatientRepository implements IPatientRepository {
         if (response.statusCode == 200 ||
             response.statusCode == 201 ||
             response.statusCode == 204) {
-          await (_localDb.update(_localDb.patients)
+          // Atualizado para patientsLocal
+          await (_localDb.update(_localDb.patientsLocal)
                 ..where((t) => t.id.equals(row.id)))
-              .write(const drift_db.PatientsCompanion(isSynced: Value(true)));
+              .write(const drift_db.PatientsLocalCompanion(isSynced: Value(true)));
         }
       } catch (e) {
         debugPrint('Falha ao sincronizar paciente ${row.fullName}: $e');
       }
     }
 
-    // 2) Busca no servidor os pacientes criados/editados em OUTROS
-    //    computadores da rede e atualiza o cache local (pull).
-    //    Isso garante sincronização mesmo sem depender do SignalR.
     try {
       final response = await _apiClient.instance.get('patients');
       if (response.data != null) {
@@ -167,7 +153,8 @@ class PatientRepository implements IPatientRepository {
     );
   }
 
-  entity.Patient _mapSchemaToEntity(drift_db.Patient row) {
+  // O tipo gerado para a tabela PatientsLocal é PatientsLocalData
+  entity.Patient _mapSchemaToEntity(drift_db.PatientsLocalData row) {
     return entity.Patient(
       id: row.id,
       fullName: row.fullName,
@@ -183,7 +170,6 @@ class PatientRepository implements IPatientRepository {
   }
 
   Map<String, dynamic> _mapEntityToJson(entity.Patient patient) {
-    // NOMES EXATOS DAS PROPRIEDADES NO C# (PascalCase conforme configurado no Program.cs)
     return {
       'Id': patient.id,
       'FullName': patient.fullName,
@@ -199,8 +185,9 @@ class PatientRepository implements IPatientRepository {
   }
 
   Future<void> _saveLocal(entity.Patient patient, bool isSynced) async {
-    await _localDb.into(_localDb.patients).insertOnConflictUpdate(
-      drift_db.PatientsCompanion.insert(
+    // Atualizado para patientsLocal e PatientsLocalCompanion
+    await _localDb.into(_localDb.patientsLocal).insertOnConflictUpdate(
+      drift_db.PatientsLocalCompanion.insert(
         id: patient.id,
         fullName: patient.fullName,
         cpf: patient.cpf,

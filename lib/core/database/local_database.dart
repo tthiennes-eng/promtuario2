@@ -7,25 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 part 'local_database.g.dart';
 
-/// Tabela de Clínicas com parâmetros de funcionamento.
-class ClinicsLocal extends Table {
-  TextColumn get id => text()();
-  TextColumn get name => text().withLength(min: 1, max: 255)();
-  TextColumn get description => text().nullable()();
-  TextColumn get location => text().nullable()();
-  IntColumn get capacity => integer().withDefault(const Constant(1))();
-  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
-  IntColumn get startHour => integer().withDefault(const Constant(8))();
-  IntColumn get endHour => integer().withDefault(const Constant(18))();
-  IntColumn get slotDurationMinutes => integer().withDefault(const Constant(60))();
-  TextColumn get metadataJson => text().nullable()();
-
-  @override
-  Set<Column> get primaryKey => {id};
-}
-
-/// Tabela de Pacientes (Cache Local)
-class Patients extends Table {
+// Definindo classes com nomes explícitos para evitar conflitos de nomes (InvalidType)
+@DataClassName('PatientLocal')
+class PatientsLocal extends Table {
   TextColumn get id => text()();
   TextColumn get fullName => text().withLength(min: 3, max: 255)();
   TextColumn get cpf => text().withLength(min: 11, max: 14)();
@@ -47,7 +31,23 @@ class Patients extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// Tabela de Usuários Locais (Cache)
+@DataClassName('ClinicLocal')
+class ClinicsLocal extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text().withLength(min: 1, max: 255)();
+  TextColumn get description => text().nullable()();
+  TextColumn get location => text().nullable()();
+  IntColumn get capacity => integer().withDefault(const Constant(1))();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  IntColumn get startHour => integer().withDefault(const Constant(8))();
+  IntColumn get endHour => integer().withDefault(const Constant(18))();
+  IntColumn get slotDurationMinutes => integer().withDefault(const Constant(60))();
+  TextColumn get metadataJson => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 class UsersLocal extends Table {
   TextColumn get id => text()();
   TextColumn get name => text()();
@@ -59,7 +59,6 @@ class UsersLocal extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// Tabela de Anexos e Documentos
 class AttachmentsLocal extends Table {
   TextColumn get id => text()();
   TextColumn get patientId => text()();
@@ -73,7 +72,6 @@ class AttachmentsLocal extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// Tabela de Odontograma
 class OdontogramLocal extends Table {
   TextColumn get patientId => text()();
   TextColumn get dataJson => text()();
@@ -84,7 +82,6 @@ class OdontogramLocal extends Table {
   Set<Column> get primaryKey => {patientId};
 }
 
-/// Tabela de Lista de Espera
 class WaitListLocal extends Table {
   TextColumn get id => text()();
   TextColumn get patientId => text()();
@@ -100,7 +97,6 @@ class WaitListLocal extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// Tabela de Auditoria de Ações Locais
 class AuditLocal extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get resourceId => text()();
@@ -109,7 +105,6 @@ class AuditLocal extends Table {
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
 }
 
-/// Tabela de Anamnese
 class AnamneseLocal extends Table {
   TextColumn get patientId => text()();
   TextColumn get responsesJson => text()();
@@ -120,7 +115,6 @@ class AnamneseLocal extends Table {
   Set<Column> get primaryKey => {patientId};
 }
 
-/// Tabela de Agendamentos (Cache Local)
 class AppointmentsLocal extends Table {
   TextColumn get id => text()();
   TextColumn get patientId => text().withDefault(const Constant(''))();
@@ -143,7 +137,6 @@ class AppointmentsLocal extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// Tabela de Evoluções de Prontuário
 class EvolutionsLocal extends Table {
   TextColumn get id => text()();
   TextColumn get patientId => text()();
@@ -162,7 +155,6 @@ class EvolutionsLocal extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// Tabela de Itens de Tratamento
 class TreatmentItemsLocal extends Table {
   TextColumn get id => text()();
   TextColumn get planId => text()();
@@ -177,7 +169,7 @@ class TreatmentItemsLocal extends Table {
 
 @DriftDatabase(tables: [
   ClinicsLocal,
-  Patients,
+  PatientsLocal,
   UsersLocal,
   AttachmentsLocal,
   OdontogramLocal,
@@ -199,10 +191,16 @@ LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, 'db.sqlite'));
+    
+    // O crash 'InvalidType' vs 'FunctionType' no Dart 3.5 ocorre 
+    // frequentemente com NativeDatabase.createInBackground().
+    // Revertendo para NativeDatabase estável para permitir a compilação.
     return NativeDatabase(file);
   });
 }
 
 final databaseProvider = Provider<AppDatabase>((ref) {
-  return AppDatabase();
+  final db = AppDatabase();
+  ref.onDispose(() => db.close());
+  return db;
 });

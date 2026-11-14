@@ -10,24 +10,29 @@ import 'package:promt/core/network/sync_service.dart';
 
 /// Ponto de entrada principal do sistema OdontoClinica Universitária.
 void main() async {
-  // Garante que binding do Flutter esteja inicializado.
+  // 1. Garante que binding do Flutter esteja inicializado.
+  // Essencial para o carregamento estável de bibliotecas nativas (FFI/SQLite).
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Configuraçãos global de Logs para depuração.
+  // 2. Configurações globais de Logs para depuração.
   Logger.root.level = Level.ALL;
   Logger.root.onRecord.listen((record) {
     debugPrint('${record.level.name}: ${record.time}: ${record.message}');
   });
 
-  // Inicializa a formatação de datas para Português do Brasil.
+  // 3. Inicializa a formatação de datas.
   await initializeDateFormatting('pt_BR', null);
 
-  // Inicializa o ProviderContainer para gerenciar serviços de background.
+  // 4. Cria o container global do Riverpod.
   final container = ProviderContainer();
   
-  // Inicia o serviço de sincronização automática (Offline First).
-  // Garante a integridade dos dados de clínicas e agendamentos mesmo sem rede.
-  container.read(syncServiceProvider).startAutoSync();
+  // 5. INICIALIZAÇÃO SEGURA (Correção para crash de FFI/InvalidType):
+  // O crash 'InvalidType' ocorre quando o compilador tenta resolver a ponte FFI
+  // do SQLite prematuramente. Adiar o início da sincronização para o primeiro frame
+  // permite que o ambiente de execução nativo e o isolate principal estejam estáveis.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    container.read(syncServiceProvider).startAutoSync();
+  });
 
   runApp(
     UncontrolledProviderScope(
@@ -42,7 +47,6 @@ class OdontoClinicaApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Escuta as mudanças no roteador e no tema.
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeViewModelProvider);
 
