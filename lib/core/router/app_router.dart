@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,14 +35,30 @@ import '../../features/notifications/presentation/views/notification_list_screen
 import '../../features/audit/presentation/views/audit_log_screen.dart';
 import '../../features/patients/presentation/views/patient_history_screen.dart';
 
+/// Adaptador para converter o stream do Riverpod em um Listenable para o GoRouter.
+class RouterRefreshStream extends ChangeNotifier {
+  RouterRefreshStream(Stream<dynamic> stream) {
+    notifyListeners();
+    _subscription = stream.asBroadcastStream().listen((_) => notifyListeners());
+  }
+
+  late final StreamSubscription<dynamic> _subscription;
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authViewModelProvider);
+  final authNotifier = ref.watch(authViewModelProvider.notifier);
 
   return GoRouter(
     initialLocation: '/splash',
-    // Usamos um ValueNotifier simples para evitar InvalidType no compilador
-    refreshListenable: ValueNotifier<AuthState>(authState),
+    refreshListenable: RouterRefreshStream(authNotifier.stream),
     redirect: (context, state) {
+      final authState = ref.read(authViewModelProvider);
       final isSplash = state.matchedLocation == '/splash';
       final isLoggingIn = state.matchedLocation == '/login';
       final isLoggedIn = authState.user != null;

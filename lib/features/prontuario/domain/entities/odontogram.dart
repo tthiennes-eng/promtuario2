@@ -1,12 +1,13 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-// part 'odontogram.freezed.dart';
-// part 'odontogram.g.dart';
+// Enums unificados para evitar erro de exaustividade no switch
+enum ToothSurface { mesial, distal, occlusal, buccal, lingual, palatal, root }
+enum ConditionType { healthy, decayed, restored, missing, implant, endodontic, prosthesis }
 
 class ToothCondition {
   final int toothNumber;
   final List<ToothSurface> surfaces;
-  final ToothStatus condition;
+  final ConditionType condition;
   final String? observation;
 
   const ToothCondition({
@@ -23,11 +24,25 @@ class ToothCondition {
               ?.map((e) => ToothSurface.values.firstWhere((s) => s.name == e))
               .toList() ??
           [],
-      condition: ToothStatus.values.firstWhere(
+      condition: ConditionType.values.firstWhere(
         (e) => e.name == json['condition'],
-        orElse: () => ToothStatus.higido,
+        orElse: () => ConditionType.healthy,
       ),
       observation: json['observation'] as String?,
+    );
+  }
+
+  ToothCondition copyWith({
+    int? toothNumber,
+    List<ToothSurface>? surfaces,
+    ConditionType? condition,
+    String? observation,
+  }) {
+    return ToothCondition(
+      toothNumber: toothNumber ?? this.toothNumber,
+      surfaces: surfaces ?? this.surfaces,
+      condition: condition ?? this.condition,
+      observation: observation ?? this.observation,
     );
   }
 }
@@ -59,29 +74,4 @@ class Odontogram {
       updatedBy: json['updatedBy'] as String? ?? '',
     );
   }
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'patientId': patientId,
-      };
-
-  Odontogram copyWith({
-    String? id,
-    String? patientId,
-    List<ToothCondition>? teeth,
-    DateTime? updatedAt,
-    String? updatedBy,
-  }) {
-    return Odontogram(
-      id: id ?? this.id,
-      patientId: patientId ?? this.patientId,
-      teeth: teeth ?? this.teeth,
-      updatedAt: updatedAt ?? this.updatedAt,
-      updatedBy: updatedBy ?? this.updatedBy,
-    );
-  }
 }
-
-enum ToothSurface { vestibular, lingual, oclusal, mesial, distal }
-
-enum ToothStatus { higido, carie, restaurado, perdido, endodontia, implante }

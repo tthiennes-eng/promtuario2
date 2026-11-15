@@ -161,8 +161,6 @@ class _ToothTile extends StatelessWidget {
       selectedSurface = ToothSurface.lingual;
     } else {
       int quadrant = number ~/ 10;
-      // Quadrantes 1 e 4 (Lado direito do paciente): Esquerda da tela é Distal, Direita é Mesial
-      // Quadrantes 2 e 3 (Lado esquerdo do paciente): Esquerda da tela é Mesial, Direita é Distal
       bool isRightSide = (quadrant == 1 || quadrant == 4);
       if (localPosition.dx < padding) {
         selectedSurface = isRightSide ? ToothSurface.distal : ToothSurface.mesial;
@@ -213,20 +211,14 @@ class ToothPainter extends CustomPainter {
     final quadrant = toothNumber ~/ 10;
     final isRightSide = (quadrant == 1 || quadrant == 4);
 
-    // Oclusal sempre central
     _drawFace(canvas, [Offset(padding, padding), Offset(size.width - padding, padding), Offset(size.width - padding, size.height - padding), Offset(padding, size.height - padding)], ToothSurface.occlusal, borderPaint);
-    
-    // Vestibular e Lingual sempre em cima e embaixo
     _drawFace(canvas, [const Offset(0, 0), Offset(size.width, 0), Offset(size.width - padding, padding), Offset(padding, padding)], ToothSurface.buccal, borderPaint);
     _drawFace(canvas, [Offset(padding, size.height - padding), Offset(size.width - padding, size.height - padding), Offset(size.width, size.height), Offset(0, size.height)], ToothSurface.lingual, borderPaint);
 
-    // Mesial e Distal dependem do lado (Quadrante)
     if (isRightSide) {
-      // Para Q1 e Q4: Mesial é na DIREITA do widget, Distal é na ESQUERDA do widget
       _drawFace(canvas, [const Offset(0, 0), Offset(padding, padding), Offset(padding, size.height - padding), Offset(0, size.height)], ToothSurface.distal, borderPaint);
       _drawFace(canvas, [Offset(size.width - padding, padding), Offset(size.width, 0), Offset(size.width, size.height), Offset(size.width - padding, size.height - padding)], ToothSurface.mesial, borderPaint);
     } else {
-      // Para Q2 e Q3: Mesial é na ESQUERDA do widget, Distal é na DIREITA do widget
       _drawFace(canvas, [const Offset(0, 0), Offset(padding, padding), Offset(padding, size.height - padding), Offset(0, size.height)], ToothSurface.mesial, borderPaint);
       _drawFace(canvas, [Offset(size.width - padding, padding), Offset(size.width, 0), Offset(size.width, size.height), Offset(size.width - padding, size.height - padding)], ToothSurface.distal, borderPaint);
     }
