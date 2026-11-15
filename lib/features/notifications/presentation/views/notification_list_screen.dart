@@ -103,6 +103,7 @@ class _NotificationCard extends ConsumerWidget {
       NotificationType.pendingSignature => Icons.draw,
       NotificationType.treatmentApproved => Icons.check_circle_outline,
       NotificationType.systemAlert => Icons.warning_amber,
+      NotificationType.info => Icons.info_outline,
     };
   }
 
@@ -112,6 +113,7 @@ class _NotificationCard extends ConsumerWidget {
       NotificationType.pendingSignature => Colors.orange,
       NotificationType.treatmentApproved => Colors.green,
       NotificationType.systemAlert => Colors.red,
+      NotificationType.info => Colors.blueGrey,
     };
   }
 }

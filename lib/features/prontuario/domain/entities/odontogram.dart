@@ -74,4 +74,20 @@ class Odontogram {
       updatedBy: json['updatedBy'] as String? ?? '',
     );
   }
+
+  Odontogram copyWith({
+    String? id,
+    String? patientId,
+    List<ToothCondition>? teeth,
+    DateTime? updatedAt,
+    String? updatedBy,
+  }) {
+    return Odontogram(
+      id: id ?? this.id,
+      patientId: patientId ?? this.patientId,
+      teeth: teeth ?? this.teeth,
+      updatedAt: updatedAt ?? this.updatedAt,
+      updatedBy: updatedBy ?? this.updatedBy,
+    );
+  }
 }

@@ -1,34 +1,22 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../domain/entities/user.dart';
 
-// part 'user_model.freezed.dart';
-// part 'user_model.g.dart';
+part 'user_model.freezed.dart';
+part 'user_model.g.dart';
 
 @freezed
-class UserModel {
-  final String id;
-  final String name;
-  final String email;
-  final String role;
-  final bool isActive;
+class UserModel with _$UserModel {
+  const factory UserModel({
+    required String id,
+    required String name,
+    required String email,
+    required String role,
+    @Default(true) bool isActive,
+  }) = _UserModel;
 
-  const UserModel({
-    required this.id,
-    required this.name,
-    required this.email,
-    required this.role,
-    this.isActive = true,
-  });
+  const UserModel._();
 
-  factory UserModel.fromJson(Map<String, dynamic> json) {
-    return UserModel(
-      id: json['id'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      email: json['email'] as String? ?? '',
-      role: json['role'] as String? ?? 'aluno',
-      isActive: json['isActive'] as bool? ?? true,
-    );
-  }
+  factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
 
   User toEntity() {
     return User(

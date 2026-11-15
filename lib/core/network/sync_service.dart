@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:promt/core/database/local_database.dart';
 import 'package:promt/core/providers/providers.dart';
+import 'package:drift/drift.dart';
 
 /// Coordena a sincronização de dados persistidos localmente.
 class SyncService {
@@ -17,8 +18,9 @@ class SyncService {
   void startAutoSync() {
     _syncTimer?.cancel();
     unawaited(syncAll());
+    // Intervalo de 30 segundos para não sobrecarregar em redes instáveis
     _syncTimer =
-        Timer.periodic(const Duration(seconds: 10), (_) => unawaited(syncAll()));
+        Timer.periodic(const Duration(seconds: 30), (_) => unawaited(syncAll()));
   }
 
   Future<void> syncAll() async {
@@ -55,38 +57,47 @@ class SyncService {
       () => _ref.read(prontuarioRepositoryProvider).syncPendingData());
 
   Future<void> _syncAttachments() async {
-    final dynamic db = _db;
     try {
-      final pending = await (db.select(db.attachmentsLocal)
+      final pending = await (_db.select(_db.attachmentsLocal)
             ..where((table) => table.isSynced.equals(false)))
           .get();
+      
       final repository = _ref.read(attachmentRepositoryProvider);
-      for (final attachment in (pending as List)) {
+      for (final attachment in pending) {
         final sent = await repository.syncPendingAttachment(attachment.id);
-        if (!sent) {
+        if (sent) {
+          await (_db.update(_db.attachmentsLocal)
+                ..where((t) => t.id.equals(attachment.id)))
+              .write(const AttachmentsLocalCompanion(isSynced: Value(true)));
+        } else {
           _logger.warning('Anexo ${attachment.id} mantido na fila.');
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      _logger.warning('Falha ao sincronizar anexos: $e');
+    }
   }
 
   Future<void> _syncAuditLogs() async {
-    final dynamic db = _db;
     try {
-      final pending = await (db.select(db.auditLocal)
+      final pending = await (_db.select(_db.auditLocal)
             ..where((table) => table.isSynced.equals(false)))
           .get();
+      
       final repository = _ref.read(auditRepositoryProvider);
-      for (final log in (pending as List)) {
+      for (final log in pending) {
         try {
           final sent = await repository.syncPendingAccess(log.resourceId, log.action);
-          if (!sent) continue;
-          await (db.delete(db.auditLocal)..where((table) => table.id.equals(log.id))).go();
+          if (sent) {
+            await (_db.delete(_db.auditLocal)..where((table) => table.id.equals(log.id))).go();
+          }
         } catch (error, stackTrace) {
           _logger.warning('Falha ao sincronizar auditoria.', error, stackTrace);
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      _logger.warning('Erro na fila de auditoria: $e');
+    }
   }
 
   Future<void> _run(String scope, Future<void> Function() action) async {
