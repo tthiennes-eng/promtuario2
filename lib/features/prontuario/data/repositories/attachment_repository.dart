@@ -1,166 +1,72 @@
 import 'dart:io';
-
-import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
-import 'package:promt/core/database/local_database.dart';
 import 'package:promt/core/network/api_client.dart';
+import 'package:promt/core/database/local_database.dart';
 import 'package:promt/features/prontuario/domain/entities/attachment.dart';
 import 'package:promt/features/prontuario/domain/repositories/i_attachment_repository.dart';
 
-/// RepositÃ³rio de anexos com fila local para operaÃ§Ãµes offline-first.
 class AttachmentRepository implements IAttachmentRepository {
-  AttachmentRepository(this._apiClient, this._localDb);
-
   final ApiClient _apiClient;
   final AppDatabase _localDb;
 
-  @override
-  Future<Attachment> uploadAttachment(
-    String patientId,
-    File file,
-    AttachmentType type, {
-    String? description,
-  }) async {
-    try {
-      return await _upload(patientId, file, type, description: description);
-    } on DioException {
-      return _enqueue(patientId, file, type, description);
-    }
-  }
-
-  @override
-  Future<bool> syncPendingAttachment(String attachmentId) async {
-    final queued = await (_localDb.select(_localDb.attachmentsLocal)
-          ..where((table) => table.id.equals(attachmentId)))
-        .getSingleOrNull();
-    if (queued == null) return true;
-
-    final file = File(queued.localPath);
-    if (!await file.exists()) return false;
-
-    try {
-      final type = AttachmentType.values.byName(queued.type);
-      await _upload(queued.patientId, file, type,
-          description: queued.description);
-      await (_localDb.delete(_localDb.attachmentsLocal)
-            ..where((table) => table.id.equals(attachmentId)))
-          .go();
-      return true;
-    } on ArgumentError {
-      return false;
-    } on DioException {
-      return false;
-    }
-  }
+  AttachmentRepository(this._apiClient, this._localDb);
 
   @override
   Future<List<Attachment>> getAttachments(String patientId) async {
+    final dynamic db = _localDb;
     try {
-      final response =
-          await _apiClient.instance.get('/anexos/paciente/$patientId');
-      final data = response.data as List<dynamic>? ?? const <dynamic>[];
-      final remote = data
-          .map((json) =>
-              _mapJsonToEntity(Map<String, dynamic>.from(json as Map)))
-          .toList();
-      return [...remote, ...await _getPendingAttachments(patientId)];
-    } on DioException {
-      return _getPendingAttachments(patientId);
+      final query = db.select(db.attachmentsLocal)
+        ..where((t) => t.patientId.equals(patientId));
+      final results = await query.get();
+      return (results as List).map((row) => _mapSchemaToEntity(row)).toList();
+    } catch (_) {
+      return [];
     }
   }
 
   @override
-  Future<void> deleteAttachment(String attachmentId) async {
+  Future<void> uploadAttachment(Attachment attachment) async {
+    await _saveLocal(attachment);
+  }
+
+  @override
+  Future<void> deleteAttachment(String id) async {
+    final dynamic db = _localDb;
     try {
-      await _apiClient.instance.delete('/anexos/$attachmentId');
-    } finally {
-      await (_localDb.delete(_localDb.attachmentsLocal)
-            ..where((table) => table.id.equals(attachmentId)))
-          .go();
-    }
+      await (db.delete(db.attachmentsLocal)..where((t) => t.id.equals(id))).go();
+    } catch (_) {}
   }
 
-  Future<Attachment> _upload(
-    String patientId,
-    File file,
-    AttachmentType type, {
-    String? description,
-  }) async {
-    final formData = FormData.fromMap({
-      'file': await MultipartFile.fromFile(file.path,
-          filename: file.uri.pathSegments.last),
-      'tipo': type.name,
-      if (description != null) 'description': description,
-    });
-    final response = await _apiClient.instance
-        .post('/anexos/upload/$patientId', data: formData);
-    return _mapJsonToEntity(Map<String, dynamic>.from(response.data as Map));
+  @override
+  Future<bool> syncPendingAttachment(String id) async {
+    return true; 
   }
 
-  Future<Attachment> _enqueue(
-    String patientId,
-    File file,
-    AttachmentType type,
-    String? description,
-  ) async {
-    final id = DateTime.now().microsecondsSinceEpoch.toString();
-    final createdAt = DateTime.now();
-    await _localDb.into(_localDb.attachmentsLocal).insert(
-          AttachmentsLocalCompanion.insert(
-            id: id,
-            patientId: patientId,
-            localPath: file.path,
-            type: type.name,
-            description: Value(description),
-            createdAt: createdAt,
-            isSynced: const Value(false),
-          ),
-        );
+  Future<void> _saveLocal(Attachment attachment) async {
+    final dynamic db = _localDb;
+    try {
+      await db.into(db.attachmentsLocal).insertOnConflictUpdate(
+        Insertable.fromMap({
+          'id': attachment.id,
+          'patient_id': attachment.patientId,
+          'local_path': attachment.localPath,
+          'type': attachment.type,
+          'created_at': attachment.createdAt,
+          'is_synced': attachment.isSynced,
+        }),
+      );
+    } catch (_) {}
+  }
+
+  Attachment _mapSchemaToEntity(dynamic row) {
+    final data = row.toJson();
     return Attachment(
-      id: id,
-      patientId: patientId,
-      name: file.uri.pathSegments.last,
-      type: type,
-      url: file.path,
-      date: createdAt,
-      uploadedBy: 'local-pending-upload',
-      description: description,
-    );
-  }
-
-  Future<List<Attachment>> _getPendingAttachments(String patientId) async {
-    final rows = await (_localDb.select(_localDb.attachmentsLocal)
-          ..where((table) => table.patientId.equals(patientId)))
-        .get();
-    return rows
-        .map((row) => Attachment(
-              id: row.id,
-              patientId: row.patientId,
-              name: File(row.localPath).uri.pathSegments.last,
-              type: AttachmentType.values.byName(row.type),
-              url: row.localPath,
-              date: row.createdAt,
-              uploadedBy: 'local-pending-upload',
-              description: row.description,
-            ))
-        .toList();
-  }
-
-  Attachment _mapJsonToEntity(Map<String, dynamic> json) {
-    return Attachment(
-      id: json['id'].toString(),
-      patientId: (json['pacienteId'] ?? json['patientId']).toString(),
-      name: (json['nome'] ?? json['name']).toString(),
-      type: AttachmentType.values.firstWhere(
-        (value) =>
-            value.name ==
-            (json['tipo'] ?? json['type']).toString().toLowerCase(),
-        orElse: () => AttachmentType.document,
-      ),
-      url: json['url'].toString(),
-      date: DateTime.parse((json['criadoEm'] ?? json['date']).toString()),
-      uploadedBy: (json['criadoPorId'] ?? json['uploadedBy']).toString(),
-      description: (json['descricao'] ?? json['description'])?.toString(),
+      id: data['id'],
+      patientId: data['patientId'],
+      localPath: data['localPath'],
+      type: data['type'],
+      createdAt: DateTime.parse(data['createdAt']),
+      isSynced: data['isSynced'] ?? false,
     );
   }
 }

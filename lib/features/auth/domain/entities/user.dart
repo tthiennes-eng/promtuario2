@@ -1,7 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-// part 'user.freezed.dart';
-// part 'user.g.dart';
+// REUPERAÇÃO DE EMERGÊNCIA: Convertido para classe normal para destravar o compilador Dart 3.5
+// O crash InvalidType ocorre porque o compilador não encontra o _$User e trava o FFI.
 
 class User {
   final String id;

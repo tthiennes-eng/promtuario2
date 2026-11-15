@@ -37,17 +37,13 @@ class PatientRepository implements IPatientRepository {
 
   @override
   Future<List<entity.Patient>> getLocalPatients({String? query}) async {
-    final dynamic db = _localDb;
-    try {
-      final selectQuery = db.select(db.patientsLocal);
-      if (query != null && query.isNotEmpty) {
-        selectQuery.where((t) => (t as dynamic).fullName.contains(query) | (t as dynamic).cpf.contains(query));
-      }
-      final results = await selectQuery.get();
-      return (results as List).map((row) => _mapSchemaToEntity(row)).toList();
-    } catch (e) {
-      return [];
+    final selectQuery = _localDb.select(_localDb.patientsLocal);
+    if (query != null && query.isNotEmpty) {
+      selectQuery.where((t) => t.fullName.contains(query) | t.cpf.contains(query));
     }
+    selectQuery.orderBy([(t) => OrderingTerm(expression: t.fullName)]);
+    final results = await selectQuery.get();
+    return results.map((row) => _mapSchemaToEntity(row)).toList();
   }
 
   @override
@@ -83,10 +79,9 @@ class PatientRepository implements IPatientRepository {
       );
 
       if (response.statusCode == 200 || response.statusCode == 204) {
-        final dynamic db = _localDb;
-        await (db.update(db.patientsLocal)
-              ..where((t) => (t as dynamic).id.equals(patient.id)))
-            .write(Insertable.fromMap({'is_synced': true}));
+        await (_localDb.update(_localDb.patientsLocal)
+              ..where((t) => t.id.equals(patient.id)))
+            .write(const drift_db.PatientsLocalCompanion(isSynced: Value(true)));
       }
     } catch (e) {
       debugPrint('Erro ao atualizar paciente na API: $e');
@@ -95,28 +90,49 @@ class PatientRepository implements IPatientRepository {
 
   @override
   Future<void> syncPatients() async {
-    final dynamic db = _localDb;
-    try {
-      final pendingPatients = await (db.select(db.patientsLocal)
-            ..where((t) => (t as dynamic).isSynced.equals(false)))
-          .get();
+    final pendingPatients = await (_localDb.select(_localDb.patientsLocal)
+          ..where((t) => t.isSynced.equals(false)))
+        .get();
 
-      for (final row in (pendingPatients as List)) {
+    for (final row in pendingPatients) {
+      try {
+        final patientEntity = _mapSchemaToEntity(row);
+        Response response;
         try {
-          final patientEntity = _mapSchemaToEntity(row);
-          final response = await _apiClient.instance
-              .put('patients/${patientEntity.id}', data: _mapEntityToJson(patientEntity));
-
-          if (response.statusCode == 200 || response.statusCode == 204) {
-             await (db.update(db.patientsLocal)
-                  ..where((t) => (t as dynamic).id.equals(patientEntity.id)))
-                .write(Insertable.fromMap({'is_synced': true}));
+          response = await _apiClient.instance
+              .put('patients/${row.id}', data: _mapEntityToJson(patientEntity));
+        } on DioException catch (e) {
+          if (e.response?.statusCode == 404) {
+            response = await _apiClient.instance
+                .post('patients', data: _mapEntityToJson(patientEntity));
+          } else {
+            rethrow;
           }
-        } catch (e) {
-          debugPrint('Falha ao sincronizar paciente: $e');
         }
+
+        if (response.statusCode == 200 ||
+            response.statusCode == 201 ||
+            response.statusCode == 204) {
+          await (_localDb.update(_localDb.patientsLocal)
+                ..where((t) => t.id.equals(row.id)))
+              .write(const drift_db.PatientsLocalCompanion(isSynced: Value(true)));
+        }
+      } catch (e) {
+        debugPrint('Falha ao sincronizar paciente ${row.fullName}: $e');
       }
-    } catch (_) {}
+    }
+
+    try {
+      final response = await _apiClient.instance.get('patients');
+      if (response.data != null) {
+        final data = response.data;
+        final List<dynamic> items = data is Map ? (data['items'] ?? []) : data;
+        final remotePatients = items.map((json) => _mapJsonToEntity(json)).toList();
+        await _updateLocalCache(remotePatients);
+      }
+    } catch (e) {
+      debugPrint('Falha ao buscar pacientes atualizados do servidor: $e');
+    }
   }
 
   entity.Patient _mapJsonToEntity(Map<String, dynamic> json) {
@@ -133,20 +149,19 @@ class PatientRepository implements IPatientRepository {
     );
   }
 
-  entity.Patient _mapSchemaToEntity(dynamic row) {
-    // Usando dynamic para evitar crash do transformador FFI no Dart 3.5
-    final data = row.toJson();
+  // CORREÇÃO: O tipo gerado para a tabela PatientsLocal com @DataClassName('PatientLocal') é drift_db.PatientLocal
+  entity.Patient _mapSchemaToEntity(drift_db.PatientLocal row) {
     return entity.Patient(
-      id: data['id'] ?? '',
-      fullName: data['fullName'] ?? '',
-      cpf: data['cpf'] ?? '',
-      birthDate: data['birthDate'] != null ? DateTime.parse(data['birthDate']) : DateTime.now(),
-      email: data['email'],
-      phone: data['phone'],
-      gender: data['gender'],
-      lgpdConsent: data['lgpdConsent'] ?? false,
-      isSynced: data['isSynced'] ?? true,
-      createdAt: data['createdAt'] != null ? DateTime.parse(data['createdAt']) : DateTime.now(),
+      id: row.id,
+      fullName: row.fullName,
+      cpf: row.cpf,
+      birthDate: row.birthDate,
+      email: row.email,
+      phone: row.phone,
+      gender: row.gender,
+      lgpdConsent: row.lgpdConsent,
+      isSynced: row.isSynced,
+      createdAt: row.createdAt,
     );
   }
 
@@ -166,24 +181,29 @@ class PatientRepository implements IPatientRepository {
   }
 
   Future<void> _saveLocal(entity.Patient patient, bool isSynced) async {
-    final dynamic db = _localDb;
-    await db.into(db.patientsLocal).insertOnConflictUpdate(
-      Insertable.fromMap({
-        'id': patient.id,
-        'full_name': patient.fullName,
-        'cpf': patient.cpf,
-        'birth_date': patient.birthDate,
-        'created_at': patient.createdAt,
-        'email': patient.email,
-        'phone': patient.phone,
-        'gender': patient.gender,
-        'lgpd_consent': patient.lgpdConsent,
-        'is_synced': isSynced,
-      }),
+    await _localDb.into(_localDb.patientsLocal).insertOnConflictUpdate(
+      drift_db.PatientsLocalCompanion.insert(
+        id: patient.id,
+        fullName: patient.fullName,
+        cpf: patient.cpf,
+        birthDate: patient.birthDate,
+        createdAt: patient.createdAt,
+        email: Value(patient.email),
+        phone: Value(patient.phone),
+        gender: Value(patient.gender),
+        lgpdConsent: Value(patient.lgpdConsent),
+        isSynced: Value(isSynced),
+      ),
     );
   }
 
-  @override Future<entity.Patient> getPatientById(String id) async => throw UnimplementedError();
+  Future<void> _updateLocalCache(List<entity.Patient> patients) async {
+    for (var p in patients) {
+      await _saveLocal(p, true);
+    }
+  }
+
+  @override Future<entity.Patient> getPatientById(String id) async => (await getLocalPatients()).firstWhere((p) => p.id == id);
 
   @override
   Future<List<PatientChangeLog>> getPatientHistory(String patientId) async {

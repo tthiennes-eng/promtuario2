@@ -1,9 +1,8 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-// part 'clinic.freezed.dart';
-// part 'clinic.g.dart';
+// REUPERAÇÃO DE EMERGÊNCIA: Convertido para classe normal para destravar o compilador Dart 3.5
+// O crash InvalidType ocorre porque o compilador não encontra o _$Clinic e trava o FFI.
 
-@freezed
 class Clinic {
   final String id;
   final String name;

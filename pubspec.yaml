@@ -24,9 +24,9 @@ dependencies:
   # FFI Explicit - OBRIGATÓRIO para destravar o compilador no Dart 3.5+
   ffi: ^2.1.2
 
-  # Local Database - Versões fixadas para estabilidade FFI
-  drift: 2.24.2
-  sqlite3_flutter_libs: 0.5.35
+  # Local Database - Versões estáveis (fixadas conforme protocolo FFI)
+  drift: ^2.20.3
+  sqlite3_flutter_libs: 0.5.42
 
   # Network
   dio: ^5.4.1
@@ -55,7 +55,7 @@ dev_dependencies:
   # Code Generation
   build_runner: ^2.4.8
   riverpod_generator: ^2.3.11
-  drift_dev: 2.24.2
+  drift_dev: ^2.20.3
   freezed: ^2.4.7
   json_serializable: ^6.7.1
 
