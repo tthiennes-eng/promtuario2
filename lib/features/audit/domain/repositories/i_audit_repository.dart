@@ -3,8 +3,7 @@ import '../entities/audit_log.dart';
 /// Contrato para o Repositório de Auditoria.
 abstract class IAuditRepository {
   /// Recupera logs de auditoria de forma paginada.
-  Future<List<AuditLog>> getLogs(
-      {int page = 1, int pageSize = 50, String? userId, String? action});
+  Future<List<AuditLog>> getLogs({String? userId, String? action});
 
   /// Registra uma ação sensível para conformidade LGPD.
   Future<void> registerAccess(String resourceId, String action);

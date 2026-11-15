@@ -5,11 +5,34 @@ part 'appointment.g.dart';
 
 enum AppointmentStatus {
   scheduled,
+  confirmed,
   arrived,
   inProgress,
   completed,
   cancelled,
-  noShow
+  noShow,
+  missed;
+
+  String get displayName {
+    switch (this) {
+      case AppointmentStatus.scheduled:
+        return 'Agendado';
+      case AppointmentStatus.confirmed:
+        return 'Confirmado';
+      case AppointmentStatus.arrived:
+        return 'Chegou';
+      case AppointmentStatus.inProgress:
+        return 'Em andamento';
+      case AppointmentStatus.completed:
+        return 'Concluído';
+      case AppointmentStatus.cancelled:
+        return 'Cancelado';
+      case AppointmentStatus.noShow:
+        return 'Falta';
+      case AppointmentStatus.missed:
+        return 'Ausente';
+    }
+  }
 }
 
 @freezed

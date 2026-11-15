@@ -100,12 +100,12 @@ class ProntuarioRepository implements IProntuarioRepository {
   Future<void> _saveLocalOdontogram(Odontogram odontogram, bool isSynced) async {
     final dynamic db = _localDb;
     await db.into(db.odontogramLocal).insertOnConflictUpdate(
-      Insertable.fromMap({
-        'patient_id': odontogram.patientId,
-        'data_json': jsonEncode(odontogram.toJson()),
-        'last_updated': DateTime.now(),
-        'is_synced': isSynced,
-      }),
+      OdontogramLocalCompanion(
+        patientId: Value(odontogram.patientId),
+        dataJson: Value(jsonEncode(odontogram.toJson())),
+        lastUpdated: Value(DateTime.now()),
+        isSynced: Value(isSynced),
+      ),
     );
   }
 
@@ -129,7 +129,7 @@ class ProntuarioRepository implements IProntuarioRepository {
             
             await (db.update(db.odontogramLocal)
                   ..where((t) => (t as dynamic).patientId.equals((row as dynamic).patientId)))
-                .write(Insertable.fromMap({'is_synced': true}));
+                .write(const OdontogramLocalCompanion(isSynced: Value(true)));
           }
         } catch (_) {}
       }
@@ -299,24 +299,24 @@ class ProntuarioRepository implements IProntuarioRepository {
   Future<void> _saveLocalPeri(String patientId, Map<String, dynamic> data) async {
     final dynamic db = _localDb;
     await db.into(db.odontogramLocal).insertOnConflictUpdate(
-      Insertable.fromMap({
-        'patient_id': 'peri_$patientId',
-        'data_json': jsonEncode(data),
-        'last_updated': DateTime.now(),
-        'is_synced': true,
-      }),
+      OdontogramLocalCompanion(
+        patientId: Value('peri_$patientId'),
+        dataJson: Value(jsonEncode(data)),
+        lastUpdated: Value(DateTime.now()),
+        isSynced: const Value(true),
+      ),
     );
   }
 
   Future<void> _saveLocalEndo(String patientId, Map<String, dynamic> data) async {
     final dynamic db = _localDb;
     await db.into(db.odontogramLocal).insertOnConflictUpdate(
-      Insertable.fromMap({
-        'patient_id': 'endo_$patientId',
-        'data_json': jsonEncode(data),
-        'last_updated': DateTime.now(),
-        'is_synced': true,
-      }),
+      OdontogramLocalCompanion(
+        patientId: Value('endo_$patientId'),
+        dataJson: Value(jsonEncode(data)),
+        lastUpdated: Value(DateTime.now()),
+        isSynced: const Value(true),
+      ),
     );
   }
 

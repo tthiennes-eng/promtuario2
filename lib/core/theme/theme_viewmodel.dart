@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 /// Notifier responsável pelo gerenciamento do tema da aplicação.
 class ThemeViewModel extends StateNotifier<ThemeMode> {
@@ -14,7 +15,6 @@ class ThemeViewModel extends StateNotifier<ThemeMode> {
   }
 }
 
-/// Provider para criar a instância do ThemeViewModel.
 final themeViewModelProvider = StateNotifierProvider<ThemeViewModel, ThemeMode>((ref) {
   return ThemeViewModel();
 });

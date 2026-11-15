@@ -46,14 +46,15 @@ class AttachmentRepository implements IAttachmentRepository {
     final dynamic db = _localDb;
     try {
       await db.into(db.attachmentsLocal).insertOnConflictUpdate(
-        Insertable.fromMap({
-          'id': attachment.id,
-          'patient_id': attachment.patientId,
-          'local_path': attachment.localPath,
-          'type': attachment.type,
-          'created_at': attachment.createdAt,
-          'is_synced': attachment.isSynced,
-        }),
+        AttachmentsLocalCompanion(
+          id: Value(attachment.id),
+          patientId: Value(attachment.patientId),
+          localPath: Value(attachment.localPath),
+          type: Value(attachment.type),
+          description: Value(attachment.description),
+          createdAt: Value(attachment.createdAt),
+          isSynced: Value(attachment.isSynced),
+        ),
       );
     } catch (_) {}
   }

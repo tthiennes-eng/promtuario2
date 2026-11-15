@@ -16,12 +16,12 @@ class AuditRepository implements IAuditRepository {
     // CORREÇÃO: Usando dynamic para evitar crash de FFI por tipo inexistente
     try {
       await db.into(db.auditLocal).insert(
-        Insertable.fromMap({
-          'resource_id': resourceId,
-          'action': action,
-          'timestamp': DateTime.now(),
-          'is_synced': false,
-        }),
+        AuditLocalCompanion(
+          resourceId: Value(resourceId),
+          action: Value(action),
+          timestamp: Value(DateTime.now()),
+          isSynced: const Value(false),
+        ),
       );
     } catch (_) {}
 

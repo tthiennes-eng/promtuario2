@@ -116,9 +116,9 @@ class AppointmentRepository implements IAppointmentRepository {
           );
           
           if (response.statusCode == 200 || response.statusCode == 201) {
-            await (db.update(db.appointmentsLocal)..where((t) => (t as dynamic).id.equals((row as dynamic).id))).write(
-              Insertable.fromMap({'is_synced': true}),
-            );
+            await (db.update(db.appointmentsLocal)
+                  ..where((t) => (t as dynamic).id.equals((row as dynamic).id)))
+                .write(const AppointmentsLocalCompanion(isSynced: Value(true)));
           }
         } catch (_) {}
       }
@@ -139,12 +139,12 @@ class AppointmentRepository implements IAppointmentRepository {
   Future<void> _updateLocalStatus(String id, AppointmentStatus status, bool isSynced) async {
     final dynamic db = _localDb;
     try {
-      await (db.update(db.appointmentsLocal)..where((t) => (t as dynamic).id.equals(id))).write(
-        Insertable.fromMap({
-          'status': status.name,
-          'is_synced': isSynced,
-        }),
-      );
+      await (db.update(db.appointmentsLocal)
+            ..where((t) => (t as dynamic).id.equals(id)))
+          .write(AppointmentsLocalCompanion(
+            status: Value(status.name),
+            isSynced: Value(isSynced),
+          ));
     } catch (_) {}
   }
 
@@ -152,16 +152,24 @@ class AppointmentRepository implements IAppointmentRepository {
     final dynamic db = _localDb;
     try {
       await db.into(db.appointmentsLocal).insertOnConflictUpdate(
-        Insertable.fromMap({
-          'id': app.id,
-          'patient_name': app.patientName,
-          'start_time': app.startTime.toIso8601String(),
-          'end_time': app.endTime.toIso8601String(),
-          'status': app.status.name,
-          'patient_id': app.patientId,
-          'clinic_id': app.clinicId,
-          'is_synced': isSynced,
-        }),
+        AppointmentsLocalCompanion(
+          id: Value(app.id),
+          patientId: Value(app.patientId),
+          patientName: Value(app.patientName),
+          doctorId: Value(app.doctorId),
+          doctorName: Value(app.doctorName),
+          studentId: Value(app.studentId),
+          studentName: Value(app.studentName),
+          professorId: Value(app.professorId),
+          professorName: Value(app.professorName),
+          startTime: Value(app.startTime),
+          endTime: Value(app.endTime),
+          status: Value(app.status.name),
+          procedureName: Value(app.procedureName),
+          notes: Value(app.notes),
+          clinicId: Value(app.clinicId),
+          isSynced: Value(isSynced),
+        ),
       );
     } catch (_) {}
   }

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import '../security/storage_service.dart';
 
 /// Provider que gerencia o IP do servidor.
@@ -11,8 +12,7 @@ final serverIpProvider = StateNotifierProvider<ServerIpNotifier, String>((ref) {
 
 class ServerIpNotifier extends StateNotifier<String> {
   final StorageService _storage;
-  
-  // IP padrão inicial conforme solicitado.
+
   static const defaultIp = '192.168.0.3';
 
   ServerIpNotifier(this._storage) : super(defaultIp) {

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:promt/features/agenda/domain/entities/appointment.dart';
 import 'package:promt/features/procedures/domain/entities/clinic.dart';
 import 'package:promt/core/providers/providers.dart';
