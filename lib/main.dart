@@ -10,36 +10,42 @@ import 'package:promt/core/network/sync_service.dart';
 
 /// Ponto de entrada principal do sistema OdontoClinica Universitária.
 void main() async {
-  // 1. Garante que binding do Flutter esteja inicializado.
-  // Essencial para o carregamento estável de bibliotecas nativas (FFI/SQLite).
-  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    // 1. Garante que binding do Flutter esteja inicializado.
+    WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Configurações globais de Logs para depuração.
-  Logger.root.level = Level.ALL;
-  Logger.root.onRecord.listen((record) {
-    debugPrint('${record.level.name}: ${record.time}: ${record.message}');
-  });
+    // 2. Configurações globais de Logs.
+    Logger.root.level = Level.ALL;
+    Logger.root.onRecord.listen((record) {
+      debugPrint('${record.level.name}: ${record.time}: ${record.message}');
+    });
 
-  // 3. Inicializa a formatação de datas.
-  await initializeDateFormatting('pt_BR', null);
+    // 3. Inicializa a formatação de datas.
+    await initializeDateFormatting('pt_BR', null);
 
-  // 4. Cria o container global do Riverpod.
-  final container = ProviderContainer();
-  
-  // 5. INICIALIZAÇÃO SEGURA (Correção para crash de FFI/InvalidType):
-  // O crash 'InvalidType' ocorre quando o compilador tenta resolver a ponte FFI
-  // do SQLite prematuramente. Adiar o início da sincronização para o primeiro frame
-  // permite que o ambiente de execução nativo e o isolate principal estejam estáveis.
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    container.read(syncServiceProvider).startAutoSync();
-  });
+    // 4. Cria o container global do Riverpod.
+    final container = ProviderContainer();
+    
+    // 5. INICIALIZAÇÃO SEGURA (Correção para crash de FFI/InvalidType):
+    // Adiar o início da sincronização para o primeiro frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try {
+        container.read(syncServiceProvider).startAutoSync();
+      } catch (e) {
+        debugPrint('Erro ao iniciar SyncService: $e');
+      }
+    });
 
-  runApp(
-    UncontrolledProviderScope(
-      container: container,
-      child: const OdontoClinicaApp(),
-    ),
-  );
+    runApp(
+      UncontrolledProviderScope(
+        container: container,
+        child: const OdontoClinicaApp(),
+      ),
+    );
+  } catch (e, stack) {
+    debugPrint('Erro fatal na inicialização: $e');
+    debugPrint(stack.toString());
+  }
 }
 
 class OdontoClinicaApp extends ConsumerWidget {
@@ -47,6 +53,7 @@ class OdontoClinicaApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // O routerProvider agora usa o RouterRefreshStream corrigido
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeViewModelProvider);
 

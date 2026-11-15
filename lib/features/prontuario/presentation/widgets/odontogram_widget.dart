@@ -182,11 +182,11 @@ class _ToothTile extends StatelessWidget {
 
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       builder: (context) => _FaceActionSheet(
         toothNumber: number,
         surface: surface,
-        condition: existing.copyWith(surfaces: [surface]),
+        condition: existing,
         getSurfaceLabel: getSurfaceLabel,
         getConditionLabel: getConditionLabel,
         onSave: (updated) {
