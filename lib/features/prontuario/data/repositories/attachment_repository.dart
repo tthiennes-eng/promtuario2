@@ -25,8 +25,22 @@ class AttachmentRepository implements IAttachmentRepository {
   }
 
   @override
-  Future<void> uploadAttachment(Attachment attachment) async {
+  Future<Attachment> uploadAttachment(
+    String patientId,
+    File file,
+    AttachmentType type, {
+    String? description,
+  }) async {
+    final attachment = Attachment(
+      id: const Uuid().v4(),
+      patientId: patientId,
+      localPath: file.path,
+      type: type.name,
+      description: description,
+      createdAt: DateTime.now(),
+    );
     await _saveLocal(attachment);
+    return attachment;
   }
 
   @override

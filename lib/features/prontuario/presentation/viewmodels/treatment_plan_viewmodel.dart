@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:promt/features/prontuario/domain/entities/treatment_plan.dart';
 import 'package:promt/core/providers/providers.dart';
 import 'package:promt/features/auth/presentation/viewmodels/auth_viewmodel.dart';
@@ -15,9 +14,7 @@ class TreatmentPlanViewModel extends StateNotifier<AsyncValue<List<TreatmentPlan
 
   Future<void> _init() async {
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() => 
-      _ref.read(prontuarioRepositoryProvider).getTreatmentPlans(_patientId)
-    );
+    state = await AsyncValue.guard(() => _ref.read(prontuarioRepositoryProvider).getTreatmentPlans(_patientId));
   }
 
   Future<void> refresh() async => _init();
@@ -25,28 +22,23 @@ class TreatmentPlanViewModel extends StateNotifier<AsyncValue<List<TreatmentPlan
   Future<void> addItem(TreatmentItem item) async {
     final currentState = state.value ?? [];
     state = const AsyncValue.loading();
-    
+
     final result = await AsyncValue.guard(() async {
       final repo = _ref.read(prontuarioRepositoryProvider);
-      
+
       if (currentState.isEmpty) {
-        final authState = _ref.read(authViewModelProvider);
         final plan = TreatmentPlan(
           id: const Uuid().v4(),
           patientId: _patientId,
           description: 'Plano de tratamento',
           items: [item],
-          createdByUserId: authState.user?.id ?? 'system',
           status: TreatmentPlanStatus.draft,
           createdAt: DateTime.now(),
         );
         await repo.saveTreatmentPlan(plan);
       } else {
         final plan = currentState.first;
-        final updatedPlan = plan.copyWith(
-          items: [...plan.items, item],
-          updatedAt: DateTime.now(),
-        );
+        final updatedPlan = plan.copyWith(items: [...plan.items, item]);
         await repo.saveTreatmentPlan(updatedPlan);
       }
       return repo.getTreatmentPlans(_patientId);

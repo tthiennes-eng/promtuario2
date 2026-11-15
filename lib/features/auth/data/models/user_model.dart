@@ -1,22 +1,37 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../domain/entities/user.dart';
 
-part 'user_model.freezed.dart';
-part 'user_model.g.dart';
+class UserModel {
+  final String id;
+  final String name;
+  final String email;
+  final String role;
+  final bool isActive;
 
-@freezed
-class UserModel with _$UserModel {
-  const factory UserModel({
-    required String id,
-    required String name,
-    required String email,
-    required String role,
-    @Default(true) bool isActive,
-  }) = _UserModel;
+  const UserModel({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.role,
+    this.isActive = true,
+  });
 
-  const UserModel._();
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      email: json['email'] as String? ?? '',
+      role: json['role'] as String? ?? '',
+      isActive: json['isActive'] as bool? ?? true,
+    );
+  }
 
-  factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'email': email,
+        'role': role,
+        'isActive': isActive,
+      };
 
   User toEntity() {
     return User(
@@ -28,6 +43,22 @@ class UserModel with _$UserModel {
         orElse: () => UserRole.aluno,
       ),
       isActive: isActive,
+    );
+  }
+
+  UserModel copyWith({
+    String? id,
+    String? name,
+    String? email,
+    String? role,
+    bool? isActive,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      role: role ?? this.role,
+      isActive: isActive ?? this.isActive,
     );
   }
 }

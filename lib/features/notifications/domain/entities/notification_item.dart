@@ -1,27 +1,72 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
-
-part 'notification_item.freezed.dart';
-part 'notification_item.g.dart';
-
-@freezed
-class NotificationItem with _$NotificationItem {
-  const factory NotificationItem({
-    required String id,
-    required String title,
-    required String message,
-    required NotificationType type,
-    required DateTime timestamp,
-    @Default(false) bool isRead,
-    Map<String, dynamic>? data,
-  }) = _NotificationItem;
-
-  factory NotificationItem.fromJson(Map<String, dynamic> json) => _$NotificationItemFromJson(json);
+enum NotificationType {
+  appointmentReminder,
+  pendingSignature,
+  treatmentApproved,
+  systemAlert,
+  info,
 }
 
-enum NotificationType { 
-  appointmentReminder, 
-  pendingSignature, 
-  treatmentApproved, 
-  systemAlert,
-  info
+class NotificationItem {
+  final String id;
+  final String title;
+  final String message;
+  final NotificationType type;
+  final DateTime timestamp;
+  final bool isRead;
+  final Map<String, dynamic>? data;
+
+  const NotificationItem({
+    required this.id,
+    required this.title,
+    required this.message,
+    required this.type,
+    required this.timestamp,
+    this.isRead = false,
+    this.data,
+  });
+
+  factory NotificationItem.fromJson(Map<String, dynamic> json) {
+    return NotificationItem(
+      id: json['id'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      message: json['message'] as String? ?? '',
+      type: NotificationType.values.firstWhere(
+        (e) => e.name == (json['type'] as String? ?? NotificationType.info.name),
+        orElse: () => NotificationType.info,
+      ),
+      timestamp: json['timestamp'] != null ? DateTime.parse(json['timestamp']) : DateTime.now(),
+      isRead: json['isRead'] as bool? ?? false,
+      data: json['data'] as Map<String, dynamic>?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'message': message,
+        'type': type.name,
+        'timestamp': timestamp.toIso8601String(),
+        'isRead': isRead,
+        'data': data,
+      };
+
+  NotificationItem copyWith({
+    String? id,
+    String? title,
+    String? message,
+    NotificationType? type,
+    DateTime? timestamp,
+    bool? isRead,
+    Map<String, dynamic>? data,
+  }) {
+    return NotificationItem(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      message: message ?? this.message,
+      type: type ?? this.type,
+      timestamp: timestamp ?? this.timestamp,
+      isRead: isRead ?? this.isRead,
+      data: data ?? this.data,
+    );
+  }
 }
