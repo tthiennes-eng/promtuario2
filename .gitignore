@@ -1,5 +1,13 @@
 ```
 # Compiled and build artifacts
+.dart_tool/
+build/
+backend/**/bin/
+backend/**/obj/
+.flutter-plugins-dependencies
+analy*.txt
+analyzer*.txt
+errors.txt
 *.pyc
 __pycache__/
 *.o

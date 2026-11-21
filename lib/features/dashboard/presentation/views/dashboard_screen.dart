@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:promt/features/auth/domain/entities/user.dart';
 import 'package:promt/features/auth/presentation/viewmodels/auth_viewmodel.dart';
 import 'package:promt/features/dashboard/presentation/viewmodels/dashboard_viewmodel.dart';
+import 'package:promt/features/dashboard/domain/models/dashboard_summary.dart';
 import 'package:go_router/go_router.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -18,7 +19,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authViewModelProvider);
-    final dashboardAsync = ref.watch(dashboardViewModelProvider);
+    final dashboardAsync = ref.watch(dashboardSummaryProvider);
     final user = authState.user;
     final isDesktop = MediaQuery.of(context).size.width > 900;
 
@@ -55,7 +56,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 Expanded(
                   child: dashboardAsync.when(
                     data: (stats) => _buildContent(stats, user),
-                    loading: () => const Center(child: CircularProgressIndicator()),
+                    loading: () => const Center(child: SizedBox.square(dimension: 28, child: CircularProgressIndicator(strokeWidth: 3))),
                     error: (err, _) => _buildErrorState(err.toString()),
                   ),
                 ),
@@ -193,18 +194,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildContent(dynamic stats, User? user) {
+  Widget _buildContent(DashboardSummary stats, User? user) {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return RefreshIndicator(
-      onRefresh: () => ref.read(dashboardViewModelProvider.notifier).refresh(),
+      onRefresh: () async {
+        ref.invalidate(dashboardSummaryProvider);
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      },
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Olá, ${user?.name.split(' ').first ?? 'Bem-vindo'}!', 
+            Text(user?.name.isNotEmpty == true ? 'Olá, ${user!.name.split(' ').first}!' : 'Olá!', 
               style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF006494))),
             const Text('Resumo das atividades do dia.', style: TextStyle(color: Colors.grey)),
             const SizedBox(height: 24),
@@ -216,11 +220,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               crossAxisSpacing: 16,
               childAspectRatio: screenWidth > 800 ? 1.5 : 2.0,
               children: [
-                _buildStatCard('Pacientes', stats.totalPatients.toString(), Icons.group, Colors.blue),
-                _buildStatCard('Consultas', stats.appointmentsToday.toString(), Icons.event_note, Colors.green),
-                _buildStatCard('Atendimentos', stats.proceduresThisMonth.toString(), Icons.medical_information, Colors.orange),
-                _buildStatCard('Vagas/Ocupação', '${stats.bookedSlots}/${stats.totalCapacity}', Icons.pie_chart, Colors.purple),
-                _buildStatCard('Alertas (Alergia)', stats.pendingAlerts.toString(), Icons.warning_amber, Colors.red),
+                _buildStatCard('Pacientes', stats.totalPacientes.toString(), Icons.group, Colors.blue),
+                _buildStatCard('Consultas', stats.consultasHoje.toString(), Icons.event_note, Colors.green),
+                _buildStatCard('Atendimentos', stats.atendimentos.toString(), Icons.medical_information, Colors.orange),
+                _buildStatCard('Vagas/Ocupação', stats.vagasTotais == 0 ? '—' : '${stats.vagasOcupadas}/${stats.vagasTotais}', Icons.pie_chart, Colors.purple),
+                _buildStatCard('Alertas (Alergia)', stats.alertasAlergia.toString(), Icons.warning_amber, Colors.red),
               ],
             ),
             const SizedBox(height: 32),
@@ -257,13 +261,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               child: Icon(icon, color: color, size: 20),
             ),
             const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-              ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  ),
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -301,7 +317,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         children: [
           const Icon(Icons.error_outline, size: 48, color: Colors.red),
           Text('Erro: $message'),
-          TextButton(onPressed: () => ref.read(dashboardViewModelProvider.notifier).refresh(), child: const Text('Tentar Novamente')),
+          TextButton(onPressed: () => ref.invalidate(dashboardSummaryProvider), child: const Text('Tentar Novamente')),
         ],
       ),
     );

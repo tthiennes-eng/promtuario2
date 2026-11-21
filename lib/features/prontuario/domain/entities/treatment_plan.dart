@@ -5,6 +5,13 @@ enum TreatmentPlanStatus {
   canceled,
 }
 
+enum TreatmentItemStatus {
+  pending,
+  inProgress,
+  completed,
+  canceled,
+}
+
 class TreatmentPlan {
   final String id;
   final String patientId;
@@ -71,7 +78,7 @@ class TreatmentItem {
   final String procedureId;
   final String procedureName;
   final int? toothNumber;
-  final TreatmentPlanStatus status;
+  final TreatmentItemStatus status;
   final String? observation;
 
   const TreatmentItem({
@@ -89,9 +96,9 @@ class TreatmentItem {
       procedureId: json['procedureId'] as String? ?? '',
       procedureName: json['procedureName'] as String? ?? '',
       toothNumber: json['toothNumber'] as int?,
-      status: TreatmentPlanStatus.values.firstWhere(
-        (e) => e.name == (json['status'] as String? ?? 'draft'),
-        orElse: () => TreatmentPlanStatus.draft,
+      status: TreatmentItemStatus.values.firstWhere(
+        (e) => e.name == (json['status'] as String? ?? 'pending'),
+        orElse: () => TreatmentItemStatus.pending,
       ),
       observation: json['observation'] as String?,
     );
@@ -111,7 +118,7 @@ class TreatmentItem {
     String? procedureId,
     String? procedureName,
     int? toothNumber,
-    TreatmentPlanStatus? status,
+    TreatmentItemStatus? status,
     String? observation,
   }) {
     return TreatmentItem(

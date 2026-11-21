@@ -34,6 +34,15 @@ class AuditRepository implements IAuditRepository {
   }
 
   @override
+  Future<List<AuditLog>> getLogs({String? userId, String? action}) async {
+    final response = await _apiClient.instance.get('/audit', queryParameters: {
+      if (userId != null) 'userId': userId,
+      if (action != null) 'action': action,
+    });
+    final List<dynamic> data = response.data;
+    return data.map((json) => AuditLog.fromJson(json)).toList();
+  }
+
   Future<List<AuditLog>> getAuditLogs({String? resourceId, String? userId}) async {
     final response = await _apiClient.instance.get('/audit', queryParameters: {
       if (resourceId != null) 'resourceId': resourceId,

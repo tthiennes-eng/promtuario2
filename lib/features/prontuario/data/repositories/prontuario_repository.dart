@@ -100,9 +100,20 @@ class ProntuarioRepository implements IProntuarioRepository {
   Future<void> _saveLocalOdontogram(Odontogram odontogram, bool isSynced) async {
     final dynamic db = _localDb;
     await db.into(db.odontogramLocal).insertOnConflictUpdate(
-      OdontogramLocalCompanion(
+      drift_db.OdontogramLocalCompanion(
         patientId: Value(odontogram.patientId),
-        dataJson: Value(jsonEncode(odontogram.toJson())),
+        dataJson: Value(jsonEncode({
+          'id': odontogram.id,
+          'patientId': odontogram.patientId,
+          'teeth': odontogram.teeth.map((t) => {
+            'toothNumber': t.toothNumber,
+            'surfaces': t.surfaces.map((s) => s.name).toList(),
+            'condition': t.condition.name,
+            'observation': t.observation,
+          }).toList(),
+          'updatedAt': odontogram.updatedAt.toIso8601String(),
+          'updatedBy': odontogram.updatedBy,
+        })),
         lastUpdated: Value(DateTime.now()),
         isSynced: Value(isSynced),
       ),
@@ -129,7 +140,7 @@ class ProntuarioRepository implements IProntuarioRepository {
             
             await (db.update(db.odontogramLocal)
                   ..where((t) => (t as dynamic).patientId.equals((row as dynamic).patientId)))
-                .write(const OdontogramLocalCompanion(isSynced: Value(true)));
+                .write(drift_db.OdontogramLocalCompanion(isSynced: Value(true)));
           }
         } catch (_) {}
       }
@@ -202,9 +213,24 @@ class ProntuarioRepository implements IProntuarioRepository {
   Future<List<Anamnese>> getAnamneses(String patientId) async {
     try {
       final response = await _apiClient.instance.get('Prontuario/$patientId/anamnese');
-      if (response.data == null) return [];
-      return [Anamnese.fromJson(response.data)];
-    } catch (_) { return []; }
+      if (response.data != null) {
+        await _saveLocalAnamnese(patientId, response.data is Map
+            ? Map<String, dynamic>.from(response.data)
+            : <String, dynamic>{}, true);
+        return [Anamnese.fromJson(response.data)];
+      }
+    } catch (_) {}
+
+    final dynamic db = _localDb;
+    final local = await (db.select(db.anamneseLocal)
+          ..where((t) => (t as dynamic).patientId.equals(patientId)))
+        .getSingleOrNull();
+    if (local == null) return [];
+    try {
+      return [Anamnese.fromJson(jsonDecode((local as dynamic).responsesJson))];
+    } catch (_) {
+      return [];
+    }
   }
 
   @override
@@ -233,8 +259,28 @@ class ProntuarioRepository implements IProntuarioRepository {
     final results = await getAnamneses(id);
     return results.isNotEmpty ? results.first : null;
   }
-  @override Future<void> saveAnamnese(String id, Map<String, dynamic> r) async {
-    await _apiClient.instance.post('Prontuario/$id/anamnese', data: r);
+  @override
+  Future<void> saveAnamnese(String id, Map<String, dynamic> r) async {
+    await _saveLocalAnamnese(id, r, false);
+    try {
+      await _apiClient.instance.post('Prontuario/$id/anamnese', data: r);
+      await _saveLocalAnamnese(id, r, true);
+    } catch (_) {}
+  }
+
+  Future<void> _saveLocalAnamnese(
+    String patientId,
+    Map<String, dynamic> responses,
+    bool isSynced,
+  ) async {
+    await _localDb.into(_localDb.anamneseLocal).insertOnConflictUpdate(
+      drift_db.AnamneseLocalCompanion(
+        patientId: Value(patientId),
+        responsesJson: Value(jsonEncode(responses)),
+        lastUpdated: Value(DateTime.now()),
+        isSynced: Value(isSynced),
+      ),
+    );
   }
 
   @override
@@ -299,11 +345,11 @@ class ProntuarioRepository implements IProntuarioRepository {
   Future<void> _saveLocalPeri(String patientId, Map<String, dynamic> data) async {
     final dynamic db = _localDb;
     await db.into(db.odontogramLocal).insertOnConflictUpdate(
-      OdontogramLocalCompanion(
+      drift_db.OdontogramLocalCompanion(
         patientId: Value('peri_$patientId'),
         dataJson: Value(jsonEncode(data)),
         lastUpdated: Value(DateTime.now()),
-        isSynced: const Value(true),
+        isSynced: Value(true),
       ),
     );
   }
@@ -311,11 +357,11 @@ class ProntuarioRepository implements IProntuarioRepository {
   Future<void> _saveLocalEndo(String patientId, Map<String, dynamic> data) async {
     final dynamic db = _localDb;
     await db.into(db.odontogramLocal).insertOnConflictUpdate(
-      OdontogramLocalCompanion(
+      drift_db.OdontogramLocalCompanion(
         patientId: Value('endo_$patientId'),
         dataJson: Value(jsonEncode(data)),
         lastUpdated: Value(DateTime.now()),
-        isSynced: const Value(true),
+        isSynced: Value(true),
       ),
     );
   }

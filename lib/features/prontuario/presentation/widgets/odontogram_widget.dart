@@ -177,12 +177,16 @@ class _ToothTile extends StatelessWidget {
   void _showFaceEditor(BuildContext context, ToothSurface surface) {
     final existing = toothConditions.firstWhere(
       (c) => c.surfaces.contains(surface),
-      orElse: () => ToothCondition(toothNumber: number, surfaces: [surface], condition: ConditionType.healthy),
+      orElse: () => ToothCondition(
+        toothNumber: number,
+        surfaces: [surface],
+        condition: ConditionType.healthy,
+      ),
     );
 
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       builder: (context) => _FaceActionSheet(
         toothNumber: number,
         surface: surface,
@@ -249,7 +253,7 @@ class _FaceActionSheet extends StatefulWidget {
   final String Function(ConditionType) getConditionLabel;
   final Function(ToothCondition) onSave;
 
-  const _FaceActionSheet({required this.toothNumber, required this.surface, required this.condition, required this.onSave, required this.getSurfaceLabel, required this.getConditionLabel});
+  _FaceActionSheet({required this.toothNumber, required this.surface, required this.condition, required this.onSave, required this.getSurfaceLabel, required this.getConditionLabel});
 
   @override
   State<_FaceActionSheet> createState() => _FaceActionSheetState();

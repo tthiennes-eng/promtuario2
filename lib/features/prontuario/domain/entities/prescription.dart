@@ -41,17 +41,23 @@ class Prescription {
   final String patientId;
   final String clinicId;
   final List<PrescriptionItem> items;
+  final String doctorId;
+  final String doctorName;
   final String? observations;
   final DateTime createdAt;
 
-  const Prescription({
+  Prescription({
     required this.id,
     required this.patientId,
     required this.clinicId,
     required this.items,
+    required this.doctorId,
+    required this.doctorName,
     this.observations,
-    required this.createdAt,
-  });
+    DateTime? date,
+  }) : createdAt = date ?? DateTime.now();
+
+  DateTime get date => createdAt;
 
   factory Prescription.fromJson(Map<String, dynamic> json) {
     return Prescription(
@@ -61,8 +67,10 @@ class Prescription {
       items: (json['items'] as List<dynamic>? ?? [])
           .map((e) => PrescriptionItem.fromJson(Map<String, dynamic>.from(e)))
           .toList(),
+      doctorId: json['doctorId'] as String? ?? '',
+      doctorName: json['doctorName'] as String? ?? '',
       observations: json['observations'] as String?,
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+      date: json['date'] != null ? DateTime.parse(json['date']) : (json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null),
     );
   }
 
@@ -71,8 +79,10 @@ class Prescription {
         'patientId': patientId,
         'clinicId': clinicId,
         'items': items.map((e) => e.toJson()).toList(),
+        'doctorId': doctorId,
+        'doctorName': doctorName,
         'observations': observations,
-        'createdAt': createdAt.toIso8601String(),
+        'date': createdAt.toIso8601String(),
       };
 
   Prescription copyWith({
@@ -80,16 +90,20 @@ class Prescription {
     String? patientId,
     String? clinicId,
     List<PrescriptionItem>? items,
+    String? doctorId,
+    String? doctorName,
     String? observations,
-    DateTime? createdAt,
+    DateTime? date,
   }) {
     return Prescription(
       id: id ?? this.id,
       patientId: patientId ?? this.patientId,
       clinicId: clinicId ?? this.clinicId,
       items: items ?? this.items,
+      doctorId: doctorId ?? this.doctorId,
+      doctorName: doctorName ?? this.doctorName,
       observations: observations ?? this.observations,
-      createdAt: createdAt ?? this.createdAt,
+      date: date ?? createdAt,
     );
   }
 }
@@ -99,17 +113,23 @@ class MedicalCertificate {
   final String patientId;
   final String content;
   final int daysOfRest;
+  final String doctorId;
+  final String doctorName;
   final String? cid;
   final DateTime createdAt;
 
-  const MedicalCertificate({
+  MedicalCertificate({
     required this.id,
     required this.patientId,
     required this.content,
     required this.daysOfRest,
+    required this.doctorId,
+    required this.doctorName,
     this.cid,
-    required this.createdAt,
-  });
+    DateTime? date,
+  }) : createdAt = date ?? DateTime.now();
+
+  DateTime get date => createdAt;
 
   factory MedicalCertificate.fromJson(Map<String, dynamic> json) {
     return MedicalCertificate(
@@ -117,8 +137,10 @@ class MedicalCertificate {
       patientId: json['patientId'] as String? ?? '',
       content: json['content'] as String? ?? '',
       daysOfRest: json['daysOfRest'] as int? ?? 0,
+      doctorId: json['doctorId'] as String? ?? '',
+      doctorName: json['doctorName'] as String? ?? '',
       cid: json['cid'] as String?,
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+      date: json['date'] != null ? DateTime.parse(json['date']) : (json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null),
     );
   }
 
@@ -127,8 +149,10 @@ class MedicalCertificate {
         'patientId': patientId,
         'content': content,
         'daysOfRest': daysOfRest,
+        'doctorId': doctorId,
+        'doctorName': doctorName,
         'cid': cid,
-        'createdAt': createdAt.toIso8601String(),
+        'date': createdAt.toIso8601String(),
       };
 
   MedicalCertificate copyWith({
@@ -136,16 +160,20 @@ class MedicalCertificate {
     String? patientId,
     String? content,
     int? daysOfRest,
+    String? doctorId,
+    String? doctorName,
     String? cid,
-    DateTime? createdAt,
+    DateTime? date,
   }) {
     return MedicalCertificate(
       id: id ?? this.id,
       patientId: patientId ?? this.patientId,
       content: content ?? this.content,
       daysOfRest: daysOfRest ?? this.daysOfRest,
+      doctorId: doctorId ?? this.doctorId,
+      doctorName: doctorName ?? this.doctorName,
       cid: cid ?? this.cid,
-      createdAt: createdAt ?? this.createdAt,
+      date: date ?? createdAt,
     );
   }
 }

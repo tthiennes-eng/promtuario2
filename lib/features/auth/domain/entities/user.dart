@@ -23,10 +23,7 @@ class User {
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? '',
       email: json['email'] as String? ?? '',
-      role: UserRole.values.firstWhere(
-        (e) => e.name == (json['role'] as String? ?? 'aluno'),
-        orElse: () => UserRole.aluno,
-      ),
+      role: UserRole.parse(json['role'] as String?),
       isActive: json['isActive'] as bool? ?? true,
     );
   }
@@ -47,6 +44,19 @@ enum UserRole {
   @JsonValue('aluno') aluno,
   @JsonValue('recepcionista') recepcionista,
   @JsonValue('secretaria') secretaria;
+
+  static UserRole parse(String? value) {
+    final normalized = value?.trim().toLowerCase();
+    return switch (normalized) {
+      'admin' || 'administrator' || 'administrador' => UserRole.admin,
+      'coordenador' || 'coordinator' => UserRole.coordenador,
+      'professor' => UserRole.professor,
+      'aluno' || 'student' => UserRole.aluno,
+      'recepcionista' || 'receptionist' => UserRole.recepcionista,
+      'secretaria' || 'secretary' => UserRole.secretaria,
+      _ => UserRole.aluno,
+    };
+  }
 
   String get displayName {
     return switch (this) {

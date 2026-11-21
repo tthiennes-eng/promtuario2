@@ -49,7 +49,7 @@ class ClinicsViewModel extends StateNotifier<AsyncValue<List<Clinic>>> {
       id: const Uuid().v4(),
       name: name,
       description: description ?? '',
-      location: location,
+      location: location ?? '',
       capacity: capacity,
       startHour: startHour,
       endHour: endHour,

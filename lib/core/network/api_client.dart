@@ -13,7 +13,8 @@ final serverIpProvider = StateNotifierProvider<ServerIpNotifier, String>((ref) {
 class ServerIpNotifier extends StateNotifier<String> {
   final StorageService _storage;
 
-  static const defaultIp = '192.168.0.3';
+  // Alterado para localhost para facilitar o desenvolvimento no Windows
+  static const defaultIp = 'localhost';
 
   ServerIpNotifier(this._storage) : super(defaultIp) {
     _loadIp();
@@ -47,15 +48,19 @@ class ApiClient {
     String baseUrl;
     
     if (kIsWeb) {
-      // No Web o IP configurado é usado.
       baseUrl = 'http://$_serverIp:5000/api/';
     } else {
       switch (defaultTargetPlatform) {
         case TargetPlatform.android:
-          // Se for localhost (127.0.0.1) no Android emulador, usamos o alias 10.0.2.2.
-          // Se for um IP real da rede, usamos o IP configurado.
           if (_serverIp == 'localhost' || _serverIp == '127.0.0.1') {
             baseUrl = 'http://10.0.2.2:5000/api/';
+          } else {
+            baseUrl = 'http://$_serverIp:5000/api/';
+          }
+          break;
+        case TargetPlatform.windows:
+          if (_serverIp == 'localhost' || _serverIp == '127.0.0.1') {
+            baseUrl = 'http://localhost:5000/api/';
           } else {
             baseUrl = 'http://$_serverIp:5000/api/';
           }
@@ -77,23 +82,13 @@ class ApiClient {
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         final token = await _storage.getAccessToken();
-        if (kDebugMode) {
-          debugPrint('🔑 Token recuperado para ${options.path}: ${token != null ? 'SIM (${token.substring(0, 20)}...)' : 'NÃO'}');
-        }
         if (token != null && token.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $token';
-        } else {
-          if (kDebugMode) {
-            debugPrint('⚠️ Requisição ${options.path} enviada SEM token!');
-          }
         }
         return handler.next(options);
       },
       onError: (DioException e, handler) async {
         if (e.response?.statusCode == 401) {
-          if (kDebugMode) {
-            debugPrint('🚫 Erro 401 em ${e.requestOptions.path}. Tentando refresh...');
-          }
           final refreshToken = await _storage.getRefreshToken();
           if (refreshToken != null && refreshToken.isNotEmpty) {
             try {
@@ -109,15 +104,9 @@ class ApiClient {
                 return handler.resolve(response);
               }
             } catch (refreshError) {
-              if (kDebugMode) {
-                debugPrint('❌ Refresh falhou: $refreshError');
-              }
               await _storage.clearSession();
             }
           } else {
-            if (kDebugMode) {
-              debugPrint('⚠️ Sem refresh token disponível. Limpando sessão.');
-            }
             await _storage.clearSession();
           }
         }

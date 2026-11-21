@@ -63,8 +63,8 @@ final userManagementRepositoryProvider = Provider<IUserManagementRepository>((re
 });
 
 final dashboardRepositoryProvider = Provider<IDashboardRepository>((ref) {
-  final apiClient = ref.watch(apiClientProvider);
-  return DashboardRepository(apiClient);
+  final localDb = ref.watch(databaseProvider);
+  return DashboardRepository(localDb);
 });
 
 final attachmentRepositoryProvider = Provider<IAttachmentRepository>((ref) {

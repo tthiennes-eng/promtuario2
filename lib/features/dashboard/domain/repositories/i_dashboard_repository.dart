@@ -1,7 +1,7 @@
-import '../models/dashboard_stats_model.dart';
+import '../models/dashboard_summary.dart';
 
 /// Contrato para o Repositório de Dashboard e Estatísticas.
 abstract class IDashboardRepository {
-  /// Recupera as estatísticas resumidas para a tela inicial.
-  Future<DashboardStatsModel> getStats();
+  /// Observa os indicadores calculados a partir do banco local.
+  Stream<DashboardSummary> watchSummary();
 }

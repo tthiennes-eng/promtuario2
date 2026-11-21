@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:promt/features/prontuario/domain/entities/treatment_plan.dart';
 import 'package:promt/core/providers/providers.dart';
-import 'package:promt/features/auth/presentation/viewmodels/auth_viewmodel.dart';
 import 'package:uuid/uuid.dart';
 
 class TreatmentPlanViewModel extends StateNotifier<AsyncValue<List<TreatmentPlan>>> {

@@ -56,11 +56,10 @@ class _CertificateScreenState extends ConsumerState<CertificateScreen> {
           patientId: widget.patientId,
           doctorId: user.id,
           doctorName: user.name,
-          date: DateTime.now(),
           content: _contentController.text,
           daysOfRest: int.parse(_daysController.text),
           cid: _cidController.text,
-          clinicId: const Uuid().v4(),
+          date: DateTime.now(),
         );
 
         await ref

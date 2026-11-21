@@ -23,7 +23,7 @@ class Attachment {
   final String patientId;
   final String localPath;
   final String? remoteUrl;
-  final String type;
+  final AttachmentType type;
   final String? description;
   final DateTime createdAt;
   final bool isSynced;
@@ -39,13 +39,20 @@ class Attachment {
     this.isSynced = false,
   });
 
+  String get url => remoteUrl ?? localPath;
+  String get name => description ?? 'Anexo';
+  DateTime get date => createdAt;
+
   factory Attachment.fromJson(Map<String, dynamic> json) {
     return Attachment(
       id: json['id'] as String? ?? '',
       patientId: json['patientId'] as String? ?? '',
       localPath: json['localPath'] as String? ?? '',
       remoteUrl: json['remoteUrl'] as String?,
-      type: json['type'] as String? ?? '',
+      type: AttachmentType.values.firstWhere(
+        (e) => e.name == (json['type'] as String? ?? 'image'),
+        orElse: () => AttachmentType.image,
+      ),
       description: json['description'] as String?,
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
       isSynced: json['isSynced'] as bool? ?? false,
@@ -57,7 +64,7 @@ class Attachment {
         'patientId': patientId,
         'localPath': localPath,
         'remoteUrl': remoteUrl,
-        'type': type,
+        'type': type.name,
         'description': description,
         'createdAt': createdAt.toIso8601String(),
         'isSynced': isSynced,
@@ -68,7 +75,7 @@ class Attachment {
     String? patientId,
     String? localPath,
     String? remoteUrl,
-    String? type,
+    AttachmentType? type,
     String? description,
     DateTime? createdAt,
     bool? isSynced,

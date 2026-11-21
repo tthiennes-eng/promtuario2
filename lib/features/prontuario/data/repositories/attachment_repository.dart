@@ -4,6 +4,7 @@ import 'package:promt/core/network/api_client.dart';
 import 'package:promt/core/database/local_database.dart';
 import 'package:promt/features/prontuario/domain/entities/attachment.dart';
 import 'package:promt/features/prontuario/domain/repositories/i_attachment_repository.dart';
+import 'package:uuid/uuid.dart';
 
 class AttachmentRepository implements IAttachmentRepository {
   final ApiClient _apiClient;
@@ -35,7 +36,7 @@ class AttachmentRepository implements IAttachmentRepository {
       id: const Uuid().v4(),
       patientId: patientId,
       localPath: file.path,
-      type: type.name,
+      type: type,
       description: description,
       createdAt: DateTime.now(),
     );
@@ -64,7 +65,7 @@ class AttachmentRepository implements IAttachmentRepository {
           id: Value(attachment.id),
           patientId: Value(attachment.patientId),
           localPath: Value(attachment.localPath),
-          type: Value(attachment.type),
+          type: Value(attachment.type.name),
           description: Value(attachment.description),
           createdAt: Value(attachment.createdAt),
           isSynced: Value(attachment.isSynced),
@@ -76,12 +77,17 @@ class AttachmentRepository implements IAttachmentRepository {
   Attachment _mapSchemaToEntity(dynamic row) {
     final data = row.toJson();
     return Attachment(
-      id: data['id'],
-      patientId: data['patientId'],
-      localPath: data['localPath'],
-      type: data['type'],
-      createdAt: DateTime.parse(data['createdAt']),
-      isSynced: data['isSynced'] ?? false,
+      id: data['id'] as String,
+      patientId: data['patientId'] as String,
+      localPath: data['localPath'] as String,
+      remoteUrl: data['remoteUrl'] as String?,
+      type: AttachmentType.values.firstWhere(
+        (e) => e.name == (data['type'] as String? ?? 'image'),
+        orElse: () => AttachmentType.image,
+      ),
+      description: data['description'] as String?,
+      createdAt: DateTime.parse(data['createdAt'] as String),
+      isSynced: data['isSynced'] as bool? ?? false,
     );
   }
 }

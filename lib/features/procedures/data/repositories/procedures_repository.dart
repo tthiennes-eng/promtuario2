@@ -1,13 +1,14 @@
+import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:promt/core/network/api_client.dart';
-import 'package:promt/core/database/local_database.dart';
+import 'package:promt/core/database/local_database.dart' as drift_db;
 import 'package:promt/features/procedures/domain/entities/clinic.dart';
 import 'package:promt/features/procedures/domain/entities/procedure.dart';
 import 'package:promt/features/procedures/domain/repositories/i_procedures_repository.dart';
 
 class ProceduresRepository implements IProceduresRepository {
   final ApiClient _apiClient;
-  final AppDatabase _localDb;
+  final drift_db.AppDatabase _localDb;
 
   ProceduresRepository(this._apiClient, this._localDb);
 
@@ -21,13 +22,17 @@ class ProceduresRepository implements IProceduresRepository {
       final dynamic db = _localDb;
       for (var clinic in clinics) {
         await db.into(db.clinicsLocal).insertOnConflictUpdate(
-          drift_db.ClinicsLocalCompanion.insert(
-            id: clinic.id,
-            name: clinic.name,
+          drift_db.ClinicsLocalCompanion(
+            id: Value(clinic.id),
+            name: Value(clinic.name),
             description: Value(clinic.description),
             location: Value(clinic.location),
             capacity: Value(clinic.capacity),
             isActive: Value(clinic.isActive),
+            startHour: Value(clinic.startHour),
+            endHour: Value(clinic.endHour),
+            slotDurationMinutes: Value(clinic.slotDurationMinutes),
+            metadataJson: Value(clinic.metadata != null ? jsonEncode(clinic.metadata) : null),
           ),
         );
       }

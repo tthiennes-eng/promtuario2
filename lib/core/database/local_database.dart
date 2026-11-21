@@ -183,7 +183,17 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (migrator) => migrator.createAll(),
+    onUpgrade: (migrator, from, to) async {
+      // Reconcilia bancos antigos ou parcialmente inicializados.
+      // createAll é idempotente e não apaga registros das tabelas existentes.
+      await migrator.createAll();
+    },
+  );
 }
 
 QueryExecutor _openConnection() {
