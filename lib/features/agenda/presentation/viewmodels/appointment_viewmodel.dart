@@ -5,6 +5,7 @@ import 'package:promt/features/procedures/domain/entities/clinic.dart';
 import 'package:promt/core/providers/providers.dart';
 import 'package:promt/core/network/realtime_service.dart';
 import 'package:promt/features/patients/presentation/viewmodels/patient_viewmodel.dart';
+import 'package:promt/features/dashboard/presentation/viewmodels/dashboard_viewmodel.dart';
 
 enum AgendaDayPeriod { all, morning, afternoon, night }
 
@@ -198,14 +199,19 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
     'Clinica de Odontopediatria',
   ];
 
+  void _invalidateConsumers() {
+    ref.invalidate(allAppointmentsProvider);
+    ref.invalidate(dashboardSummaryProvider);
+  }
+
   void _initRealtime() {
     final realtime = ref.read(realtimeServiceProvider);
     realtime.on('AppointmentUpdated', (args) {
-      ref.invalidate(allAppointmentsProvider);
+      _invalidateConsumers();
       refresh();
     });
     realtime.on('AppointmentCreated', (args) {
-      ref.invalidate(allAppointmentsProvider);
+      _invalidateConsumers();
       refresh();
     });
   }
@@ -308,11 +314,27 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
   }
 
   Future<void> schedule(Appointment appointment) async {
-    await ref
+    final saved = await ref
         .read(appointmentRepositoryProvider)
         .scheduleAppointment(appointment);
-    // Invalida o provider de histórico global para que a lista de pacientes reflita a mudança na hora
-    ref.invalidate(allAppointmentsProvider);
+
+    final date = state.selectedDate;
+    final inSelectedDate =
+        saved.startTime.year == date.year &&
+        saved.startTime.month == date.month &&
+        saved.startTime.day == date.day;
+
+    final current = state.appointments.value ?? const <Appointment>[];
+    final merged = <String, Appointment>{
+      for (final item in current) item.id: item,
+      saved.id: saved,
+    }.values.toList()..sort((a, b) => a.startTime.compareTo(b.startTime));
+
+    if (inSelectedDate) {
+      state = state.copyWith(appointments: AsyncValue.data(merged));
+    }
+
+    _invalidateConsumers();
     await refresh();
   }
 
@@ -320,25 +342,25 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
     await ref
         .read(appointmentRepositoryProvider)
         .updateAppointmentStatus(id, status);
-    ref.invalidate(allAppointmentsProvider);
+    _invalidateConsumers();
     await refresh();
   }
 
   Future<void> registerArrival(String id) async {
     await ref.read(appointmentRepositoryProvider).registerArrival(id);
-    ref.invalidate(allAppointmentsProvider);
+    _invalidateConsumers();
     await refresh();
   }
 
   Future<void> registerStart(String id) async {
     await ref.read(appointmentRepositoryProvider).registerStart(id);
-    ref.invalidate(allAppointmentsProvider);
+    _invalidateConsumers();
     await refresh();
   }
 
   Future<void> registerFinish(String id) async {
     await ref.read(appointmentRepositoryProvider).registerFinish(id);
-    ref.invalidate(allAppointmentsProvider);
+    _invalidateConsumers();
     await refresh();
   }
 

@@ -33,7 +33,7 @@ class AppointmentRepository implements IAppointmentRepository {
       if (rawData is List) {
         data = rawData;
       } else if (rawData is Map) {
-        for (final key in const ['data', 'items', 'results']) {
+        for (final key in const ['data', 'items', 'results', 'appointment']) {
           final value = rawData[key];
           if (value is List) {
             data = value;
@@ -127,7 +127,7 @@ class AppointmentRepository implements IAppointmentRepository {
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (response.data is Map) {
           final responseMap = Map<String, dynamic>.from(response.data);
-          final nested = responseMap['data'];
+          final nested = responseMap['data'] ?? responseMap['appointment'];
           final appointmentJson = nested is Map
               ? Map<String, dynamic>.from(nested)
               : responseMap;
