@@ -7,7 +7,11 @@ class AnamneseScreen extends ConsumerStatefulWidget {
   final String patientId;
   final String patientName;
 
-  const AnamneseScreen({super.key, required this.patientId, required this.patientName});
+  const AnamneseScreen({
+    super.key,
+    required this.patientId,
+    required this.patientName,
+  });
 
   @override
   ConsumerState<AnamneseScreen> createState() => _AnamneseScreenState();
@@ -27,7 +31,7 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
     _data['posologia'] = "";
     _data['outrasInfo'] = "";
     _data['queixaPrincipal'] = "";
-    
+
     // Condições Sistêmicas
     _data['sistemico'] = {
       'cardiacos': {'sim': false, 'qual': ""},
@@ -65,7 +69,9 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
   @override
   Widget build(BuildContext context) {
     // Usando o provider de endodontia como um repositório genérico para fichas JSON
-    final endoAsync = ref.watch(endodontiaViewModelProvider("anamnese_${widget.patientId}"));
+    final endoAsync = ref.watch(
+      endodontiaViewModelProvider("anamnese_${widget.patientId}"),
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
@@ -95,27 +101,68 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
           children: [
             _buildSectionHeader("CABEÇALHO"),
             _buildInfoCard([
-              _buildTextField("Paciente", initial: widget.patientName, readOnly: true),
-              _buildTextField("Aluno(s)", onChanged: (v) => _data['aluno'] = v, initial: _data['aluno']),
+              _buildTextField(
+                "Paciente",
+                initial: widget.patientName,
+                readOnly: true,
+              ),
+              _buildTextField(
+                "Aluno(s)",
+                onChanged: (v) => _data['aluno'] = v,
+                initial: _data['aluno'],
+              ),
             ]),
 
-            _buildSectionHeader("HISTÓRIA MÉDICA (Preenchimento pelo Paciente)"),
+            _buildSectionHeader(
+              "HISTÓRIA MÉDICA (Preenchimento pelo Paciente)",
+            ),
             _buildInfoCard([
-              _buildTextField("Data do último exame médico", onChanged: (v) => _data['ultimoExameMedico'] = v, initial: _data['ultimoExameMedico']),
-              _buildTextField("Motivo", onChanged: (v) => _data['motivoExame'] = v, initial: _data['motivoExame']),
-              _buildTextField("Uso atual de medicamentos", onChanged: (v) => _data['medicamentosAtuais'] = v, initial: _data['medicamentosAtuais']),
-              _buildTextField("Posologia", onChanged: (v) => _data['posologia'] = v, initial: _data['posologia']),
+              _buildTextField(
+                "Data do último exame médico",
+                onChanged: (v) => _data['ultimoExameMedico'] = v,
+                initial: _data['ultimoExameMedico'],
+              ),
+              _buildTextField(
+                "Motivo",
+                onChanged: (v) => _data['motivoExame'] = v,
+                initial: _data['motivoExame'],
+              ),
+              _buildTextField(
+                "Uso atual de medicamentos",
+                onChanged: (v) => _data['medicamentosAtuais'] = v,
+                initial: _data['medicamentosAtuais'],
+              ),
+              _buildTextField(
+                "Posologia",
+                onChanged: (v) => _data['posologia'] = v,
+                initial: _data['posologia'],
+              ),
               const SizedBox(height: 16),
-              const Text("CONDIÇÕES SISTÊMICAS", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF006494))),
+              const Text(
+                "CONDIÇÕES SISTÊMICAS",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: Color(0xFF006494),
+                ),
+              ),
               const SizedBox(height: 8),
               _buildSistemicoGrid(),
               const SizedBox(height: 16),
-              _buildTextField("Outras informações importantes", onChanged: (v) => _data['outrasInfo'] = v, initial: _data['outrasInfo']),
+              _buildTextField(
+                "Outras informações importantes",
+                onChanged: (v) => _data['outrasInfo'] = v,
+                initial: _data['outrasInfo'],
+              ),
             ]),
 
             _buildSectionHeader("HISTÓRIA DENTAL (Preenchimento pelo Aluno)"),
             _buildInfoCard([
-              _buildTextField("Queixa principal (nas palavras do paciente)", onChanged: (v) => _data['queixaPrincipal'] = v, initial: _data['queixaPrincipal']),
+              _buildTextField(
+                "Queixa principal (nas palavras do paciente)",
+                onChanged: (v) => _data['queixaPrincipal'] = v,
+                initial: _data['queixaPrincipal'],
+              ),
               const SizedBox(height: 16),
               _buildDentalTable(),
             ]),
@@ -124,10 +171,16 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
             _buildInfoCard([
               _buildPainAnalysisTable(),
               const Divider(height: 32),
-              const Text("Provocada/aumentada por:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              const Text(
+                "Provocada/aumentada por:",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
               _buildProvocadaPorOptions(),
               const Divider(height: 32),
-              const Text("Quando inicia dura:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              const Text(
+                "Quando inicia dura:",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
               _buildDuracaoOptions(),
             ]),
 
@@ -166,16 +219,33 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+          ),
           Row(
             children: [
-              Checkbox(value: item['sim'], onChanged: (v) => setState(() => item['sim'] = v!)),
+              Checkbox(
+                value: item['sim'],
+                onChanged: (v) => setState(() => item['sim'] = v!),
+              ),
               const Text("Sim. Qual:", style: TextStyle(fontSize: 10)),
-              Expanded(child: TextFormField(initialValue: item['qual'], maxLines: 1, textInputAction: TextInputAction.done, style: const TextStyle(fontSize: 10), onChanged: (v) => item['qual'] = v)),
-              Checkbox(value: !item['sim'], onChanged: (v) => setState(() => item['sim'] = !v!)),
+              Expanded(
+                child: TextFormField(
+                  initialValue: item['qual'],
+                  maxLines: 1,
+                  textInputAction: TextInputAction.done,
+                  style: const TextStyle(fontSize: 10),
+                  onChanged: (v) => item['qual'] = v,
+                ),
+              ),
+              Checkbox(
+                value: !item['sim'],
+                onChanged: (v) => setState(() => item['sim'] = !v!),
+              ),
               const Text("Não", style: TextStyle(fontSize: 10)),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -186,10 +256,21 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
       width: 280,
       child: Row(
         children: [
-          Expanded(child: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
-          Checkbox(value: item['sim'], onChanged: (v) => setState(() => item['sim'] = v!)),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+            ),
+          ),
+          Checkbox(
+            value: item['sim'],
+            onChanged: (v) => setState(() => item['sim'] = v!),
+          ),
           const Text("Sim", style: TextStyle(fontSize: 10)),
-          Checkbox(value: !item['sim'], onChanged: (v) => setState(() => item['sim'] = !v!)),
+          Checkbox(
+            value: !item['sim'],
+            onChanged: (v) => setState(() => item['sim'] = !v!),
+          ),
           const Text("Não", style: TextStyle(fontSize: 10)),
         ],
       ),
@@ -202,18 +283,35 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("5. Pressão arterial", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+          const Text(
+            "5. Pressão arterial",
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+          ),
           Row(
             children: [
               const Text("Qual:", style: TextStyle(fontSize: 10)),
-              Expanded(child: TextFormField(initialValue: item['qual'], maxLines: 1, textInputAction: TextInputAction.done, style: const TextStyle(fontSize: 10), onChanged: (v) => item['qual'] = v)),
+              Expanded(
+                child: TextFormField(
+                  initialValue: item['qual'],
+                  maxLines: 1,
+                  textInputAction: TextInputAction.done,
+                  style: const TextStyle(fontSize: 10),
+                  onChanged: (v) => item['qual'] = v,
+                ),
+              ),
               const Text("Usa meds?", style: TextStyle(fontSize: 10)),
-              Checkbox(value: item['usaMeds'], onChanged: (v) => setState(() => item['usaMeds'] = v!)),
+              Checkbox(
+                value: item['usaMeds'],
+                onChanged: (v) => setState(() => item['usaMeds'] = v!),
+              ),
               const Text("S", style: TextStyle(fontSize: 10)),
-              Checkbox(value: !item['usaMeds'], onChanged: (v) => setState(() => item['usaMeds'] = !v!)),
+              Checkbox(
+                value: !item['usaMeds'],
+                onChanged: (v) => setState(() => item['usaMeds'] = !v!),
+              ),
               const Text("N", style: TextStyle(fontSize: 10)),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -225,16 +323,33 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("8. Diabetes", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+          const Text(
+            "8. Diabetes",
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+          ),
           Row(
             children: [
-              Checkbox(value: item['sim'], onChanged: (v) => setState(() => item['sim'] = v!)),
+              Checkbox(
+                value: item['sim'],
+                onChanged: (v) => setState(() => item['sim'] = v!),
+              ),
               const Text("Sim. Controlada?", style: TextStyle(fontSize: 10)),
-              Expanded(child: TextFormField(initialValue: item['controlada'], maxLines: 1, textInputAction: TextInputAction.done, style: const TextStyle(fontSize: 10), onChanged: (v) => item['controlada'] = v)),
-              Checkbox(value: !item['sim'], onChanged: (v) => setState(() => item['sim'] = !v!)),
+              Expanded(
+                child: TextFormField(
+                  initialValue: item['controlada'],
+                  maxLines: 1,
+                  textInputAction: TextInputAction.done,
+                  style: const TextStyle(fontSize: 10),
+                  onChanged: (v) => item['controlada'] = v,
+                ),
+              ),
+              Checkbox(
+                value: !item['sim'],
+                onChanged: (v) => setState(() => item['sim'] = !v!),
+              ),
               const Text("Não", style: TextStyle(fontSize: 10)),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -246,16 +361,33 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("9. Gravidez", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+          const Text(
+            "9. Gravidez",
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+          ),
           Row(
             children: [
-              Checkbox(value: item['sim'], onChanged: (v) => setState(() => item['sim'] = v!)),
+              Checkbox(
+                value: item['sim'],
+                onChanged: (v) => setState(() => item['sim'] = v!),
+              ),
               const Text("Sim. Mês:", style: TextStyle(fontSize: 10)),
-              Expanded(child: TextFormField(initialValue: item['mes'], maxLines: 1, textInputAction: TextInputAction.done, style: const TextStyle(fontSize: 10), onChanged: (v) => item['mes'] = v)),
-              Checkbox(value: !item['sim'], onChanged: (v) => setState(() => item['sim'] = !v!)),
+              Expanded(
+                child: TextFormField(
+                  initialValue: item['mes'],
+                  maxLines: 1,
+                  textInputAction: TextInputAction.done,
+                  style: const TextStyle(fontSize: 10),
+                  onChanged: (v) => item['mes'] = v,
+                ),
+              ),
+              Checkbox(
+                value: !item['sim'],
+                onChanged: (v) => setState(() => item['sim'] = !v!),
+              ),
               const Text("Não", style: TextStyle(fontSize: 10)),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -270,9 +402,21 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
         TableRow(
           decoration: BoxDecoration(color: Colors.grey.shade100),
           children: const [
-            Padding(padding: EdgeInsets.all(8), child: Text("PASSADA", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-            Padding(padding: EdgeInsets.all(8), child: Text("ATUAL", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-          ]
+            Padding(
+              padding: EdgeInsets.all(8),
+              child: Text(
+                "PASSADA",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.all(8),
+              child: Text(
+                "ATUAL",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+            ),
+          ],
         ),
         TableRow(
           children: [
@@ -281,10 +425,23 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Tratamento Anterior:", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                  const Text(
+                    "Tratamento Anterior:",
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
                   _buildSubField("Sim. Qual:", p['tratamentoAnterior'], 'qual'),
-                  _buildSubField("Há quanto tempo?", p['tratamentoAnterior'], 'tempo'),
-                  CheckboxListTile(dense: true, title: const Text("Não", style: TextStyle(fontSize: 10)), value: !p['tratamentoAnterior']['sim'], onChanged: (v) => setState(() => p['tratamentoAnterior']['sim'] = !v!)),
+                  _buildSubField(
+                    "Há quanto tempo?",
+                    p['tratamentoAnterior'],
+                    'tempo',
+                  ),
+                  CheckboxListTile(
+                    dense: true,
+                    title: const Text("Não", style: TextStyle(fontSize: 10)),
+                    value: !p['tratamentoAnterior']['sim'],
+                    onChanged: (v) =>
+                        setState(() => p['tratamentoAnterior']['sim'] = !v!),
+                  ),
                 ],
               ),
             ),
@@ -293,13 +450,22 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Tratamento Recente:", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                  const Text(
+                    "Tratamento Recente:",
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
                   _buildSubField("Sim. Qual:", a['tratamentoRecente'], 'qual'),
-                  CheckboxListTile(dense: true, title: const Text("Não", style: TextStyle(fontSize: 10)), value: !a['tratamentoRecente']['sim'], onChanged: (v) => setState(() => a['tratamentoRecente']['sim'] = !v!)),
+                  CheckboxListTile(
+                    dense: true,
+                    title: const Text("Não", style: TextStyle(fontSize: 10)),
+                    value: !a['tratamentoRecente']['sim'],
+                    onChanged: (v) =>
+                        setState(() => a['tratamentoRecente']['sim'] = !v!),
+                  ),
                 ],
               ),
             ),
-          ]
+          ],
         ),
         TableRow(
           children: [
@@ -308,10 +474,27 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Dor Pré-Tratamento Anterior:", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                  _buildSubField("Sim. Como era?", p['dorPreTratamento'], 'comoEra'),
-                  _buildSubField("Controlada?", p['dorPreTratamento'], 'controlada'),
-                  CheckboxListTile(dense: true, title: const Text("Não", style: TextStyle(fontSize: 10)), value: !p['dorPreTratamento']['sim'], onChanged: (v) => setState(() => p['dorPreTratamento']['sim'] = !v!)),
+                  const Text(
+                    "Dor Pré-Tratamento Anterior:",
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
+                  _buildSubField(
+                    "Sim. Como era?",
+                    p['dorPreTratamento'],
+                    'comoEra',
+                  ),
+                  _buildSubField(
+                    "Controlada?",
+                    p['dorPreTratamento'],
+                    'controlada',
+                  ),
+                  CheckboxListTile(
+                    dense: true,
+                    title: const Text("Não", style: TextStyle(fontSize: 10)),
+                    value: !p['dorPreTratamento']['sim'],
+                    onChanged: (v) =>
+                        setState(() => p['dorPreTratamento']['sim'] = !v!),
+                  ),
                 ],
               ),
             ),
@@ -320,14 +503,27 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Dor Após-Tratamento Atual:", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                  _buildSubField("Sim. Controlada com meds?", a['dorAposTratamento'], 'controladaMeds'),
-                  CheckboxListTile(dense: true, title: const Text("Não", style: TextStyle(fontSize: 10)), value: !a['dorAposTratamento']['sim'], onChanged: (v) => setState(() => a['dorAposTratamento']['sim'] = !v!)),
+                  const Text(
+                    "Dor Após-Tratamento Atual:",
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
+                  _buildSubField(
+                    "Sim. Controlada com meds?",
+                    a['dorAposTratamento'],
+                    'controladaMeds',
+                  ),
+                  CheckboxListTile(
+                    dense: true,
+                    title: const Text("Não", style: TextStyle(fontSize: 10)),
+                    value: !a['dorAposTratamento']['sim'],
+                    onChanged: (v) =>
+                        setState(() => a['dorAposTratamento']['sim'] = !v!),
+                  ),
                 ],
               ),
             ),
-          ]
-        )
+          ],
+        ),
       ],
     );
   }
@@ -335,10 +531,22 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
   Widget _buildSubField(String label, Map item, String key) {
     return Row(
       children: [
-        Checkbox(value: item['sim'], onChanged: (v) => setState(() => item['sim'] = v!)),
+        Checkbox(
+          value: item['sim'],
+          onChanged: (v) => setState(() => item['sim'] = v!),
+        ),
         Text(label, style: const TextStyle(fontSize: 10)),
         const SizedBox(width: 4),
-        Expanded(child: TextFormField(initialValue: item[key], maxLines: 1, textInputAction: TextInputAction.done, style: const TextStyle(fontSize: 10), onChanged: (v) => item[key] = v, decoration: const InputDecoration(isDense: true))),
+        Expanded(
+          child: TextFormField(
+            initialValue: item[key],
+            maxLines: 1,
+            textInputAction: TextInputAction.done,
+            style: const TextStyle(fontSize: 10),
+            onChanged: (v) => item[key] = v,
+            decoration: const InputDecoration(isDense: true),
+          ),
+        ),
       ],
     );
   }
@@ -349,26 +557,68 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
       runSpacing: 16,
       children: [
         _buildRadioGroup("Dor:", ["Presente", "Ausente"], _data, 'dor'),
-        _buildRadioGroup("Estímulo:", ["Provocada", "Espontânea"], _data, 'estimulo'),
-        _buildRadioGroup("Localização:", ["Localizada no dente", "Irradiada na face"], _data, 'localizacao'),
-        _buildRadioGroup("Frequência:", ["Contínua", "Intermitente"], _data, 'frequencia'),
-        _buildRadioGroup("Intensidade:", ["Aguda/Pulsátil", "Latente"], _data, 'intensidade'),
+        _buildRadioGroup(
+          "Estímulo:",
+          ["Provocada", "Espontânea"],
+          _data,
+          'estimulo',
+        ),
+        _buildRadioGroup(
+          "Localização:",
+          ["Localizada no dente", "Irradiada na face"],
+          _data,
+          'localizacao',
+        ),
+        _buildRadioGroup(
+          "Frequência:",
+          ["Contínua", "Intermitente"],
+          _data,
+          'frequencia',
+        ),
+        _buildRadioGroup(
+          "Intensidade:",
+          ["Aguda/Pulsátil", "Latente"],
+          _data,
+          'intensidade',
+        ),
       ],
     );
   }
 
-  Widget _buildRadioGroup(String label, List<String> opts, Map target, String key) {
+  Widget _buildRadioGroup(
+    String label,
+    List<String> opts,
+    Map target,
+    String key,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-        ...opts.map((o) => Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Radio(value: o, groupValue: target[key], onChanged: (v) => setState(() => target[key] = v)),
-            Text(o, style: const TextStyle(fontSize: 11)),
-          ],
-        )).toList(),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+        ),
+        ...opts
+            .map(
+              (o) => Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Radio(
+                    value: o,
+                    groupValue: target[key],
+                    onChanged: (v) => setState(() => target[key] = v),
+                  ),
+                  Text(
+                    o,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.visible,
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ],
+              ),
+            )
+            .toList(),
       ],
     );
   }
@@ -376,31 +626,60 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
   Widget _buildProvocadaPorOptions() {
     final list = ["Frio", "Calor", "Alimentos", "Mastigação", "Ar", "Decúbito"];
     return Wrap(
-      children: list.map((o) => SizedBox(
-        width: 120,
-        child: CheckboxListTile(
-          dense: true, title: Text(o, style: const TextStyle(fontSize: 11)),
-          value: (_data['provocadaPor'] as List).contains(o),
-          onChanged: (v) => setState(() {
-            v! ? _data['provocadaPor'].add(o) : _data['provocadaPor'].remove(o);
-          }),
-        ),
-      )).toList(),
+      spacing: 8,
+      children: list
+          .map(
+            (o) => SizedBox(
+              width: 150,
+              child: CheckboxListTile(
+                dense: true,
+                title: Text(
+                  o,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.visible,
+                  style: const TextStyle(fontSize: 11),
+                ),
+                value: (_data['provocadaPor'] as List).contains(o),
+                onChanged: (v) => setState(() {
+                  v!
+                      ? _data['provocadaPor'].add(o)
+                      : _data['provocadaPor'].remove(o);
+                }),
+              ),
+            ),
+          )
+          .toList(),
     );
   }
 
   Widget _buildDuracaoOptions() {
     final list = ["Dias", "Horas", "Minutos", "Segundos"];
     return Wrap(
-      children: list.map((o) => SizedBox(
-        width: 120,
-        child: Row(
-          children: [
-            Radio(value: o, groupValue: _data['duracao'], onChanged: (v) => setState(() => _data['duracao'] = v)),
-            Text(o, style: const TextStyle(fontSize: 11)),
-          ],
-        ),
-      )).toList(),
+      spacing: 8,
+      children: list
+          .map(
+            (o) => SizedBox(
+              width: 150,
+              child: Row(
+                children: [
+                  Radio(
+                    value: o,
+                    groupValue: _data['duracao'],
+                    onChanged: (v) => setState(() => _data['duracao'] = v),
+                  ),
+                  Text(
+                    o,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.visible,
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+          )
+          .toList(),
     );
   }
 
@@ -409,26 +688,93 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
       width: double.infinity,
       height: 56,
       child: FilledButton.icon(
-        style: FilledButton.styleFrom(backgroundColor: const Color(0xFF006494), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+        style: FilledButton.styleFrom(
+          backgroundColor: const Color(0xFF006494),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
         onPressed: () async {
-          await ref.read(endodontiaViewModelProvider("anamnese_${widget.patientId}").notifier).save(_data);
-          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Anamnese salva com sucesso!"), backgroundColor: Colors.green));
+          await ref
+              .read(
+                endodontiaViewModelProvider(
+                  "anamnese_${widget.patientId}",
+                ).notifier,
+              )
+              .save(_data);
+          if (mounted)
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Anamnese salva com sucesso!"),
+                backgroundColor: Colors.green,
+              ),
+            );
         },
         icon: const Icon(Icons.save),
-        label: const Text("SALVAR FICHA DE ANAMNESE", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        label: const Text(
+          "SALVAR FICHA DE ANAMNESE",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
       ),
     );
   }
 
   Widget _buildSectionHeader(String title) {
-    return Container(width: double.infinity, margin: const EdgeInsets.only(top: 24, bottom: 8), padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: const Color(0xFF2D3748), borderRadius: BorderRadius.circular(8)), child: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)));
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 24, bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2D3748),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        title,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+        ),
+      ),
+    );
   }
 
   Widget _buildInfoCard(List<Widget> children) {
-    return Card(elevation: 0, shape: RoundedRectangleBorder(side: BorderSide(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(12)), child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children)));
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        side: BorderSide(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: children,
+        ),
+      ),
+    );
   }
 
-  Widget _buildTextField(String label, {Function(String)? onChanged, String? initial, bool readOnly = false}) {
-    return Padding(padding: const EdgeInsets.only(bottom: 12), child: TextFormField(initialValue: initial, readOnly: readOnly, maxLines: 1, textInputAction: TextInputAction.done, decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()), onChanged: onChanged));
+  Widget _buildTextField(
+    String label, {
+    Function(String)? onChanged,
+    String? initial,
+    bool readOnly = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextFormField(
+        initialValue: initial,
+        readOnly: readOnly,
+        maxLines: 1,
+        textInputAction: TextInputAction.done,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
+        onChanged: onChanged,
+      ),
+    );
   }
 }
