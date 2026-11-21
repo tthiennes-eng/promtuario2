@@ -56,7 +56,8 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
                 const SizedBox(height: 16),
                 TextField(
                   controller: obsController,
-                  maxLines: 4,
+                  maxLines: 1,
+                  textInputAction: TextInputAction.done,
                   decoration: const InputDecoration(
                     labelText: 'Observações Técnicas', 
                     hintText: 'Descreva a necessidade do procedimento...',

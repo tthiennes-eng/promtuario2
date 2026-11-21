@@ -143,7 +143,8 @@ class EvolutionScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 TextField(
                   controller: controller,
-                  maxLines: 10,
+                  maxLines: 1,
+                  textInputAction: TextInputAction.done,
                   decoration: const InputDecoration(
                     hintText: 'Descreva detalhadamente o atendimento...',
                     border: OutlineInputBorder(),

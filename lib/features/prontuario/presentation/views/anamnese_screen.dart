@@ -110,12 +110,12 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
               const SizedBox(height: 8),
               _buildSistemicoGrid(),
               const SizedBox(height: 16),
-              _buildTextField("Outras informações importantes", maxLines: 2, onChanged: (v) => _data['outrasInfo'] = v, initial: _data['outrasInfo']),
+              _buildTextField("Outras informações importantes", onChanged: (v) => _data['outrasInfo'] = v, initial: _data['outrasInfo']),
             ]),
 
             _buildSectionHeader("HISTÓRIA DENTAL (Preenchimento pelo Aluno)"),
             _buildInfoCard([
-              _buildTextField("Queixa principal (nas palavras do paciente)", maxLines: 3, onChanged: (v) => _data['queixaPrincipal'] = v, initial: _data['queixaPrincipal']),
+              _buildTextField("Queixa principal (nas palavras do paciente)", onChanged: (v) => _data['queixaPrincipal'] = v, initial: _data['queixaPrincipal']),
               const SizedBox(height: 16),
               _buildDentalTable(),
             ]),
@@ -171,7 +171,7 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
             children: [
               Checkbox(value: item['sim'], onChanged: (v) => setState(() => item['sim'] = v!)),
               const Text("Sim. Qual:", style: TextStyle(fontSize: 10)),
-              Expanded(child: TextFormField(initialValue: item['qual'], style: const TextStyle(fontSize: 10), onChanged: (v) => item['qual'] = v)),
+              Expanded(child: TextFormField(initialValue: item['qual'], maxLines: 1, textInputAction: TextInputAction.done, style: const TextStyle(fontSize: 10), onChanged: (v) => item['qual'] = v)),
               Checkbox(value: !item['sim'], onChanged: (v) => setState(() => item['sim'] = !v!)),
               const Text("Não", style: TextStyle(fontSize: 10)),
             ],
@@ -206,7 +206,7 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
           Row(
             children: [
               const Text("Qual:", style: TextStyle(fontSize: 10)),
-              Expanded(child: TextFormField(initialValue: item['qual'], style: const TextStyle(fontSize: 10), onChanged: (v) => item['qual'] = v)),
+              Expanded(child: TextFormField(initialValue: item['qual'], maxLines: 1, textInputAction: TextInputAction.done, style: const TextStyle(fontSize: 10), onChanged: (v) => item['qual'] = v)),
               const Text("Usa meds?", style: TextStyle(fontSize: 10)),
               Checkbox(value: item['usaMeds'], onChanged: (v) => setState(() => item['usaMeds'] = v!)),
               const Text("S", style: TextStyle(fontSize: 10)),
@@ -230,7 +230,7 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
             children: [
               Checkbox(value: item['sim'], onChanged: (v) => setState(() => item['sim'] = v!)),
               const Text("Sim. Controlada?", style: TextStyle(fontSize: 10)),
-              Expanded(child: TextFormField(initialValue: item['controlada'], style: const TextStyle(fontSize: 10), onChanged: (v) => item['controlada'] = v)),
+              Expanded(child: TextFormField(initialValue: item['controlada'], maxLines: 1, textInputAction: TextInputAction.done, style: const TextStyle(fontSize: 10), onChanged: (v) => item['controlada'] = v)),
               Checkbox(value: !item['sim'], onChanged: (v) => setState(() => item['sim'] = !v!)),
               const Text("Não", style: TextStyle(fontSize: 10)),
             ],
@@ -251,7 +251,7 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
             children: [
               Checkbox(value: item['sim'], onChanged: (v) => setState(() => item['sim'] = v!)),
               const Text("Sim. Mês:", style: TextStyle(fontSize: 10)),
-              Expanded(child: TextFormField(initialValue: item['mes'], style: const TextStyle(fontSize: 10), onChanged: (v) => item['mes'] = v)),
+              Expanded(child: TextFormField(initialValue: item['mes'], maxLines: 1, textInputAction: TextInputAction.done, style: const TextStyle(fontSize: 10), onChanged: (v) => item['mes'] = v)),
               Checkbox(value: !item['sim'], onChanged: (v) => setState(() => item['sim'] = !v!)),
               const Text("Não", style: TextStyle(fontSize: 10)),
             ],
@@ -338,7 +338,7 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
         Checkbox(value: item['sim'], onChanged: (v) => setState(() => item['sim'] = v!)),
         Text(label, style: const TextStyle(fontSize: 10)),
         const SizedBox(width: 4),
-        Expanded(child: TextFormField(initialValue: item[key], style: const TextStyle(fontSize: 10), onChanged: (v) => item[key] = v, decoration: const InputDecoration(isDense: true))),
+        Expanded(child: TextFormField(initialValue: item[key], maxLines: 1, textInputAction: TextInputAction.done, style: const TextStyle(fontSize: 10), onChanged: (v) => item[key] = v, decoration: const InputDecoration(isDense: true))),
       ],
     );
   }
@@ -428,7 +428,7 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
     return Card(elevation: 0, shape: RoundedRectangleBorder(side: BorderSide(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(12)), child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children)));
   }
 
-  Widget _buildTextField(String label, {int maxLines = 1, Function(String)? onChanged, String? initial, bool readOnly = false}) {
-    return Padding(padding: const EdgeInsets.only(bottom: 12), child: TextFormField(initialValue: initial, readOnly: readOnly, maxLines: maxLines, decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()), onChanged: onChanged));
+  Widget _buildTextField(String label, {Function(String)? onChanged, String? initial, bool readOnly = false}) {
+    return Padding(padding: const EdgeInsets.only(bottom: 12), child: TextFormField(initialValue: initial, readOnly: readOnly, maxLines: 1, textInputAction: TextInputAction.done, decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()), onChanged: onChanged));
   }
 }

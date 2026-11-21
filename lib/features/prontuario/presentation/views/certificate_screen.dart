@@ -99,7 +99,8 @@ class _CertificateScreenState extends ConsumerState<CertificateScreen> {
               const SizedBox(height: 24),
               TextFormField(
                 controller: _contentController,
-                maxLines: 8,
+                maxLines: 1,
+                textInputAction: TextInputAction.done,
                 decoration: const InputDecoration(labelText: 'Texto do Atestado', border: OutlineInputBorder()),
                 validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
               ),

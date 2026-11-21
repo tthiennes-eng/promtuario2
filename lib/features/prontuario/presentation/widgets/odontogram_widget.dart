@@ -290,7 +290,7 @@ class _FaceActionSheetState extends State<_FaceActionSheet> {
             decoration: const InputDecoration(labelText: 'Condição Clínica', border: OutlineInputBorder()),
           ),
           const SizedBox(height: 16),
-          TextField(controller: _obs, decoration: const InputDecoration(labelText: 'Observação da Face', border: OutlineInputBorder(), hintText: 'Opcional'), maxLines: 2),
+          TextField(controller: _obs, maxLines: 1, textInputAction: TextInputAction.done, decoration: const InputDecoration(labelText: 'Observação da Face', border: OutlineInputBorder(), hintText: 'Opcional')),
           const SizedBox(height: 32),
           SizedBox(width: double.infinity, height: 50, child: FilledButton(style: FilledButton.styleFrom(backgroundColor: const Color(0xFF006494)), onPressed: () => widget.onSave(widget.condition.copyWith(condition: _type, observation: _obs.text)), child: const Text('SALVAR ALTERAÇÃO', style: TextStyle(fontWeight: FontWeight.bold)))),
         ],

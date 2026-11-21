@@ -160,7 +160,8 @@ class _PrescriptionScreenState extends ConsumerState<PrescriptionScreen> {
               const SizedBox(height: 24),
               TextFormField(
                 controller: _observationsController,
-                maxLines: 3,
+                maxLines: 1,
+                textInputAction: TextInputAction.done,
                 decoration: const InputDecoration(
                   labelText: 'Observações Adicionais',
                   border: OutlineInputBorder(),
