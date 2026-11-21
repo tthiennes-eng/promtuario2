@@ -215,16 +215,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: screenWidth > 1200 ? 5 : (screenWidth > 800 ? 3 : 2),
+              crossAxisCount: screenWidth > 800 ? 3 : 2,
               mainAxisSpacing: 16,
               crossAxisSpacing: 16,
               childAspectRatio: screenWidth > 800 ? 1.5 : 2.0,
               children: [
                 _buildStatCard('Pacientes', stats.totalPacientes.toString(), Icons.group, Colors.blue),
-                _buildStatCard('Consultas', stats.consultasHoje.toString(), Icons.event_note, Colors.green),
+                _buildStatCard('Agendamentos hoje', stats.agendamentosHoje.toString(), Icons.event_note, Colors.green),
                 _buildStatCard('Atendimentos', stats.atendimentos.toString(), Icons.medical_information, Colors.orange),
-                _buildStatCard('Vagas/Ocupação', stats.vagasTotais == 0 ? '—' : '${stats.vagasOcupadas}/${stats.vagasTotais}', Icons.pie_chart, Colors.purple),
-                _buildStatCard('Alertas (Alergia)', stats.alertasAlergia.toString(), Icons.warning_amber, Colors.red),
               ],
             ),
             const SizedBox(height: 32),

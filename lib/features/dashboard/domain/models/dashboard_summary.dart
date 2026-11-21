@@ -6,10 +6,7 @@ part 'dashboard_summary.freezed.dart';
 abstract class DashboardSummary with _$DashboardSummary {
   const factory DashboardSummary({
     required int totalPacientes,
-    required int consultasHoje,
+    required int agendamentosHoje,
     required int atendimentos,
-    required int vagasOcupadas,
-    required int vagasTotais,
-    required int alertasAlergia,
   }) = _DashboardSummary;
 }
