@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 import 'package:promt/core/network/api_client.dart';
 import 'package:promt/core/database/local_database.dart';
@@ -121,7 +122,19 @@ class AppointmentRepository implements IAppointmentRepository {
     try {
       final response = await _apiClient.instance.post(
         '/appointments',
-        data: appointment.toJson(),
+        data: {
+          'patientId': appointment.patientId,
+          'doctorId': appointment.doctorId,
+          'clinicId': appointment.clinicId,
+          'startTime': appointment.startTime.toIso8601String(),
+          'endTime': appointment.endTime.toIso8601String(),
+          'procedureName': appointment.procedureName,
+          'notes': appointment.notes,
+          'studentId': appointment.studentId,
+          'studentName': appointment.studentName,
+          'professorId': appointment.professorId,
+          'professorName': appointment.professorName,
+        },
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -143,8 +156,19 @@ class AppointmentRepository implements IAppointmentRepository {
       }
     } catch (e) {
       _logger.severe('Erro no agendamento remoto: $e');
+      if (e is DioException) {
+        final data = e.response?.data;
+        final message = data is Map
+            ? (data['message'] ??
+                  data['title'] ??
+                  data['error'] ??
+                  'Falha ao salvar no servidor')
+            : (data?.toString() ?? 'Falha ao salvar no servidor');
+        throw Exception(message.toString());
+      }
+      throw Exception('Falha ao salvar o agendamento no servidor');
     }
-    return appointment;
+    throw Exception('O servidor não confirmou o agendamento');
   }
 
   @override
@@ -192,7 +216,19 @@ class AppointmentRepository implements IAppointmentRepository {
           final appointment = _mapSchemaToEntity(row);
           final response = await _apiClient.instance.post(
             '/appointments',
-            data: appointment.toJson(),
+            data: {
+              'patientId': appointment.patientId,
+              'doctorId': appointment.doctorId,
+              'clinicId': appointment.clinicId,
+              'startTime': appointment.startTime.toIso8601String(),
+              'endTime': appointment.endTime.toIso8601String(),
+              'procedureName': appointment.procedureName,
+              'notes': appointment.notes,
+              'studentId': appointment.studentId,
+              'studentName': appointment.studentName,
+              'professorId': appointment.professorId,
+              'professorName': appointment.professorName,
+            },
           );
 
           if (response.statusCode == 200 || response.statusCode == 201) {
@@ -330,7 +366,9 @@ class AppointmentRepository implements IAppointmentRepository {
       doctorId: nestedId(json['doctorId']) ?? nestedId(json['doctor']) ?? '',
       doctorName:
           json['doctorName']?.toString() ??
-          nestedName(json['doctor']).replaceAll('Paciente não informado', 'Não informado'),
+          nestedName(
+            json['doctor'],
+          ).replaceAll('Paciente não informado', 'Não informado'),
       studentId: json['studentId']?.toString(),
       studentName: json['studentName']?.toString(),
       professorId: json['professorId']?.toString(),

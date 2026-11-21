@@ -15,15 +15,21 @@ public class AppointmentsController : ControllerBase
 {
     private readonly IAppointmentRepository _appointmentRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IPatientRepository _patientRepository;
+    private readonly IClinicRepository _clinicRepository;
     private readonly ILogger<AppointmentsController> _logger;
 
     public AppointmentsController(
         IAppointmentRepository appointmentRepository,
         IUserRepository userRepository,
+        IPatientRepository patientRepository,
+        IClinicRepository clinicRepository,
         ILogger<AppointmentsController> logger)
     {
         _appointmentRepository = appointmentRepository;
         _userRepository = userRepository;
+        _patientRepository = patientRepository;
+        _clinicRepository = clinicRepository;
         _logger = logger;
     }
 
@@ -47,6 +53,12 @@ public class AppointmentsController : ControllerBase
             return BadRequest("Paciente e clínica devem possuir IDs válidos.");
         if (request.EndTime <= request.StartTime)
             return BadRequest("O horário de término deve ser posterior ao início.");
+        if (await _patientRepository.GetByIdAsync(request.PatientId) == null)
+            return BadRequest("O paciente selecionado não existe no servidor.");
+
+        var occupied = await _appointmentRepository.GetByRangeAsync(request.StartTime, request.EndTime, request.ClinicId);
+        if (occupied.Any(a => a.StartTime < request.EndTime && a.EndTime > request.StartTime))
+            return Conflict("Já existe um agendamento nesse horário para esta clínica.");
 
         var doctorId = request.DoctorId ?? request.ProfessorId ?? request.StudentId ?? Guid.Empty;
         if (doctorId != Guid.Empty)
@@ -133,6 +145,13 @@ public class AppointmentsController : ControllerBase
     {
         var appointment = await _appointmentRepository.GetByIdAsync(id);
         if (appointment == null) return NotFound();
+
+        if (request.EndTime <= request.StartTime)
+            return BadRequest("O horário de término deve ser posterior ao início.");
+
+        var occupied = await _appointmentRepository.GetByRangeAsync(request.StartTime, request.EndTime, appointment.ClinicId);
+        if (occupied.Any(a => a.Id != id && a.StartTime < request.EndTime && a.EndTime > request.StartTime))
+            return Conflict("Já existe um agendamento nesse horário para esta clínica.");
 
         appointment.Reschedule(request.StartTime, request.EndTime);
         await _appointmentRepository.UpdateAsync(appointment);
