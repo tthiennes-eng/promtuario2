@@ -415,9 +415,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               final now = DateTime.now();
               final startOfDay = DateTime(now.year, now.month, now.day);
               final endOfDay = startOfDay.add(const Duration(days: 1));
-              final todayAppointments = snapshot.data!.where((appointment) {
-                return !appointment.startTime.isBefore(startOfDay) &&
+              final todayAppointments = (snapshot.data ?? []).where((
+                appointment,
+              ) {
+                final isToday =
+                    !appointment.startTime.isBefore(startOfDay) &&
                     appointment.startTime.isBefore(endOfDay);
+                final isCancelled =
+                    appointment.status == AppointmentStatus.cancelled ||
+                    appointment.status == AppointmentStatus.noShow ||
+                    appointment.status == AppointmentStatus.missed;
+                return isToday && !isCancelled;
               }).toList()..sort((a, b) => a.startTime.compareTo(b.startTime));
 
               if (todayAppointments.isEmpty) {

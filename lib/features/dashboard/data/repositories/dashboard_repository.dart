@@ -27,9 +27,15 @@ class DashboardRepository implements IDashboardRepository {
       onListen: () {
         emitSummary();
         final db = _localDb;
-        subscriptions.add(db.select(db.patientsLocal).watch().listen((_) => emitSummary()));
-        subscriptions.add(db.select(db.appointmentsLocal).watch().listen((_) => emitSummary()));
-        subscriptions.add(db.select(db.evolutionsLocal).watch().listen((_) => emitSummary()));
+        subscriptions.add(
+          db.select(db.patientsLocal).watch().listen((_) => emitSummary()),
+        );
+        subscriptions.add(
+          db.select(db.appointmentsLocal).watch().listen((_) => emitSummary()),
+        );
+        subscriptions.add(
+          db.select(db.evolutionsLocal).watch().listen((_) => emitSummary()),
+        );
       },
       onCancel: () async {
         for (final subscription in subscriptions) {
@@ -52,10 +58,15 @@ class DashboardRepository implements IDashboardRepository {
 
     final appointmentRows = await db.select(db.appointmentsLocal).get();
     final agendamentosHoje = appointmentRows.where((row) {
-      return !row.startTime.isBefore(startOfDay) &&
+      final isToday =
+          !row.startTime.isBefore(startOfDay) &&
           row.startTime.isBefore(endOfDay);
+      final isCancelled =
+          row.status == 'cancelled' ||
+          row.status == 'noShow' ||
+          row.status == 'missed';
+      return isToday && !isCancelled;
     }).length;
-
 
     final evolutionRows = await db.select(db.evolutionsLocal).get();
     final startOfNextMonth = DateTime(now.year, now.month + 1);

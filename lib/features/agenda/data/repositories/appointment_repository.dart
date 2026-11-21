@@ -19,18 +19,36 @@ class AppointmentRepository implements IAppointmentRepository {
     String? clinicId,
   }) async {
     try {
-      final response = await _apiClient.instance.get('/appointments', queryParameters: {
-        'start': start.toIso8601String(),
-        'end': end.toIso8601String(),
-        if (clinicId != null) 'clinicId': clinicId,
-      });
+      final response = await _apiClient.instance.get(
+        '/appointments',
+        queryParameters: {
+          'start': start.toIso8601String(),
+          'end': end.toIso8601String(),
+          if (clinicId != null) 'clinicId': clinicId,
+        },
+      );
 
-      final data = response.data is List ? response.data as List : const [];
+      final rawData = response.data;
+      List<dynamic> data = const [];
+      if (rawData is List) {
+        data = rawData;
+      } else if (rawData is Map) {
+        for (final key in const ['data', 'items', 'results']) {
+          final value = rawData[key];
+          if (value is List) {
+            data = value;
+            break;
+          }
+        }
+      }
+
       final remoteAppointments = <Appointment>[];
       for (final item in data) {
         if (item is Map) {
           try {
-            remoteAppointments.add(_appointmentFromJson(Map<String, dynamic>.from(item)));
+            remoteAppointments.add(
+              _appointmentFromJson(Map<String, dynamic>.from(item)),
+            );
           } catch (e) {
             _logger.warning('Agendamento remoto inválido ignorado: $e');
           }
@@ -39,12 +57,42 @@ class AppointmentRepository implements IAppointmentRepository {
 
       await _updateLocalCache(remoteAppointments);
 
-      return remoteAppointments.where((appointment) {
-        final inRange = !appointment.startTime.isBefore(start) &&
-            !appointment.startTime.isAfter(end);
-        final inClinic = clinicId == null || appointment.clinicId == clinicId;
-        return inRange && inClinic;
-      }).toList();
+      final dynamic db = _localDb;
+      final localQuery = db.select(db.appointmentsLocal);
+      localQuery.where((table) {
+        var expression = (table as dynamic).startTime.isBetweenValues(
+          start,
+          end,
+        );
+        if (clinicId != null) {
+          expression =
+              expression & (table as dynamic).clinicId.equals(clinicId);
+        }
+        return expression;
+      });
+
+      final localResults = await localQuery.get() as List;
+      final localAppointments = localResults
+          .map((row) => _mapSchemaToEntity(row))
+          .toList();
+
+      final merged =
+          <String, Appointment>{
+              for (final appointment in localAppointments)
+                appointment.id: appointment,
+              for (final appointment in remoteAppointments)
+                appointment.id: appointment,
+            }.values.where((appointment) {
+              final inRange =
+                  !appointment.startTime.isBefore(start) &&
+                  !appointment.startTime.isAfter(end);
+              final inClinic =
+                  clinicId == null || appointment.clinicId == clinicId;
+              return inRange && inClinic;
+            }).toList()
+            ..sort((a, b) => a.startTime.compareTo(b.startTime));
+
+      return merged;
     } catch (e) {
       _logger.warning('Falha ao buscar agendamentos remotos: $e');
     }
@@ -75,12 +123,20 @@ class AppointmentRepository implements IAppointmentRepository {
         '/appointments',
         data: appointment.toJson(),
       );
-      
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (response.data is Map) {
-          final newAppointment = _appointmentFromJson(Map<String, dynamic>.from(response.data));
-          await _saveLocal(newAppointment, true);
-          return newAppointment;
+          final responseMap = Map<String, dynamic>.from(response.data);
+          final nested = responseMap['data'];
+          final appointmentJson = nested is Map
+              ? Map<String, dynamic>.from(nested)
+              : responseMap;
+          if (appointmentJson['id'] != null &&
+              appointmentJson['startTime'] != null) {
+            final newAppointment = _appointmentFromJson(appointmentJson);
+            await _saveLocal(newAppointment, true);
+            return newAppointment;
+          }
         }
         await _saveLocal(appointment, true);
         return appointment;
@@ -92,7 +148,10 @@ class AppointmentRepository implements IAppointmentRepository {
   }
 
   @override
-  Future<void> updateAppointmentStatus(String id, AppointmentStatus status) async {
+  Future<void> updateAppointmentStatus(
+    String id,
+    AppointmentStatus status,
+  ) async {
     try {
       await _apiClient.instance.patch(
         '/appointments/$id/status',
@@ -124,9 +183,9 @@ class AppointmentRepository implements IAppointmentRepository {
   Future<void> syncAppointments() async {
     final dynamic db = _localDb;
     try {
-      final unsynced = await (db.select(db.appointmentsLocal)
-            ..where((t) => (t as dynamic).isSynced.equals(false)))
-          .get();
+      final unsynced = await (db.select(
+        db.appointmentsLocal,
+      )..where((t) => (t as dynamic).isSynced.equals(false))).get();
 
       for (final row in (unsynced as List)) {
         try {
@@ -135,7 +194,7 @@ class AppointmentRepository implements IAppointmentRepository {
             '/appointments',
             data: appointment.toJson(),
           );
-          
+
           if (response.statusCode == 200 || response.statusCode == 201) {
             await (db.update(db.appointmentsLocal)
                   ..where((t) => (t as dynamic).id.equals((row as dynamic).id)))
@@ -147,7 +206,11 @@ class AppointmentRepository implements IAppointmentRepository {
   }
 
   @override
-  Future<void> rescheduleAppointment(String id, DateTime newStart, DateTime newEnd) async {
+  Future<void> rescheduleAppointment(
+    String id,
+    DateTime newStart,
+    DateTime newEnd,
+  ) async {
     await _apiClient.instance.put(
       '/appointments/$id/reschedule',
       data: {
@@ -157,41 +220,49 @@ class AppointmentRepository implements IAppointmentRepository {
     );
   }
 
-  Future<void> _updateLocalStatus(String id, AppointmentStatus status, bool isSynced) async {
+  Future<void> _updateLocalStatus(
+    String id,
+    AppointmentStatus status,
+    bool isSynced,
+  ) async {
     final dynamic db = _localDb;
     try {
-      await (db.update(db.appointmentsLocal)
-            ..where((t) => (t as dynamic).id.equals(id)))
-          .write(AppointmentsLocalCompanion(
-            status: Value(status.name),
-            isSynced: Value(isSynced),
-          ));
+      await (db.update(
+        db.appointmentsLocal,
+      )..where((t) => (t as dynamic).id.equals(id))).write(
+        AppointmentsLocalCompanion(
+          status: Value(status.name),
+          isSynced: Value(isSynced),
+        ),
+      );
     } catch (_) {}
   }
 
   Future<void> _saveLocal(Appointment app, bool isSynced) async {
     final dynamic db = _localDb;
     try {
-      await db.into(db.appointmentsLocal).insertOnConflictUpdate(
-        AppointmentsLocalCompanion(
-          id: Value(app.id),
-          patientId: Value(app.patientId),
-          patientName: Value(app.patientName),
-          doctorId: Value(app.doctorId),
-          doctorName: Value(app.doctorName),
-          studentId: Value(app.studentId),
-          studentName: Value(app.studentName),
-          professorId: Value(app.professorId),
-          professorName: Value(app.professorName),
-          startTime: Value(app.startTime),
-          endTime: Value(app.endTime),
-          status: Value(app.status.name),
-          procedureName: Value(app.procedureName),
-          notes: Value(app.notes),
-          clinicId: Value(app.clinicId),
-          isSynced: Value(isSynced),
-        ),
-      );
+      await db
+          .into(db.appointmentsLocal)
+          .insertOnConflictUpdate(
+            AppointmentsLocalCompanion(
+              id: Value(app.id),
+              patientId: Value(app.patientId),
+              patientName: Value(app.patientName),
+              doctorId: Value(app.doctorId),
+              doctorName: Value(app.doctorName),
+              studentId: Value(app.studentId),
+              studentName: Value(app.studentName),
+              professorId: Value(app.professorId),
+              professorName: Value(app.professorName),
+              startTime: Value(app.startTime),
+              endTime: Value(app.endTime),
+              status: Value(app.status.name),
+              procedureName: Value(app.procedureName),
+              notes: Value(app.notes),
+              clinicId: Value(app.clinicId),
+              isSynced: Value(isSynced),
+            ),
+          );
     } catch (_) {}
   }
 
@@ -221,25 +292,62 @@ class AppointmentRepository implements IAppointmentRepository {
       return DateTime.parse(value.toString());
     }
 
+    String? nestedId(dynamic value) {
+      if (value is String) return value;
+      if (value is num) return value.toString();
+      if (value is Map) {
+        for (final key in const ['id', 'patientId', '_id']) {
+          final nested = value[key];
+          if (nested != null) return nested.toString();
+        }
+      }
+      return null;
+    }
+
+    String nestedName(dynamic value) {
+      if (value is String) return value;
+      if (value is Map) {
+        for (final key in const ['name', 'fullName', 'patientName']) {
+          final nested = value[key];
+          if (nested != null) return nested.toString();
+        }
+      }
+      return 'Paciente não informado';
+    }
+
+    dynamic startValue =
+        json['startTime'] ??
+        json['start'] ??
+        json['scheduledAt'] ??
+        json['date'];
+    dynamic endValue = json['endTime'] ?? json['end'] ?? startValue;
+
     return Appointment(
       id: json['id'].toString(),
-      patientId: json['patientId']?.toString() ?? '',
-      patientName: json['patientName']?.toString() ?? 'Paciente não informado',
+      patientId: nestedId(json['patientId']) ?? nestedId(json['patient']) ?? '',
+      patientName:
+          json['patientName']?.toString() ?? nestedName(json['patient']),
       doctorId: json['doctorId']?.toString() ?? '',
       doctorName: json['doctorName']?.toString() ?? 'Não informado',
       studentId: json['studentId']?.toString(),
       studentName: json['studentName']?.toString(),
       professorId: json['professorId']?.toString(),
       professorName: json['professorName']?.toString(),
-      startTime: parseDate(json['startTime']),
-      endTime: parseDate(json['endTime']),
+      startTime: parseDate(startValue),
+      endTime: parseDate(endValue),
       status: status,
       procedureName: json['procedureName']?.toString(),
       notes: json['notes']?.toString(),
       clinicId: json['clinicId']?.toString() ?? '',
-      arrivalTime: json['arrivalTime'] == null ? null : parseDate(json['arrivalTime']),
-      actualStartTime: json['actualStartTime'] == null ? null : parseDate(json['actualStartTime']),
-      actualEndTime: json['actualEndTime'] == null ? null : parseDate(json['actualEndTime']),
+      arrivalTime: json['arrivalTime'] == null
+          ? null
+          : parseDate(json['arrivalTime']),
+      actualStartTime: json['actualStartTime'] == null
+          ? null
+          : parseDate(json['actualStartTime']),
+      actualEndTime: json['actualEndTime'] == null
+          ? null
+          : parseDate(json['actualEndTime']),
     );
   }
 

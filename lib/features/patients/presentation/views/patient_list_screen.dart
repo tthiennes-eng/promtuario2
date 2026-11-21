@@ -46,16 +46,35 @@ class PatientListScreen extends ConsumerWidget {
                             .toList();
 
                         // Histórico (Passado)
-                        final past = history.where((a) => a.startTime.isBefore(DateTime.now())).toList();
+                        final past = history
+                            .where((a) => a.startTime.isBefore(DateTime.now()))
+                            .toList();
                         past.sort((a, b) => b.startTime.compareTo(a.startTime));
                         final lastApp = past.isNotEmpty ? past.first : null;
 
                         // Agendamento (Futuro)
-                        final future = history.where((a) => a.startTime.isAfter(DateTime.now())).toList();
-                        future.sort((a, b) => a.startTime.compareTo(b.startTime));
+                        final future = history
+                            .where(
+                              (a) =>
+                                  a.startTime.isAfter(DateTime.now()) &&
+                                  a.status != AppointmentStatus.cancelled &&
+                                  a.status != AppointmentStatus.noShow &&
+                                  a.status != AppointmentStatus.missed,
+                            )
+                            .toList();
+                        future.sort(
+                          (a, b) => a.startTime.compareTo(b.startTime),
+                        );
                         final nextApp = future.isNotEmpty ? future.first : null;
 
-                        return _buildDetailedPatientCard(context, ref, patient, lastApp, nextApp, history.length);
+                        return _buildDetailedPatientCard(
+                          context,
+                          ref,
+                          patient,
+                          lastApp,
+                          nextApp,
+                          history.length,
+                        );
                       },
                     ),
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -67,7 +86,10 @@ class PatientListScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: const Color(0xFF006494),
         onPressed: () => context.push('/dashboard/patients/add'),
-        label: const Text('ADMITIR PACIENTE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: const Text(
+          'ADMITIR PACIENTE',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         icon: const Icon(Icons.add, color: Colors.white),
       ),
     );
@@ -82,7 +104,11 @@ class PatientListScreen extends ConsumerWidget {
         children: [
           _StatChip(label: 'Total', value: '$count', color: Colors.blueGrey),
           const SizedBox(width: 8),
-          const _StatChip(label: 'Atendimentos Hoje', value: '4', color: Colors.green), // Exemplo fixo
+          const _StatChip(
+            label: 'Atendimentos Hoje',
+            value: '4',
+            color: Colors.green,
+          ), // Exemplo fixo
         ],
       ),
     );
@@ -96,19 +122,29 @@ class PatientListScreen extends ConsumerWidget {
         backgroundColor: MaterialStateProperty.all(Colors.white),
         hintText: 'Pesquisar por nome ou CPF...',
         leading: const Icon(Icons.search, color: Color(0xFF006494)),
-        onChanged: (val) => ref.read(patientViewModelProvider.notifier).searchPatients(val),
+        onChanged: (val) =>
+            ref.read(patientViewModelProvider.notifier).searchPatients(val),
       ),
     );
   }
 
-  Widget _buildDetailedPatientCard(BuildContext context, WidgetRef ref, Patient patient, Appointment? last, Appointment? next, int total) {
+  Widget _buildDetailedPatientCard(
+    BuildContext context,
+    WidgetRef ref,
+    Patient patient,
+    Appointment? last,
+    Appointment? next,
+    int total,
+  ) {
     final age = DateTime.now().year - patient.birthDate.year;
-    
+
     String getClinic(String id) {
       final clinics = ref.read(clinicsViewModelProvider).value ?? [];
       try {
         return clinics.firstWhere((c) => c.id == id).name;
-      } catch (_) { return id; }
+      } catch (_) {
+        return id;
+      }
     }
 
     return Container(
@@ -119,7 +155,8 @@ class PatientListScreen extends ConsumerWidget {
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: InkWell(
-        onTap: () => context.push('/dashboard/patients/prontuario', extra: patient),
+        onTap: () =>
+            context.push('/dashboard/patients/prontuario', extra: patient),
         borderRadius: BorderRadius.circular(16),
         child: Column(
           children: [
@@ -129,15 +166,33 @@ class PatientListScreen extends ConsumerWidget {
                 children: [
                   CircleAvatar(
                     backgroundColor: const Color(0xFF006494).withOpacity(0.1),
-                    child: Text(patient.fullName[0], style: const TextStyle(color: Color(0xFF006494), fontWeight: FontWeight.bold)),
+                    child: Text(
+                      patient.fullName[0],
+                      style: const TextStyle(
+                        color: Color(0xFF006494),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(patient.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        Text('CPF: ${patient.cpf} • $age anos • ${patient.gender ?? "N/I"}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                        Text(
+                          patient.fullName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Text(
+                          'CPF: ${patient.cpf} • $age anos • ${patient.gender ?? "N/I"}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -146,15 +201,25 @@ class PatientListScreen extends ConsumerWidget {
               ),
             ),
             const Divider(height: 1),
-            
+
             // GRID DE INFORMAÇÕES DETALHADAS (Solicitado)
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  _buildAppointmentBlock('ÚLTIMO ATENDIMENTO', last, Colors.blueGrey, getClinic),
+                  _buildAppointmentBlock(
+                    'ÚLTIMO ATENDIMENTO',
+                    last,
+                    Colors.blueGrey,
+                    getClinic,
+                  ),
                   const SizedBox(height: 16),
-                  _buildAppointmentBlock('PRÓXIMO AGENDAMENTO', next, Colors.green.shade700, getClinic),
+                  _buildAppointmentBlock(
+                    'PRÓXIMO AGENDAMENTO',
+                    next,
+                    Colors.green.shade700,
+                    getClinic,
+                  ),
                 ],
               ),
             ),
@@ -164,7 +229,12 @@ class PatientListScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildAppointmentBlock(String label, Appointment? app, Color themeColor, String Function(String) getClinic) {
+  Widget _buildAppointmentBlock(
+    String label,
+    Appointment? app,
+    Color themeColor,
+    String Function(String) getClinic,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -172,23 +242,54 @@ class PatientListScreen extends ConsumerWidget {
           children: [
             Container(width: 4, height: 14, color: themeColor),
             const SizedBox(width: 8),
-            Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: themeColor, letterSpacing: 1)),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: themeColor,
+                letterSpacing: 1,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 8),
         if (app != null)
           Row(
             children: [
-              _infoItem(Icons.calendar_today, DateFormat('dd/MM/yyyy').format(app.startTime), themeColor),
-              _infoItem(Icons.access_time, DateFormat('HH:mm').format(app.startTime), themeColor),
-              _infoItem(Icons.local_hospital, getClinic(app.clinicId), themeColor),
-              _infoItem(Icons.medical_services, app.procedureName ?? 'Geral', themeColor),
+              _infoItem(
+                Icons.calendar_today,
+                DateFormat('dd/MM/yyyy').format(app.startTime),
+                themeColor,
+              ),
+              _infoItem(
+                Icons.access_time,
+                DateFormat('HH:mm').format(app.startTime),
+                themeColor,
+              ),
+              _infoItem(
+                Icons.local_hospital,
+                getClinic(app.clinicId),
+                themeColor,
+              ),
+              _infoItem(
+                Icons.medical_services,
+                app.procedureName ?? 'Geral',
+                themeColor,
+              ),
             ],
           )
         else
           const Padding(
             padding: EdgeInsets.only(left: 12),
-            child: Text('Nenhum registro encontrado', style: TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic)),
+            child: Text(
+              'Nenhum registro encontrado',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
           ),
       ],
     );
@@ -201,10 +302,11 @@ class PatientListScreen extends ConsumerWidget {
         children: [
           Icon(icon, size: 14, color: color.withOpacity(0.7)),
           const SizedBox(height: 2),
-          Text(value, 
+          Text(
+            value,
             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-            maxLines: 1, 
-            overflow: TextOverflow.ellipsis
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -218,7 +320,10 @@ class PatientListScreen extends ConsumerWidget {
         children: [
           Icon(Icons.person_search, size: 64, color: Colors.grey.shade300),
           const SizedBox(height: 16),
-          const Text('Pesquise por um paciente ou cadastre um novo.', style: TextStyle(color: Colors.grey)),
+          const Text(
+            'Pesquise por um paciente ou cadastre um novo.',
+            style: TextStyle(color: Colors.grey),
+          ),
         ],
       ),
     );
@@ -229,7 +334,11 @@ class _StatChip extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
-  const _StatChip({required this.label, required this.value, required this.color});
+  const _StatChip({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -241,8 +350,22 @@ class _StatChip extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Text('$label: ', style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w500)),
-          Text(value, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.bold)),
+          Text(
+            '$label: ',
+            style: TextStyle(
+              fontSize: 11,
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 11,
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
