@@ -116,6 +116,15 @@ namespace DentalClinic.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime?>("ActualEndTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ActualStartTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ArrivalTime")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("ClinicId")
                         .HasColumnType("uuid");
 
@@ -139,11 +148,23 @@ namespace DentalClinic.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<Guid?>("ProfessorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ProfessorName")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
+
+                    b.Property<Guid?>("StudentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("StudentName")
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");

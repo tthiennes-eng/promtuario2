@@ -96,12 +96,12 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
     return const Uuid().v5(Uuid.NAMESPACE_URL, 'promtuario-clinic:$value');
   }
 
-  String? _fallbackDoctorId() {
-    if (_isUuid(_selectedStudentId)) return _selectedStudentId;
-    if (_isUuid(_selectedProfessorId)) return _selectedProfessorId;
+  String _fallbackDoctorId() {
+    if (_isUuid(_selectedStudentId)) return _selectedStudentId!;
+    if (_isUuid(_selectedProfessorId)) return _selectedProfessorId!;
 
     final usersAsync = ref.read(userManagementViewModelProvider);
-    return usersAsync.when(
+    final fallback = usersAsync.when(
       data: (users) {
         final candidates = users.where((u) =>
             u.role == UserRole.professor ||
@@ -113,6 +113,8 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
       loading: () => null,
       error: (_, __) => null,
     );
+
+    return fallback ?? '00000000-0000-0000-0000-000000000000';
   }
 
   bool _isUuid(String? value) {
@@ -426,12 +428,6 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
 
       final finalClinicId = _selectedClinicId!;
       final finalDoctorId = _fallbackDoctorId();
-      if (finalDoctorId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cadastre ou selecione um usuário responsável válido antes de agendar.')),
-        );
-        return;
-      }
 
       final appointment = Appointment(
         id: const Uuid().v4(),

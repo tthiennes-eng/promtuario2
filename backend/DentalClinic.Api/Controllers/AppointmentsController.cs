@@ -49,10 +49,15 @@ public class AppointmentsController : ControllerBase
             return BadRequest("O horário de término deve ser posterior ao início.");
 
         var doctorId = request.DoctorId ?? request.ProfessorId ?? request.StudentId ?? Guid.Empty;
+        if (doctorId != Guid.Empty)
+        {
+            var selectedUser = await _userRepository.GetByIdAsync(doctorId);
+            if (selectedUser == null) doctorId = Guid.Empty;
+        }
         if (doctorId == Guid.Empty)
             doctorId = (await _userRepository.GetAllAsync()).FirstOrDefault()?.Id ?? Guid.Empty;
         if (doctorId == Guid.Empty)
-            return BadRequest("Não há usuário válido para vincular ao agendamento.");
+            return StatusCode(503, "Não há usuários cadastrados no servidor para vincular ao agendamento.");
 
         var appointment = Appointment.Create(
             request.PatientId,
