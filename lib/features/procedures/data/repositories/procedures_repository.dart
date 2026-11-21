@@ -16,8 +16,18 @@ class ProceduresRepository implements IProceduresRepository {
   Future<List<Clinic>> getClinics({bool onlyActive = true}) async {
     try {
       final response = await _apiClient.instance.get('/clinics');
-      final List<dynamic> data = response.data;
-      final clinics = data.map((json) => Clinic.fromJson(json)).toList();
+      final rawData = response.data;
+      final List<dynamic> data = rawData is List
+          ? rawData
+          : (rawData is Map
+              ? (rawData['data'] is List
+                  ? rawData['data'] as List<dynamic>
+                  : const <dynamic>[])
+              : const <dynamic>[]);
+      final clinics = data
+          .whereType<Map>()
+          .map((json) => Clinic.fromJson(Map<String, dynamic>.from(json)))
+          .toList();
       
       final dynamic db = _localDb;
       for (var clinic in clinics) {

@@ -27,7 +27,17 @@ public class ClinicsController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var clinics = await _repository.GetAllAsync();
-        return Ok(clinics);
+        var result = clinics.Select(clinic => new ClinicResponse(
+            clinic.Id,
+            clinic.Name,
+            clinic.Description,
+            clinic.Address?.City,
+            clinic.MaxCapacity,
+            clinic.IsActive,
+            ParseHour(clinic.OpeningTime, 8),
+            ParseHour(clinic.ClosingTime, 18),
+            60));
+        return Ok(result);
     }
 
     /// <summary>
@@ -35,10 +45,21 @@ public class ClinicsController : ControllerBase
     /// </summary>
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Create([FromBody] Clinic clinic)
+    public async Task<IActionResult> Create([FromBody] CreateClinicRequest request)
     {
+        if (string.IsNullOrWhiteSpace(request.Name)) return BadRequest("Nome da clínica é obrigatório.");
+
+        var clinic = Clinic.CreateBasic(
+            request.Name,
+            request.Description ?? string.Empty,
+            request.Capacity > 0 ? request.Capacity : 1,
+            request.StartHour,
+            request.EndHour);
+
+        if (request.Id != Guid.Empty) clinic.Id = request.Id;
         await _repository.AddAsync(clinic);
-        return CreatedAtAction(nameof(GetAll), new { id = clinic.Id }, clinic);
+        return StatusCode(201, new ClinicResponse(clinic.Id, clinic.Name, clinic.Description, request.Location,
+            clinic.MaxCapacity, clinic.IsActive, request.StartHour, request.EndHour, request.SlotDurationMinutes));
     }
 
     /// <summary>
@@ -52,4 +73,32 @@ public class ClinicsController : ControllerBase
         await _repository.UpdateAsync(clinic);
         return NoContent();
     }
+
+    private static int ParseHour(string? time, int fallback)
+    {
+        if (TimeSpan.TryParse(time, out var parsed)) return parsed.Hours;
+        return fallback;
+    }
 }
+
+public record CreateClinicRequest(
+    Guid Id,
+    string Name,
+    string? Description,
+    string? Location,
+    int Capacity,
+    bool IsActive,
+    int StartHour,
+    int EndHour,
+    int SlotDurationMinutes);
+
+public record ClinicResponse(
+    Guid Id,
+    string Name,
+    string Description,
+    string? Location,
+    int Capacity,
+    bool IsActive,
+    int StartHour,
+    int EndHour,
+    int SlotDurationMinutes);

@@ -83,9 +83,41 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
         : const TimeOfDay(hour: 8, minute: 0);
         
     if (widget.initialClinic != null) {
-      _selectedClinicId = widget.initialClinic!.id;
       _selectedClinicName = widget.initialClinic!.name;
+      if (_isUuid(widget.initialClinic!.id)) {
+        _selectedClinicId = widget.initialClinic!.id;
+      } else {
+        _selectedClinicId = _deterministicUuid(widget.initialClinic!.name);
+      }
     }
+  }
+
+  String _deterministicUuid(String value) {
+    return const Uuid().v5(Uuid.NAMESPACE_URL, 'promtuario-clinic:$value');
+  }
+
+  String? _fallbackDoctorId() {
+    if (_isUuid(_selectedStudentId)) return _selectedStudentId;
+    if (_isUuid(_selectedProfessorId)) return _selectedProfessorId;
+
+    final usersAsync = ref.read(userManagementViewModelProvider);
+    return usersAsync.when(
+      data: (users) {
+        final candidates = users.where((u) =>
+            u.role == UserRole.professor ||
+            u.role == UserRole.coordenador ||
+            u.role == UserRole.aluno);
+        final first = candidates.isNotEmpty ? candidates.first : null;
+        return _isUuid(first?.id) ? first!.id : null;
+      },
+      loading: () => null,
+      error: (_, __) => null,
+    );
+  }
+
+  bool _isUuid(String? value) {
+    if (value == null || value.isEmpty) return false;
+    return RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$').hasMatch(value);
   }
 
   @override
@@ -138,16 +170,24 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                 onChanged: (name) {
                   setState(() {
                     _selectedClinicName = name;
+                    _selectedClinicId = name == null ? null : _deterministicUuid(name);
                     clinicsAsync.whenData((list) {
                       try {
-                        _selectedClinicId = list.firstWhere((c) => c.name == name).id;
-                      } catch (_) {
-                        _selectedClinicId = name;
-                      }
+                        final clinic = list.firstWhere((c) => c.name == name);
+                        if (_isUuid(clinic.id)) {
+                          _selectedClinicId = clinic.id;
+                          return;
+                        }
+                      } catch (_) {}
+                      _selectedClinicId = _deterministicUuid(name!);
                     });
                   });
                 },
-                validator: (v) => v == null ? 'Selecione uma clínica' : null,
+                validator: (v) => v == null
+                    ? 'Selecione uma clínica'
+                    : (!_isUuid(_selectedClinicId)
+                        ? 'A clínica selecionada não possui um ID válido no servidor'
+                        : null),
               ),
               const SizedBox(height: 16),
 
@@ -235,8 +275,13 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                           border: OutlineInputBorder(), 
                           prefixIcon: Icon(Icons.group_outlined)
                         ),
-                        onChanged: (val) => _selectedStudentName = val,
-                        validator: (v) => (v == null || v.isEmpty) ? 'Informe a dupla' : null,
+                        onChanged: (val) => setState(() {
+                          _selectedStudentName = val;
+                          _selectedStudentId = null;
+                        }),
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Informe a dupla'
+                            : null,
                       );
                     },
                   );
@@ -272,7 +317,10 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                           border: OutlineInputBorder(), 
                           prefixIcon: Icon(Icons.verified_user_outlined)
                         ),
-                        onChanged: (val) => _selectedProfessorName = val,
+                        onChanged: (val) => setState(() {
+                          _selectedProfessorName = val;
+                          _selectedProfessorId = null;
+                        }),
                         validator: (v) => (v == null || v.isEmpty) ? 'Informe o professor' : null,
                       );
                     },
@@ -376,13 +424,20 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
       );
       final end = start.add(const Duration(hours: 1));
 
-      final finalClinicId = _selectedClinicId ?? const Uuid().v4();
+      final finalClinicId = _selectedClinicId!;
+      final finalDoctorId = _fallbackDoctorId();
+      if (finalDoctorId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cadastre ou selecione um usuário responsável válido antes de agendar.')),
+        );
+        return;
+      }
 
       final appointment = Appointment(
         id: const Uuid().v4(),
         patientId: _selectedPatientId!,
         patientName: _selectedPatientName!,
-        doctorId: _selectedStudentId ?? 'custom', 
+        doctorId: finalDoctorId,
         doctorName: _selectedStudentName ?? 'Não informado',
         studentId: _selectedStudentId,
         studentName: _selectedStudentName,

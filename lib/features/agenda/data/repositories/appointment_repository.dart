@@ -327,8 +327,10 @@ class AppointmentRepository implements IAppointmentRepository {
       patientId: nestedId(json['patientId']) ?? nestedId(json['patient']) ?? '',
       patientName:
           json['patientName']?.toString() ?? nestedName(json['patient']),
-      doctorId: json['doctorId']?.toString() ?? '',
-      doctorName: json['doctorName']?.toString() ?? 'Não informado',
+      doctorId: nestedId(json['doctorId']) ?? nestedId(json['doctor']) ?? '',
+      doctorName:
+          json['doctorName']?.toString() ??
+          nestedName(json['doctor']).replaceAll('Paciente não informado', 'Não informado'),
       studentId: json['studentId']?.toString(),
       studentName: json['studentName']?.toString(),
       professorId: json['professorId']?.toString(),

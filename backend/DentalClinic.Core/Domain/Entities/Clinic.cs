@@ -73,6 +73,31 @@ public sealed class Clinic : Entity
     /// <param name="openingTime">Horário de abertura (HH:mm).</param>
     /// <param name="closingTime">Horário de fechamento (HH:mm).</param>
     /// <returns>Uma nova clínica.</returns>
+    public static Clinic CreateBasic(string name, string description, int maxCapacity, int startHour, int endHour)
+    {
+        ValidateName(name);
+        ValidateDescription(description);
+        ValidateCapacity(maxCapacity);
+        var opening = $"{startHour:00}:00";
+        var closing = $"{endHour:00}:00";
+        ValidateTime(opening);
+        ValidateTime(closing);
+        ValidateOpeningClosingTimes(opening, closing);
+
+        return new Clinic
+        {
+            Name = name.Trim(),
+            Description = description.Trim(),
+            Specialty = Specialty.IntegratedClinic,
+            Address = Address.Create(".", ".", null, ".", ".", "SP", "00000-000"),
+            MaxCapacity = maxCapacity,
+            CoordinatorUserId = Guid.Empty,
+            OpeningTime = opening,
+            ClosingTime = closing,
+            IsActive = true
+        };
+    }
+
     public static Clinic Create(
         string name,
         string description,

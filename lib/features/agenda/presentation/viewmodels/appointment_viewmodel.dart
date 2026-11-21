@@ -6,6 +6,7 @@ import 'package:promt/core/providers/providers.dart';
 import 'package:promt/core/network/realtime_service.dart';
 import 'package:promt/features/patients/presentation/viewmodels/patient_viewmodel.dart';
 import 'package:promt/features/dashboard/presentation/viewmodels/dashboard_viewmodel.dart';
+import 'package:uuid/uuid.dart';
 
 enum AgendaDayPeriod { all, morning, afternoon, night }
 
@@ -209,10 +210,12 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
     realtime.on('AppointmentUpdated', (args) {
       _invalidateConsumers();
       refresh();
+      fetchInstitutionalData();
     });
     realtime.on('AppointmentCreated', (args) {
       _invalidateConsumers();
       refresh();
+      fetchInstitutionalData();
     });
   }
 
@@ -226,7 +229,7 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
         clinics = _defaultClinicNames
             .map(
               (name) => Clinic(
-                id: name, // Usa o nome como ID se não houver registro no banco
+                id: const Uuid().v5(Uuid.NAMESPACE_URL, 'promtuario-clinic:$name'),
                 name: name,
                 description: 'Clínica Escola',
                 isActive: true,
@@ -332,10 +335,24 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
 
     if (inSelectedDate) {
       state = state.copyWith(appointments: AsyncValue.data(merged));
+
+      final institutional = state.institutionalAppointments.value ?? const <Appointment>[];
+      final mergedInstitutional = <String, Appointment>{
+        for (final item in institutional) item.id: item,
+        saved.id: saved,
+      }.values.toList()..sort((a, b) => a.startTime.compareTo(b.startTime));
+      state = state.copyWith(
+        institutionalAppointments: AsyncValue.data(mergedInstitutional),
+      );
+    } else {
+      state = state.copyWith(
+        institutionalAppointments: const AsyncValue.loading(),
+      );
     }
 
     _invalidateConsumers();
     await refresh();
+    await fetchInstitutionalData();
   }
 
   Future<void> updateStatus(String id, AppointmentStatus status) async {

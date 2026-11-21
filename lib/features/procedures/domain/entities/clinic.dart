@@ -54,16 +54,26 @@ class Clinic {
   }
 
   factory Clinic.fromJson(Map<String, dynamic> json) {
+    String idValue = json['id']?.toString() ?? '';
+    if (idValue.isEmpty && json['_id'] != null) idValue = json['_id'].toString();
+
+    int intValue(String key, int fallback) {
+      final value = json[key];
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      return fallback;
+    }
+
     return Clinic(
-      id: json['id'] as String? ?? '',
+      id: idValue,
       name: json['name'] as String? ?? '',
       description: json['description'] as String? ?? '',
       location: json['location'] as String? ?? '',
-      capacity: json['capacity'] as int? ?? 1,
+      capacity: intValue('capacity', intValue('maxCapacity', 1)),
       isActive: json['isActive'] as bool? ?? true,
-      startHour: json['startHour'] as int? ?? 8,
-      endHour: json['endHour'] as int? ?? 18,
-      slotDurationMinutes: json['slotDurationMinutes'] as int? ?? 60,
+      startHour: intValue('startHour', 8),
+      endHour: intValue('endHour', 18),
+      slotDurationMinutes: intValue('slotDurationMinutes', 60),
       metadata: json['metadata'] is Map ? Map<String, dynamic>.from(json['metadata']) : null,
     );
   }
