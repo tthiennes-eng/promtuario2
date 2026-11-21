@@ -28,7 +28,9 @@ class ClinicsLocal extends Table {
 class PatientsLocal extends Table {
   TextColumn get id => text()();
   TextColumn get fullName => text().withLength(min: 3, max: 255)();
+  TextColumn get socialName => text().withLength(min: 1, max: 255).nullable()();
   TextColumn get cpf => text().withLength(min: 11, max: 14)();
+  TextColumn get susNumber => text().withLength(min: 15, max: 15).nullable()();
   DateTimeColumn get birthDate => dateTime()();
   TextColumn get email => text().nullable()();
   TextColumn get phone => text().nullable()();
@@ -183,15 +185,19 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (migrator) => migrator.createAll(),
     onUpgrade: (migrator, from, to) async {
-      // Reconcilia bancos antigos ou parcialmente inicializados.
-      // createAll é idempotente e não apaga registros das tabelas existentes.
-      await migrator.createAll();
+      if (from < 2) {
+        await migrator.createAll();
+      }
+      if (from < 3) {
+        await migrator.addColumn(patientsLocal, patientsLocal.socialName);
+        await migrator.addColumn(patientsLocal, patientsLocal.susNumber);
+      }
     },
   );
 }

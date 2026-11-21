@@ -18,12 +18,20 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
             .IsRequired()
             .HasMaxLength(255);
 
+        builder.Property(p => p.SocialName)
+            .HasColumnName("nome_social")
+            .HasMaxLength(255);
+
         builder.Property(p => p.CPF)
             .HasColumnName("cpf")
             .IsRequired()
             .HasMaxLength(14);
 
         builder.HasIndex(p => p.CPF).IsUnique();
+
+        builder.Property(p => p.SusNumber)
+            .HasColumnName("numero_sus")
+            .HasMaxLength(15);
 
         builder.Property(p => p.Email)
             .HasColumnName("email")

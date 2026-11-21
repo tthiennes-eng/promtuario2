@@ -1,7 +1,9 @@
 class Patient {
   final String id;
   final String fullName;
+  final String? socialName;
   final String cpf;
+  final String? susNumber;
   final DateTime birthDate;
   final String? email;
   final String? phone;
@@ -15,7 +17,9 @@ class Patient {
   const Patient({
     required this.id,
     required this.fullName,
+    this.socialName,
     required this.cpf,
+    this.susNumber,
     required this.birthDate,
     this.email,
     this.phone,
@@ -31,7 +35,9 @@ class Patient {
     return Patient(
       id: json['id'] as String? ?? '',
       fullName: json['fullName'] as String? ?? '',
+      socialName: json['socialName'] as String? ?? json['SocialName'] as String?,
       cpf: json['cpf'] as String? ?? '',
+      susNumber: json['susNumber'] as String? ?? json['SusNumber'] as String?,
       birthDate: json['birthDate'] != null ? DateTime.parse(json['birthDate']) : DateTime.now(),
       email: json['email'] as String?,
       phone: json['phone'] as String?,
@@ -47,7 +53,9 @@ class Patient {
   Map<String, dynamic> toJson() => {
         'id': id,
         'fullName': fullName,
+        'socialName': socialName,
         'cpf': cpf,
+        'susNumber': susNumber,
         'birthDate': birthDate.toIso8601String(),
         'email': email,
         'phone': phone,
@@ -62,7 +70,9 @@ class Patient {
   Patient copyWith({
     String? id,
     String? fullName,
+    String? socialName,
     String? cpf,
+    String? susNumber,
     DateTime? birthDate,
     String? email,
     String? phone,
@@ -76,7 +86,9 @@ class Patient {
     return Patient(
       id: id ?? this.id,
       fullName: fullName ?? this.fullName,
+      socialName: socialName ?? this.socialName,
       cpf: cpf ?? this.cpf,
+      susNumber: susNumber ?? this.susNumber,
       birthDate: birthDate ?? this.birthDate,
       email: email ?? this.email,
       phone: phone ?? this.phone,

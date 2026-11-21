@@ -19,7 +19,9 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
   bool _isLoading = false;
   
   final _nameController = TextEditingController();
+  final _socialNameController = TextEditingController();
   final _cpfController = TextEditingController();
+  final _susNumberController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _birthDateController = TextEditingController();
@@ -38,7 +40,9 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
     if (widget.patient != null) {
       final p = widget.patient!;
       _nameController.text = p.fullName;
+      _socialNameController.text = p.socialName ?? '';
       _cpfController.text = p.cpf;
+      _susNumberController.text = p.susNumber ?? '';
       _emailController.text = p.email ?? '';
       _phoneController.text = p.phone ?? '';
       _selectedBirthDate = p.birthDate;
@@ -58,8 +62,9 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
   @override
   void dispose() {
     for (var controller in [
-      _nameController, _cpfController, _emailController, _phoneController,
-      _birthDateController, _streetController, _numberController,
+      _nameController, _socialNameController, _cpfController, _susNumberController,
+      _emailController, _phoneController, _birthDateController,
+      _streetController, _numberController,
       _neighborhoodController, _cityController, _zipCodeController
     ]) {
       controller.dispose();
@@ -75,7 +80,11 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
         final patient = Patient(
           id: widget.patient?.id ?? const Uuid().v4(),
           fullName: _nameController.text.trim(),
+          socialName: _socialNameController.text.trim().isEmpty ? null : _socialNameController.text.trim(),
           cpf: _cpfController.text.replaceAll(RegExp(r'[^\d]'), ''),
+          susNumber: _susNumberController.text.replaceAll(RegExp(r'[^\d]'), '').isEmpty
+              ? null
+              : _susNumberController.text.replaceAll(RegExp(r'[^\d]'), ''),
           birthDate: _selectedBirthDate!,
           email: _emailController.text.trim(),
           phone: _phoneController.text.trim(),
@@ -135,10 +144,23 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
               const Text('Informações Gerais', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF006494), fontSize: 16)),
               const SizedBox(height: 24),
               
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Nome Completo', border: OutlineInputBorder(), prefixIcon: Icon(Icons.person)),
-                validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(labelText: 'Nome Completo', border: OutlineInputBorder(), prefixIcon: Icon(Icons.person)),
+                      validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _socialNameController,
+                      decoration: const InputDecoration(labelText: 'Nome Social', border: OutlineInputBorder(), prefixIcon: Icon(Icons.person_outline)),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               
@@ -150,6 +172,19 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                       controller: _cpfController,
                       decoration: const InputDecoration(labelText: 'CPF', border: OutlineInputBorder(), prefixIcon: Icon(Icons.badge)),
                       validator: (v) => v!.length < 11 ? 'CPF inválido' : null,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      controller: _susNumberController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Número do SUS', border: OutlineInputBorder(), prefixIcon: Icon(Icons.credit_card)),
+                      validator: (v) {
+                        final digits = v?.replaceAll(RegExp(r'[^\d]'), '') ?? '';
+                        return digits.isEmpty || digits.length == 15 ? null : 'O SUS deve conter 15 dígitos';
+                      },
                     ),
                   ),
                   const SizedBox(width: 16),

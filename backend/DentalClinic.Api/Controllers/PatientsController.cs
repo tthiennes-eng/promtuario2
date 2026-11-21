@@ -91,8 +91,14 @@ public class PatientsController : ControllerBase
         if (existing.FullName != patient.FullName)
             changes["FullName"] = new { old = existing.FullName, @new = patient.FullName };
         
+        if (existing.SocialName != patient.SocialName)
+            changes["SocialName"] = new { old = existing.SocialName, @new = patient.SocialName };
+
         if (existing.CPF != patient.CPF)
             changes["CPF"] = new { old = existing.CPF, @new = patient.CPF };
+
+        if (existing.SusNumber != patient.SusNumber)
+            changes["SusNumber"] = new { old = existing.SusNumber, @new = patient.SusNumber };
         
         if (existing.Email != patient.Email)
             changes["Email"] = new { old = existing.Email, @new = patient.Email };

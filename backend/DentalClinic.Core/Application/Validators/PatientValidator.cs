@@ -18,6 +18,10 @@ public class PatientValidator : AbstractValidator<Patient>
             .Matches(@"^\d{11}$|^\d{3}\.\d{3}\.\d{3}-\d{2}$")
             .WithMessage("O CPF deve conter 11 dígitos.");
 
+        RuleFor(x => x.SusNumber)
+            .Must(value => string.IsNullOrWhiteSpace(value) || value.Length == 15)
+            .WithMessage("O número do SUS deve conter 15 dígitos.");
+
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("O email é obrigatório.")
             .EmailAddress().WithMessage("O formato do email é inválido.");

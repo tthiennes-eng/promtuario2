@@ -656,6 +656,21 @@ class $PatientsLocalTable extends PatientsLocal
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _socialNameMeta = const VerificationMeta(
+    'socialName',
+  );
+  @override
+  late final GeneratedColumn<String> socialName = GeneratedColumn<String>(
+    'social_name',
+    aliasedName,
+    true,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 255,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _cpfMeta = const VerificationMeta('cpf');
   @override
   late final GeneratedColumn<String> cpf = GeneratedColumn<String>(
@@ -668,6 +683,21 @@ class $PatientsLocalTable extends PatientsLocal
     ),
     type: DriftSqlType.string,
     requiredDuringInsert: true,
+  );
+  static const VerificationMeta _susNumberMeta = const VerificationMeta(
+    'susNumber',
+  );
+  @override
+  late final GeneratedColumn<String> susNumber = GeneratedColumn<String>(
+    'sus_number',
+    aliasedName,
+    true,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 15,
+      maxTextLength: 15,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _birthDateMeta = const VerificationMeta(
     'birthDate',
@@ -810,7 +840,9 @@ class $PatientsLocalTable extends PatientsLocal
   List<GeneratedColumn> get $columns => [
     id,
     fullName,
+    socialName,
     cpf,
+    susNumber,
     birthDate,
     email,
     phone,
@@ -850,6 +882,12 @@ class $PatientsLocalTable extends PatientsLocal
     } else if (isInserting) {
       context.missing(_fullNameMeta);
     }
+    if (data.containsKey('social_name')) {
+      context.handle(
+        _socialNameMeta,
+        socialName.isAcceptableOrUnknown(data['social_name']!, _socialNameMeta),
+      );
+    }
     if (data.containsKey('cpf')) {
       context.handle(
         _cpfMeta,
@@ -857,6 +895,12 @@ class $PatientsLocalTable extends PatientsLocal
       );
     } else if (isInserting) {
       context.missing(_cpfMeta);
+    }
+    if (data.containsKey('sus_number')) {
+      context.handle(
+        _susNumberMeta,
+        susNumber.isAcceptableOrUnknown(data['sus_number']!, _susNumberMeta),
+      );
     }
     if (data.containsKey('birth_date')) {
       context.handle(
@@ -963,10 +1007,18 @@ class $PatientsLocalTable extends PatientsLocal
         DriftSqlType.string,
         data['${effectivePrefix}full_name'],
       )!,
+      socialName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}social_name'],
+      ),
       cpf: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}cpf'],
       )!,
+      susNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sus_number'],
+      ),
       birthDate: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}birth_date'],
@@ -1031,7 +1083,9 @@ class $PatientsLocalTable extends PatientsLocal
 class PatientLocal extends DataClass implements Insertable<PatientLocal> {
   final String id;
   final String fullName;
+  final String? socialName;
   final String cpf;
+  final String? susNumber;
   final DateTime birthDate;
   final String? email;
   final String? phone;
@@ -1048,7 +1102,9 @@ class PatientLocal extends DataClass implements Insertable<PatientLocal> {
   const PatientLocal({
     required this.id,
     required this.fullName,
+    this.socialName,
     required this.cpf,
+    this.susNumber,
     required this.birthDate,
     this.email,
     this.phone,
@@ -1068,7 +1124,13 @@ class PatientLocal extends DataClass implements Insertable<PatientLocal> {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['full_name'] = Variable<String>(fullName);
+    if (!nullToAbsent || socialName != null) {
+      map['social_name'] = Variable<String>(socialName);
+    }
     map['cpf'] = Variable<String>(cpf);
+    if (!nullToAbsent || susNumber != null) {
+      map['sus_number'] = Variable<String>(susNumber);
+    }
     map['birth_date'] = Variable<DateTime>(birthDate);
     if (!nullToAbsent || email != null) {
       map['email'] = Variable<String>(email);
@@ -1107,7 +1169,13 @@ class PatientLocal extends DataClass implements Insertable<PatientLocal> {
     return PatientsLocalCompanion(
       id: Value(id),
       fullName: Value(fullName),
+      socialName: socialName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(socialName),
       cpf: Value(cpf),
+      susNumber: susNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(susNumber),
       birthDate: Value(birthDate),
       email: email == null && nullToAbsent
           ? const Value.absent()
@@ -1148,7 +1216,9 @@ class PatientLocal extends DataClass implements Insertable<PatientLocal> {
     return PatientLocal(
       id: serializer.fromJson<String>(json['id']),
       fullName: serializer.fromJson<String>(json['fullName']),
+      socialName: serializer.fromJson<String?>(json['socialName']),
       cpf: serializer.fromJson<String>(json['cpf']),
+      susNumber: serializer.fromJson<String?>(json['susNumber']),
       birthDate: serializer.fromJson<DateTime>(json['birthDate']),
       email: serializer.fromJson<String?>(json['email']),
       phone: serializer.fromJson<String?>(json['phone']),
@@ -1170,7 +1240,9 @@ class PatientLocal extends DataClass implements Insertable<PatientLocal> {
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'fullName': serializer.toJson<String>(fullName),
+      'socialName': serializer.toJson<String?>(socialName),
       'cpf': serializer.toJson<String>(cpf),
+      'susNumber': serializer.toJson<String?>(susNumber),
       'birthDate': serializer.toJson<DateTime>(birthDate),
       'email': serializer.toJson<String?>(email),
       'phone': serializer.toJson<String?>(phone),
@@ -1190,7 +1262,9 @@ class PatientLocal extends DataClass implements Insertable<PatientLocal> {
   PatientLocal copyWith({
     String? id,
     String? fullName,
+    Value<String?> socialName = const Value.absent(),
     String? cpf,
+    Value<String?> susNumber = const Value.absent(),
     DateTime? birthDate,
     Value<String?> email = const Value.absent(),
     Value<String?> phone = const Value.absent(),
@@ -1207,7 +1281,9 @@ class PatientLocal extends DataClass implements Insertable<PatientLocal> {
   }) => PatientLocal(
     id: id ?? this.id,
     fullName: fullName ?? this.fullName,
+    socialName: socialName.present ? socialName.value : this.socialName,
     cpf: cpf ?? this.cpf,
+    susNumber: susNumber.present ? susNumber.value : this.susNumber,
     birthDate: birthDate ?? this.birthDate,
     email: email.present ? email.value : this.email,
     phone: phone.present ? phone.value : this.phone,
@@ -1226,7 +1302,11 @@ class PatientLocal extends DataClass implements Insertable<PatientLocal> {
     return PatientLocal(
       id: data.id.present ? data.id.value : this.id,
       fullName: data.fullName.present ? data.fullName.value : this.fullName,
+      socialName: data.socialName.present
+          ? data.socialName.value
+          : this.socialName,
       cpf: data.cpf.present ? data.cpf.value : this.cpf,
+      susNumber: data.susNumber.present ? data.susNumber.value : this.susNumber,
       birthDate: data.birthDate.present ? data.birthDate.value : this.birthDate,
       email: data.email.present ? data.email.value : this.email,
       phone: data.phone.present ? data.phone.value : this.phone,
@@ -1252,7 +1332,9 @@ class PatientLocal extends DataClass implements Insertable<PatientLocal> {
     return (StringBuffer('PatientLocal(')
           ..write('id: $id, ')
           ..write('fullName: $fullName, ')
+          ..write('socialName: $socialName, ')
           ..write('cpf: $cpf, ')
+          ..write('susNumber: $susNumber, ')
           ..write('birthDate: $birthDate, ')
           ..write('email: $email, ')
           ..write('phone: $phone, ')
@@ -1274,7 +1356,9 @@ class PatientLocal extends DataClass implements Insertable<PatientLocal> {
   int get hashCode => Object.hash(
     id,
     fullName,
+    socialName,
     cpf,
+    susNumber,
     birthDate,
     email,
     phone,
@@ -1295,7 +1379,9 @@ class PatientLocal extends DataClass implements Insertable<PatientLocal> {
       (other is PatientLocal &&
           other.id == this.id &&
           other.fullName == this.fullName &&
+          other.socialName == this.socialName &&
           other.cpf == this.cpf &&
+          other.susNumber == this.susNumber &&
           other.birthDate == this.birthDate &&
           other.email == this.email &&
           other.phone == this.phone &&
@@ -1314,7 +1400,9 @@ class PatientLocal extends DataClass implements Insertable<PatientLocal> {
 class PatientsLocalCompanion extends UpdateCompanion<PatientLocal> {
   final Value<String> id;
   final Value<String> fullName;
+  final Value<String?> socialName;
   final Value<String> cpf;
+  final Value<String?> susNumber;
   final Value<DateTime> birthDate;
   final Value<String?> email;
   final Value<String?> phone;
@@ -1332,7 +1420,9 @@ class PatientsLocalCompanion extends UpdateCompanion<PatientLocal> {
   const PatientsLocalCompanion({
     this.id = const Value.absent(),
     this.fullName = const Value.absent(),
+    this.socialName = const Value.absent(),
     this.cpf = const Value.absent(),
+    this.susNumber = const Value.absent(),
     this.birthDate = const Value.absent(),
     this.email = const Value.absent(),
     this.phone = const Value.absent(),
@@ -1351,7 +1441,9 @@ class PatientsLocalCompanion extends UpdateCompanion<PatientLocal> {
   PatientsLocalCompanion.insert({
     required String id,
     required String fullName,
+    this.socialName = const Value.absent(),
     required String cpf,
+    this.susNumber = const Value.absent(),
     required DateTime birthDate,
     this.email = const Value.absent(),
     this.phone = const Value.absent(),
@@ -1374,7 +1466,9 @@ class PatientsLocalCompanion extends UpdateCompanion<PatientLocal> {
   static Insertable<PatientLocal> custom({
     Expression<String>? id,
     Expression<String>? fullName,
+    Expression<String>? socialName,
     Expression<String>? cpf,
+    Expression<String>? susNumber,
     Expression<DateTime>? birthDate,
     Expression<String>? email,
     Expression<String>? phone,
@@ -1393,7 +1487,9 @@ class PatientsLocalCompanion extends UpdateCompanion<PatientLocal> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (fullName != null) 'full_name': fullName,
+      if (socialName != null) 'social_name': socialName,
       if (cpf != null) 'cpf': cpf,
+      if (susNumber != null) 'sus_number': susNumber,
       if (birthDate != null) 'birth_date': birthDate,
       if (email != null) 'email': email,
       if (phone != null) 'phone': phone,
@@ -1414,7 +1510,9 @@ class PatientsLocalCompanion extends UpdateCompanion<PatientLocal> {
   PatientsLocalCompanion copyWith({
     Value<String>? id,
     Value<String>? fullName,
+    Value<String?>? socialName,
     Value<String>? cpf,
+    Value<String?>? susNumber,
     Value<DateTime>? birthDate,
     Value<String?>? email,
     Value<String?>? phone,
@@ -1433,7 +1531,9 @@ class PatientsLocalCompanion extends UpdateCompanion<PatientLocal> {
     return PatientsLocalCompanion(
       id: id ?? this.id,
       fullName: fullName ?? this.fullName,
+      socialName: socialName ?? this.socialName,
       cpf: cpf ?? this.cpf,
+      susNumber: susNumber ?? this.susNumber,
       birthDate: birthDate ?? this.birthDate,
       email: email ?? this.email,
       phone: phone ?? this.phone,
@@ -1460,8 +1560,14 @@ class PatientsLocalCompanion extends UpdateCompanion<PatientLocal> {
     if (fullName.present) {
       map['full_name'] = Variable<String>(fullName.value);
     }
+    if (socialName.present) {
+      map['social_name'] = Variable<String>(socialName.value);
+    }
     if (cpf.present) {
       map['cpf'] = Variable<String>(cpf.value);
+    }
+    if (susNumber.present) {
+      map['sus_number'] = Variable<String>(susNumber.value);
     }
     if (birthDate.present) {
       map['birth_date'] = Variable<DateTime>(birthDate.value);
@@ -1513,7 +1619,9 @@ class PatientsLocalCompanion extends UpdateCompanion<PatientLocal> {
     return (StringBuffer('PatientsLocalCompanion(')
           ..write('id: $id, ')
           ..write('fullName: $fullName, ')
+          ..write('socialName: $socialName, ')
           ..write('cpf: $cpf, ')
+          ..write('susNumber: $susNumber, ')
           ..write('birthDate: $birthDate, ')
           ..write('email: $email, ')
           ..write('phone: $phone, ')
@@ -6386,7 +6494,9 @@ typedef $$PatientsLocalTableCreateCompanionBuilder =
     PatientsLocalCompanion Function({
       required String id,
       required String fullName,
+      Value<String?> socialName,
       required String cpf,
+      Value<String?> susNumber,
       required DateTime birthDate,
       Value<String?> email,
       Value<String?> phone,
@@ -6406,7 +6516,9 @@ typedef $$PatientsLocalTableUpdateCompanionBuilder =
     PatientsLocalCompanion Function({
       Value<String> id,
       Value<String> fullName,
+      Value<String?> socialName,
       Value<String> cpf,
+      Value<String?> susNumber,
       Value<DateTime> birthDate,
       Value<String?> email,
       Value<String?> phone,
@@ -6442,8 +6554,18 @@ class $$PatientsLocalTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get socialName => $composableBuilder(
+    column: $table.socialName,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get cpf => $composableBuilder(
     column: $table.cpf,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get susNumber => $composableBuilder(
+    column: $table.susNumber,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6532,8 +6654,18 @@ class $$PatientsLocalTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get socialName => $composableBuilder(
+    column: $table.socialName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get cpf => $composableBuilder(
     column: $table.cpf,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get susNumber => $composableBuilder(
+    column: $table.susNumber,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -6618,8 +6750,16 @@ class $$PatientsLocalTableAnnotationComposer
   GeneratedColumn<String> get fullName =>
       $composableBuilder(column: $table.fullName, builder: (column) => column);
 
+  GeneratedColumn<String> get socialName => $composableBuilder(
+    column: $table.socialName,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get cpf =>
       $composableBuilder(column: $table.cpf, builder: (column) => column);
+
+  GeneratedColumn<String> get susNumber =>
+      $composableBuilder(column: $table.susNumber, builder: (column) => column);
 
   GeneratedColumn<DateTime> get birthDate =>
       $composableBuilder(column: $table.birthDate, builder: (column) => column);
@@ -6698,7 +6838,9 @@ class $$PatientsLocalTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<String> fullName = const Value.absent(),
+                Value<String?> socialName = const Value.absent(),
                 Value<String> cpf = const Value.absent(),
+                Value<String?> susNumber = const Value.absent(),
                 Value<DateTime> birthDate = const Value.absent(),
                 Value<String?> email = const Value.absent(),
                 Value<String?> phone = const Value.absent(),
@@ -6716,7 +6858,9 @@ class $$PatientsLocalTableTableManager
               }) => PatientsLocalCompanion(
                 id: id,
                 fullName: fullName,
+                socialName: socialName,
                 cpf: cpf,
+                susNumber: susNumber,
                 birthDate: birthDate,
                 email: email,
                 phone: phone,
@@ -6736,7 +6880,9 @@ class $$PatientsLocalTableTableManager
               ({
                 required String id,
                 required String fullName,
+                Value<String?> socialName = const Value.absent(),
                 required String cpf,
+                Value<String?> susNumber = const Value.absent(),
                 required DateTime birthDate,
                 Value<String?> email = const Value.absent(),
                 Value<String?> phone = const Value.absent(),
@@ -6754,7 +6900,9 @@ class $$PatientsLocalTableTableManager
               }) => PatientsLocalCompanion.insert(
                 id: id,
                 fullName: fullName,
+                socialName: socialName,
                 cpf: cpf,
+                susNumber: susNumber,
                 birthDate: birthDate,
                 email: email,
                 phone: phone,

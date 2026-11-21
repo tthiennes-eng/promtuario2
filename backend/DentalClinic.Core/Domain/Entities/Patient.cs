@@ -11,9 +11,15 @@ public class Patient : Entity
     [MaxLength(255)]
     public string FullName { get; set; } = string.Empty;
 
+    [MaxLength(255)]
+    public string? SocialName { get; set; }
+
     [Required]
     [MaxLength(14)]
     public string CPF { get; set; } = string.Empty;
+
+    [MaxLength(15)]
+    public string? SusNumber { get; set; }
 
     [Required]
     [EmailAddress]

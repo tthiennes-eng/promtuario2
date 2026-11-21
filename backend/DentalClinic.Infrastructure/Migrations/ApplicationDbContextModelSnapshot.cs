@@ -28,23 +28,29 @@ namespace DentalClinic.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
 
                     b.Property<Guid>("CriadoPorId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("criado_por_id");
 
-                    b.Property<int>("PatientId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("paciente_id");
 
                     b.Property<string>("RespostasJson")
                         .IsRequired()
-                        .HasColumnType("jsonb");
+                        .HasColumnType("jsonb")
+                        .HasColumnName("respostas_json");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("atualizado_em");
 
                     b.HasKey("Id");
 
@@ -65,16 +71,19 @@ namespace DentalClinic.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CriadoPorId")
+                    b.Property<Guid?>("CriadoPorId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("MetaData")
+                        .HasColumnType("text");
 
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
-                    b.Property<int>("PacienteId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("PacienteId")
+                        .HasColumnType("uuid");
 
                     b.Property<long>("Tamanho")
                         .HasColumnType("bigint");
@@ -123,8 +132,8 @@ namespace DentalClinic.Infrastructure.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<int>("PatientId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("ProcedureName")
                         .HasMaxLength(255)
@@ -139,9 +148,6 @@ namespace DentalClinic.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ClinicId");
@@ -150,8 +156,6 @@ namespace DentalClinic.Infrastructure.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.HasIndex("UserId");
-
                     b.HasIndex("StartTime", "EndTime");
 
                     b.ToTable("agendamentos", (string)null);
@@ -159,11 +163,9 @@ namespace DentalClinic.Infrastructure.Migrations
 
             modelBuilder.Entity("DentalClinic.Core.Domain.Entities.Attachment", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Description")
                         .HasMaxLength(500)
@@ -179,33 +181,26 @@ namespace DentalClinic.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<int?>("MedicalRecordId")
-                        .HasColumnType("integer");
+                    b.Property<Guid?>("MedicalRecordId")
+                        .HasColumnType("uuid");
 
-                    b.Property<int>("PatientId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("UploadDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int?>("UploadedByUserId")
-                        .HasColumnType("integer");
+                    b.Property<Guid?>("UploadedByUserId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Url")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("MedicalRecordId");
-
                     b.HasIndex("PatientId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Attachments");
                 });
@@ -214,47 +209,37 @@ namespace DentalClinic.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ClosingTime")
-                        .IsRequired()
-                        .HasMaxLength(5)
-                        .HasColumnType("character varying(5)");
-
-                    b.Property<Guid>("CoordinatorUserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
+                        .HasColumnType("text")
+                        .HasColumnName("descricao");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
-                    b.Property<int>("MaxCapacity")
-                        .HasColumnType("integer");
+                        .HasDefaultValue(true)
+                        .HasColumnName("ativo");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("OpeningTime")
-                        .IsRequired()
-                        .HasMaxLength(5)
-                        .HasColumnType("character varying(5)");
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("nome");
 
                     b.Property<int>("Specialty")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("especialidade");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("atualizado_em");
 
                     b.HasKey("Id");
 
@@ -265,51 +250,42 @@ namespace DentalClinic.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<Guid>("ClinicId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("clinica_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("data_atendimento");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("descricao");
 
-                    b.Property<bool>("IsSignedByProfessor")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
+                    b.Property<string>("IsSignedByProfessor")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("assinatura_professor_digital");
 
-                    b.Property<int?>("MedicalRecordId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("PatientId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("prontuario_id");
 
                     b.Property<Guid>("ProfessorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("SignedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("uuid")
+                        .HasColumnName("professor_id");
 
                     b.Property<Guid>("StudentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("aluno_id");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ClinicId");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("MedicalRecordId");
 
                     b.HasIndex("PatientId");
 
@@ -317,49 +293,55 @@ namespace DentalClinic.Infrastructure.Migrations
 
                     b.HasIndex("StudentId");
 
-                    b.HasIndex("UserId");
-
-                    b.ToTable("evolucoes_clinicas", (string)null);
+                    b.ToTable("evolucoes", (string)null);
                 });
 
             modelBuilder.Entity("DentalClinic.Core.Domain.Entities.LogAuditoria", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<string>("Acao")
                         .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("DadosAntigos")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("DadosNovos")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("acao");
 
                     b.Property<DateTime>("DataHora")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("data_hora")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<string>("IpOrigem")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<string>("Detalhes")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("detalhes");
 
-                    b.Property<string>("Tabela")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)")
+                        .HasColumnName("ip_address");
 
-                    b.Property<string>("Usuario")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<string>("Recurso")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("recurso");
+
+                    b.Property<string>("UserAgent")
+                        .HasColumnType("text")
+                        .HasColumnName("user_agent");
+
+                    b.Property<Guid?>("UsuarioId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("usuario_id");
 
                     b.HasKey("Id");
 
-                    b.ToTable("LogsAuditoria");
+                    b.HasIndex("UsuarioId");
+
+                    b.ToTable("logs_auditoria", (string)null);
                 });
 
             modelBuilder.Entity("DentalClinic.Core.Domain.Entities.MedicalCertificate", b =>
@@ -389,8 +371,8 @@ namespace DentalClinic.Infrastructure.Migrations
                     b.Property<Guid>("DoctorId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("PatientId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -406,36 +388,20 @@ namespace DentalClinic.Infrastructure.Migrations
 
             modelBuilder.Entity("DentalClinic.Core.Domain.Entities.MedicalRecord", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("uuid");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Anamnesis")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ClinicalExam")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTime>("DateOpened")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Diagnosis")
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("PatientId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("TreatmentPlan")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.HasKey("Id");
 
@@ -448,53 +414,48 @@ namespace DentalClinic.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
 
-                    b.Property<int>("PatientId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("paciente_id");
 
                     b.Property<List<ToothCondition>>("Teeth")
                         .IsRequired()
-                        .HasColumnType("jsonb");
+                        .HasColumnType("jsonb")
+                        .HasColumnName("dados_dentes_json");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("atualizado_em");
 
                     b.Property<Guid>("UpdatedBy")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("atualizado_por");
 
                     b.HasKey("Id");
 
                     b.HasIndex("PatientId")
                         .IsUnique();
 
-                    b.HasIndex("UpdatedAt");
-
                     b.ToTable("odontogramas", (string)null);
                 });
 
             modelBuilder.Entity("DentalClinic.Core.Domain.Entities.Patient", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Address")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("Allergies")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("AlternatePhone")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                    b.Property<DateTime>("BirthDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("data_nascimento");
 
                     b.Property<string>("CPF")
                         .IsRequired()
@@ -502,82 +463,110 @@ namespace DentalClinic.Infrastructure.Migrations
                         .HasColumnType("character varying(14)")
                         .HasColumnName("cpf");
 
-                    b.Property<string>("City")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("DateOfBirth")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("email");
 
-                    b.Property<string>("Gender")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("MedicalHistory")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("Medications")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("Name")
+                    b.Property<string>("FullName")
                         .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("nome_completo");
 
-                    b.Property<string>("Neighborhood")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                    b.Property<string>("Gender")
+                        .HasMaxLength(1)
+                        .HasColumnType("character varying(1)")
+                        .HasColumnName("sexo");
+
+                    b.Property<DateTime>("LastModifiedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ultima_modificacao")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<bool>("LgpdConsent")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("consentimento_lgpd");
 
                     b.Property<string>("Phone")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("telefone");
 
-                    b.Property<string>("RG")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                    b.Property<string>("SocialName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("nome_social");
 
-                    b.Property<string>("ResponsibleName")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("ResponsiblePhone")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<string>("State")
-                        .HasMaxLength(2)
-                        .HasColumnType("character varying(2)");
+                    b.Property<string>("SusNumber")
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)")
+                        .HasColumnName("numero_sus");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ZipCode")
-                        .HasMaxLength(9)
-                        .HasColumnType("character varying(9)");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("atualizado_em");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CPF")
                         .IsUnique();
 
-                    b.HasIndex("Name");
+                    b.HasIndex("FullName");
+
+                    b.HasIndex("LastModifiedAt");
 
                     b.ToTable("pacientes", (string)null);
+                });
+
+            modelBuilder.Entity("DentalClinic.Core.Domain.Entities.PatientChangeLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ChangesJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("changes_json");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("patient_id");
+
+                    b.Property<DateTime>("Timestamp")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("timestamp")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("user_name");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("PatientId", "Timestamp");
+
+                    b.ToTable("patient_change_logs", (string)null);
                 });
 
             modelBuilder.Entity("DentalClinic.Core.Domain.Entities.Prescription", b =>
@@ -603,8 +592,8 @@ namespace DentalClinic.Infrastructure.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<int>("PatientId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -628,9 +617,6 @@ namespace DentalClinic.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<int?>("MedicalRecordId")
-                        .HasColumnType("integer");
 
                     b.Property<Guid>("ProcedureId")
                         .HasColumnType("uuid");
@@ -656,8 +642,6 @@ namespace DentalClinic.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MedicalRecordId");
-
                     b.ToTable("TreatmentItems");
                 });
 
@@ -665,51 +649,62 @@ namespace DentalClinic.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<DateTime?>("BlockedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("bloqueado_ate");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
 
                     b.Property<DateTime?>("DateOfBirth")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("data_nascimento");
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
 
                     b.Property<int>("FailedLoginAttempts")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("tentativas_falhas");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("ativo");
 
                     b.Property<DateTime?>("LastLoginAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ultimo_login");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("nome_completo");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("senha_hash");
 
                     b.Property<string>("Phone")
                         .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<int>("Role")
-                        .HasColumnType("integer");
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("telefone");
 
                     b.PrimitiveCollection<List<UserRole>>("Roles")
                         .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
+                        .HasColumnType("jsonb")
+                        .HasColumnName("perfis_json");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("atualizado_em");
 
                     b.HasKey("Id");
 
@@ -754,30 +749,40 @@ namespace DentalClinic.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<Guid>("ClinicId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("clinica_id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
 
                     b.Property<bool>("IsResolved")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("resolvido");
 
                     b.Property<string>("Observation")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("observacao");
 
-                    b.Property<int>("PatientId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("paciente_id");
 
                     b.Property<string>("Priority")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("prioridade");
 
-                    b.Property<int>("Specialty")
-                        .HasColumnType("integer");
+                    b.Property<int?>("Specialty")
+                        .HasColumnType("integer")
+                        .HasColumnName("especialidade");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -785,8 +790,6 @@ namespace DentalClinic.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ClinicId");
-
-                    b.HasIndex("IsResolved");
 
                     b.HasIndex("PatientId");
 
@@ -817,8 +820,7 @@ namespace DentalClinic.Infrastructure.Migrations
                     b.HasOne("DentalClinic.Core.Domain.Entities.User", "CriadoPor")
                         .WithMany()
                         .HasForeignKey("CriadoPorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("DentalClinic.Core.Domain.Entities.Patient", "Paciente")
                         .WithMany("Anexos")
@@ -845,10 +847,6 @@ namespace DentalClinic.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("DentalClinic.Core.Domain.Entities.User", null)
-                        .WithMany("Appointments")
-                        .HasForeignKey("UserId");
-
                     b.Navigation("Doctor");
 
                     b.Navigation("Patient");
@@ -856,81 +854,13 @@ namespace DentalClinic.Infrastructure.Migrations
 
             modelBuilder.Entity("DentalClinic.Core.Domain.Entities.Attachment", b =>
                 {
-                    b.HasOne("DentalClinic.Core.Domain.Entities.MedicalRecord", "MedicalRecord")
-                        .WithMany("Attachments")
-                        .HasForeignKey("MedicalRecordId");
-
                     b.HasOne("DentalClinic.Core.Domain.Entities.Patient", "Patient")
-                        .WithMany("Attachments")
+                        .WithMany()
                         .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DentalClinic.Core.Domain.Entities.User", null)
-                        .WithMany("Attachments")
-                        .HasForeignKey("UserId");
-
-                    b.Navigation("MedicalRecord");
-
                     b.Navigation("Patient");
-                });
-
-            modelBuilder.Entity("DentalClinic.Core.Domain.Entities.Clinic", b =>
-                {
-                    b.OwnsOne("DentalClinic.Core.Domain.ValueObjects.Address", "Address", b1 =>
-                        {
-                            b1.Property<Guid>("ClinicId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<string>("City")
-                                .IsRequired()
-                                .HasMaxLength(100)
-                                .HasColumnType("character varying(100)")
-                                .HasColumnName("endereco_cidade");
-
-                            b1.Property<string>("Complement")
-                                .HasColumnType("text");
-
-                            b1.Property<string>("Neighborhood")
-                                .IsRequired()
-                                .HasMaxLength(100)
-                                .HasColumnType("character varying(100)")
-                                .HasColumnName("endereco_bairro");
-
-                            b1.Property<string>("Number")
-                                .IsRequired()
-                                .HasMaxLength(20)
-                                .HasColumnType("character varying(20)")
-                                .HasColumnName("endereco_numero");
-
-                            b1.Property<string>("State")
-                                .IsRequired()
-                                .HasMaxLength(2)
-                                .HasColumnType("character varying(2)")
-                                .HasColumnName("endereco_estado");
-
-                            b1.Property<string>("Street")
-                                .IsRequired()
-                                .HasMaxLength(255)
-                                .HasColumnType("character varying(255)")
-                                .HasColumnName("endereco_rua");
-
-                            b1.Property<string>("ZipCode")
-                                .IsRequired()
-                                .HasMaxLength(10)
-                                .HasColumnType("character varying(10)")
-                                .HasColumnName("endereco_cep");
-
-                            b1.HasKey("ClinicId");
-
-                            b1.ToTable("clinicas");
-
-                            b1.WithOwner()
-                                .HasForeignKey("ClinicId");
-                        });
-
-                    b.Navigation("Address")
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("DentalClinic.Core.Domain.Entities.Evolution", b =>
@@ -941,12 +871,8 @@ namespace DentalClinic.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DentalClinic.Core.Domain.Entities.MedicalRecord", null)
-                        .WithMany("Evolutions")
-                        .HasForeignKey("MedicalRecordId");
-
                     b.HasOne("DentalClinic.Core.Domain.Entities.Patient", "Patient")
-                        .WithMany()
+                        .WithMany("Evolutions")
                         .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -954,18 +880,14 @@ namespace DentalClinic.Infrastructure.Migrations
                     b.HasOne("DentalClinic.Core.Domain.Entities.User", "Professor")
                         .WithMany()
                         .HasForeignKey("ProfessorId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("DentalClinic.Core.Domain.Entities.User", "Student")
                         .WithMany()
                         .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("DentalClinic.Core.Domain.Entities.User", null)
-                        .WithMany("Evolutions")
-                        .HasForeignKey("UserId");
 
                     b.Navigation("Clinic");
 
@@ -974,6 +896,16 @@ namespace DentalClinic.Infrastructure.Migrations
                     b.Navigation("Professor");
 
                     b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("DentalClinic.Core.Domain.Entities.LogAuditoria", b =>
+                {
+                    b.HasOne("DentalClinic.Core.Domain.Entities.User", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("DentalClinic.Core.Domain.Entities.MedicalCertificate", b =>
@@ -998,7 +930,7 @@ namespace DentalClinic.Infrastructure.Migrations
             modelBuilder.Entity("DentalClinic.Core.Domain.Entities.MedicalRecord", b =>
                 {
                     b.HasOne("DentalClinic.Core.Domain.Entities.Patient", "Patient")
-                        .WithMany("MedicalRecords")
+                        .WithMany()
                         .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1012,6 +944,69 @@ namespace DentalClinic.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("DentalClinic.Core.Domain.Entities.Patient", b =>
+                {
+                    b.OwnsOne("DentalClinic.Core.Domain.ValueObjects.Address", "Address", b1 =>
+                        {
+                            b1.Property<Guid>("PatientId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("City")
+                                .IsRequired()
+                                .HasColumnType("text")
+                                .HasColumnName("endereco_cidade");
+
+                            b1.Property<string>("Complement")
+                                .HasColumnType("text")
+                                .HasColumnName("endereco_complemento");
+
+                            b1.Property<string>("Neighborhood")
+                                .IsRequired()
+                                .HasColumnType("text")
+                                .HasColumnName("endereco_bairro");
+
+                            b1.Property<string>("Number")
+                                .IsRequired()
+                                .HasColumnType("text")
+                                .HasColumnName("endereco_numero");
+
+                            b1.Property<string>("State")
+                                .IsRequired()
+                                .HasColumnType("text")
+                                .HasColumnName("endereco_estado");
+
+                            b1.Property<string>("Street")
+                                .IsRequired()
+                                .HasColumnType("text")
+                                .HasColumnName("endereco_rua");
+
+                            b1.Property<string>("ZipCode")
+                                .IsRequired()
+                                .HasColumnType("text")
+                                .HasColumnName("endereco_cep");
+
+                            b1.HasKey("PatientId");
+
+                            b1.ToTable("pacientes");
+
+                            b1.WithOwner()
+                                .HasForeignKey("PatientId");
+                        });
+
+                    b.Navigation("Address");
+                });
+
+            modelBuilder.Entity("DentalClinic.Core.Domain.Entities.PatientChangeLog", b =>
+                {
+                    b.HasOne("DentalClinic.Core.Domain.Entities.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Patient");
@@ -1036,67 +1031,8 @@ namespace DentalClinic.Infrastructure.Migrations
                     b.Navigation("Patient");
                 });
 
-            modelBuilder.Entity("DentalClinic.Core.Domain.Entities.TreatmentItem", b =>
-                {
-                    b.HasOne("DentalClinic.Core.Domain.Entities.MedicalRecord", null)
-                        .WithMany("TreatmentItems")
-                        .HasForeignKey("MedicalRecordId");
-                });
-
             modelBuilder.Entity("DentalClinic.Core.Domain.Entities.User", b =>
                 {
-                    b.OwnsOne("DentalClinic.Core.Domain.ValueObjects.Address", "Address", b1 =>
-                        {
-                            b1.Property<Guid>("UserId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<string>("City")
-                                .IsRequired()
-                                .HasMaxLength(100)
-                                .HasColumnType("character varying(100)")
-                                .HasColumnName("endereco_cidade");
-
-                            b1.Property<string>("Complement")
-                                .HasColumnType("text");
-
-                            b1.Property<string>("Neighborhood")
-                                .IsRequired()
-                                .HasMaxLength(100)
-                                .HasColumnType("character varying(100)")
-                                .HasColumnName("endereco_bairro");
-
-                            b1.Property<string>("Number")
-                                .IsRequired()
-                                .HasMaxLength(20)
-                                .HasColumnType("character varying(20)")
-                                .HasColumnName("endereco_numero");
-
-                            b1.Property<string>("State")
-                                .IsRequired()
-                                .HasMaxLength(2)
-                                .HasColumnType("character varying(2)")
-                                .HasColumnName("endereco_estado");
-
-                            b1.Property<string>("Street")
-                                .IsRequired()
-                                .HasMaxLength(255)
-                                .HasColumnType("character varying(255)")
-                                .HasColumnName("endereco_rua");
-
-                            b1.Property<string>("ZipCode")
-                                .IsRequired()
-                                .HasMaxLength(10)
-                                .HasColumnType("character varying(10)")
-                                .HasColumnName("endereco_cep");
-
-                            b1.HasKey("UserId");
-
-                            b1.ToTable("usuarios");
-
-                            b1.WithOwner()
-                                .HasForeignKey("UserId");
-                        });
-
                     b.OwnsOne("DentalClinic.Core.Domain.ValueObjects.CPF", "CPF", b1 =>
                         {
                             b1.Property<Guid>("UserId")
@@ -1141,8 +1077,6 @@ namespace DentalClinic.Infrastructure.Migrations
                                 .HasForeignKey("UserId");
                         });
 
-                    b.Navigation("Address");
-
                     b.Navigation("CPF");
 
                     b.Navigation("EmailAddress")
@@ -1168,31 +1102,11 @@ namespace DentalClinic.Infrastructure.Migrations
                     b.Navigation("Patient");
                 });
 
-            modelBuilder.Entity("DentalClinic.Core.Domain.Entities.MedicalRecord", b =>
-                {
-                    b.Navigation("Attachments");
-
-                    b.Navigation("Evolutions");
-
-                    b.Navigation("TreatmentItems");
-                });
-
             modelBuilder.Entity("DentalClinic.Core.Domain.Entities.Patient", b =>
                 {
                     b.Navigation("Anexos");
 
                     b.Navigation("Appointments");
-
-                    b.Navigation("Attachments");
-
-                    b.Navigation("MedicalRecords");
-                });
-
-            modelBuilder.Entity("DentalClinic.Core.Domain.Entities.User", b =>
-                {
-                    b.Navigation("Appointments");
-
-                    b.Navigation("Attachments");
 
                     b.Navigation("Evolutions");
                 });

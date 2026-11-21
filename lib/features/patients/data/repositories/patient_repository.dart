@@ -139,7 +139,9 @@ class PatientRepository implements IPatientRepository {
     return entity.Patient(
       id: json['id']?.toString() ?? '',
       fullName: json['fullName'] ?? 'Sem Nome',
+      socialName: json['socialName'] as String? ?? json['SocialName'] as String?,
       cpf: json['cpf'] ?? '',
+      susNumber: json['susNumber'] as String? ?? json['SusNumber'] as String?,
       birthDate: DateTime.parse(json['birthDate'] ?? DateTime.now().toIso8601String()),
       email: json['email'],
       phone: json['phone'],
@@ -154,7 +156,9 @@ class PatientRepository implements IPatientRepository {
     return entity.Patient(
       id: row.id,
       fullName: row.fullName,
+      socialName: row.socialName,
       cpf: row.cpf,
+      susNumber: row.susNumber,
       birthDate: row.birthDate,
       email: row.email,
       phone: row.phone,
@@ -169,7 +173,9 @@ class PatientRepository implements IPatientRepository {
     return {
       'Id': patient.id,
       'FullName': patient.fullName,
+      'SocialName': patient.socialName,
       'CPF': patient.cpf,
+      'SusNumber': patient.susNumber,
       'Email': patient.email,
       'Phone': patient.phone,
       'BirthDate': patient.birthDate.toIso8601String(),
@@ -185,7 +191,9 @@ class PatientRepository implements IPatientRepository {
       drift_db.PatientsLocalCompanion.insert(
         id: patient.id,
         fullName: patient.fullName,
+        socialName: Value(patient.socialName),
         cpf: patient.cpf,
+        susNumber: Value(patient.susNumber),
         birthDate: patient.birthDate,
         createdAt: patient.createdAt,
         email: Value(patient.email),
