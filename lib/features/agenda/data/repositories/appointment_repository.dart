@@ -51,7 +51,7 @@ class AppointmentRepository implements IAppointmentRepository {
               _appointmentFromJson(Map<String, dynamic>.from(item)),
             );
           } catch (e) {
-            _logger.warning('Agendamento remoto inválido ignorado: $e');
+            _logger.warning('Agendamento remoto invÃ¡lido ignorado: $e');
           }
         }
       }
@@ -126,8 +126,8 @@ class AppointmentRepository implements IAppointmentRepository {
           'patientId': appointment.patientId,
           'doctorId': appointment.doctorId,
           'clinicId': appointment.clinicId,
-          'startTime': appointment.startTime.toIso8601String(),
-          'endTime': appointment.endTime.toIso8601String(),
+          'startTime': appointment.startTime.toUtc().toIso8601String(),
+          'endTime': appointment.endTime.toUtc().toIso8601String(),
           'procedureName': appointment.procedureName,
           'notes': appointment.notes,
           'studentId': appointment.studentId,
@@ -168,7 +168,7 @@ class AppointmentRepository implements IAppointmentRepository {
       }
       throw Exception('Falha ao salvar o agendamento no servidor');
     }
-    throw Exception('O servidor não confirmou o agendamento');
+    throw Exception('O servidor nÃ£o confirmou o agendamento');
   }
 
   @override
@@ -220,8 +220,8 @@ class AppointmentRepository implements IAppointmentRepository {
               'patientId': appointment.patientId,
               'doctorId': appointment.doctorId,
               'clinicId': appointment.clinicId,
-              'startTime': appointment.startTime.toIso8601String(),
-              'endTime': appointment.endTime.toIso8601String(),
+              'startTime': appointment.startTime.toUtc().toIso8601String(),
+              'endTime': appointment.endTime.toUtc().toIso8601String(),
               'procedureName': appointment.procedureName,
               'notes': appointment.notes,
               'studentId': appointment.studentId,
@@ -348,7 +348,7 @@ class AppointmentRepository implements IAppointmentRepository {
           if (nested != null) return nested.toString();
         }
       }
-      return 'Paciente não informado';
+      return 'Paciente nÃ£o informado';
     }
 
     dynamic startValue =
@@ -368,7 +368,7 @@ class AppointmentRepository implements IAppointmentRepository {
           json['doctorName']?.toString() ??
           nestedName(
             json['doctor'],
-          ).replaceAll('Paciente não informado', 'Não informado'),
+          ).replaceAll('Paciente nÃ£o informado', 'NÃ£o informado'),
       studentId: json['studentId']?.toString(),
       studentName: json['studentName']?.toString(),
       professorId: json['professorId']?.toString(),

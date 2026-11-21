@@ -51,13 +51,30 @@ public class AppointmentsController : ControllerBase
     {
         if (request.PatientId == Guid.Empty || request.ClinicId == Guid.Empty)
             return BadRequest("Paciente e clínica devem possuir IDs válidos.");
-        if (request.EndTime <= request.StartTime)
+        var startTime = request.StartTime.Kind == DateTimeKind.Utc
+            ? request.StartTime
+            : DateTime.SpecifyKind(request.StartTime, DateTimeKind.Utc);
+        var endTime = request.EndTime.Kind == DateTimeKind.Utc
+            ? request.EndTime
+            : DateTime.SpecifyKind(request.EndTime, DateTimeKind.Utc);
+
+        if (endTime <= startTime)
             return BadRequest("O horário de término deve ser posterior ao início.");
         if (await _patientRepository.GetByIdAsync(request.PatientId) == null)
             return BadRequest("O paciente selecionado não existe no servidor.");
 
-        var occupied = await _appointmentRepository.GetByRangeAsync(request.StartTime, request.EndTime, request.ClinicId);
-        if (occupied.Any(a => a.StartTime < request.EndTime && a.EndTime > request.StartTime))
+        if (await _clinicRepository.GetByIdAsync(request.ClinicId) == null)
+        {
+            var clinicName = string.IsNullOrWhiteSpace(request.ClinicName)
+                ? "Clínica selecionada"
+                : request.ClinicName.Trim();
+            var clinic = Clinic.CreateBasic(clinicName, "Clínica Escola", 1, 8, 18);
+            clinic.Id = request.ClinicId;
+            await _clinicRepository.AddAsync(clinic);
+        }
+
+        var occupied = await _appointmentRepository.GetByRangeAsync(startTime, endTime, request.ClinicId);
+        if (occupied.Any(a => a.StartTime < endTime && a.EndTime > startTime))
             return Conflict("Já existe um agendamento nesse horário para esta clínica.");
 
         var doctorId = request.DoctorId ?? request.ProfessorId ?? request.StudentId ?? Guid.Empty;
@@ -74,8 +91,8 @@ public class AppointmentsController : ControllerBase
         var appointment = Appointment.Create(
             request.PatientId,
             doctorId,
-            request.StartTime,
-            request.EndTime,
+            startTime,
+            endTime,
             request.ClinicId,
             request.ProcedureName,
             request.Notes,
@@ -146,14 +163,21 @@ public class AppointmentsController : ControllerBase
         var appointment = await _appointmentRepository.GetByIdAsync(id);
         if (appointment == null) return NotFound();
 
-        if (request.EndTime <= request.StartTime)
+        var startTime = request.StartTime.Kind == DateTimeKind.Utc
+            ? request.StartTime
+            : DateTime.SpecifyKind(request.StartTime, DateTimeKind.Utc);
+        var endTime = request.EndTime.Kind == DateTimeKind.Utc
+            ? request.EndTime
+            : DateTime.SpecifyKind(request.EndTime, DateTimeKind.Utc);
+
+        if (endTime <= startTime)
             return BadRequest("O horário de término deve ser posterior ao início.");
 
-        var occupied = await _appointmentRepository.GetByRangeAsync(request.StartTime, request.EndTime, appointment.ClinicId);
-        if (occupied.Any(a => a.Id != id && a.StartTime < request.EndTime && a.EndTime > request.StartTime))
+        var occupied = await _appointmentRepository.GetByRangeAsync(startTime, endTime, appointment.ClinicId);
+        if (occupied.Any(a => a.Id != id && a.StartTime < endTime && a.EndTime > startTime))
             return Conflict("Já existe um agendamento nesse horário para esta clínica.");
 
-        appointment.Reschedule(request.StartTime, request.EndTime);
+        appointment.Reschedule(startTime, endTime);
         await _appointmentRepository.UpdateAsync(appointment);
 
         return NoContent();
@@ -173,7 +197,8 @@ public record CreateAppointmentRequest(
     Guid? StudentId,
     string? StudentName,
     Guid? ProfessorId,
-    string? ProfessorName);
+    string? ProfessorName,
+    string? ClinicName);
 
 public record AppointmentResponse
 {

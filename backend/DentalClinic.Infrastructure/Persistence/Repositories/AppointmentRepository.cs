@@ -23,6 +23,9 @@ public class AppointmentRepository : IAppointmentRepository
 
     public async Task<IEnumerable<Appointment>> GetByRangeAsync(DateTime start, DateTime end, Guid? clinicId)
     {
+        start = start.Kind == DateTimeKind.Utc ? start : DateTime.SpecifyKind(start, DateTimeKind.Utc);
+        end = end.Kind == DateTimeKind.Utc ? end : DateTime.SpecifyKind(end, DateTimeKind.Utc);
+
         var query = _context.Appointments
             .Include(a => a.Patient)
             .Include(a => a.Doctor)
