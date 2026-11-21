@@ -156,24 +156,46 @@ public record CreateAppointmentRequest(
     Guid? ProfessorId,
     string? ProfessorName);
 
-public record AppointmentResponse(Appointment Appointment)
+public record AppointmentResponse
 {
-    public Guid Id => Appointment.Id;
-    public Guid PatientId => Appointment.PatientId;
-    public string PatientName => Appointment.Patient?.FullName ?? "Paciente não informado";
-    public Guid DoctorId => Appointment.DoctorId;
-    public string DoctorName => Appointment.Doctor?.Name ?? "Não informado";
-    public Guid? StudentId => Appointment.StudentId;
-    public string? StudentName => Appointment.StudentName;
-    public Guid? ProfessorId => Appointment.ProfessorId;
-    public string? ProfessorName => Appointment.ProfessorName;
-    public DateTime StartTime => Appointment.StartTime;
-    public DateTime EndTime => Appointment.EndTime;
-    public AppointmentStatus Status => Appointment.Status;
-    public string? ProcedureName => Appointment.ProcedureName;
-    public string? Notes => Appointment.Notes;
-    public Guid ClinicId => Appointment.ClinicId;
-    public DateTime? ArrivalTime => Appointment.ArrivalTime;
-    public DateTime? ActualStartTime => Appointment.ActualStartTime;
-    public DateTime? ActualEndTime => Appointment.ActualEndTime;
+    public AppointmentResponse(Appointment appointment)
+    {
+        Id = appointment.Id;
+        PatientId = appointment.PatientId;
+        PatientName = appointment.Patient?.FullName ?? "Paciente não informado";
+        DoctorId = appointment.DoctorId;
+        DoctorName = appointment.Doctor?.Name ?? "Não informado";
+        StudentId = appointment.StudentId;
+        StudentName = appointment.StudentName;
+        ProfessorId = appointment.ProfessorId;
+        ProfessorName = appointment.ProfessorName;
+        StartTime = appointment.StartTime;
+        EndTime = appointment.EndTime;
+        Status = appointment.Status;
+        ProcedureName = appointment.ProcedureName;
+        Notes = appointment.Notes;
+        ClinicId = appointment.ClinicId;
+        ArrivalTime = appointment.ArrivalTime;
+        ActualStartTime = appointment.ActualStartTime;
+        ActualEndTime = appointment.ActualEndTime;
+    }
+
+    public Guid Id { get; init; }
+    public Guid PatientId { get; init; }
+    public string PatientName { get; init; } = "Paciente não informado";
+    public Guid DoctorId { get; init; }
+    public string DoctorName { get; init; } = "Não informado";
+    public Guid? StudentId { get; init; }
+    public string? StudentName { get; init; }
+    public Guid? ProfessorId { get; init; }
+    public string? ProfessorName { get; init; }
+    public DateTime StartTime { get; init; }
+    public DateTime EndTime { get; init; }
+    public AppointmentStatus Status { get; init; }
+    public string? ProcedureName { get; init; }
+    public string? Notes { get; init; }
+    public Guid ClinicId { get; init; }
+    public DateTime? ArrivalTime { get; init; }
+    public DateTime? ActualStartTime { get; init; }
+    public DateTime? ActualEndTime { get; init; }
 }

@@ -53,6 +53,10 @@ builder.Services.AddSignalR();
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<AuditFilter>();
+}).AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
 });
 
 // 5. Configuração JWT
@@ -145,6 +149,56 @@ using (var scope = app.Services.CreateScope())
     var hasher = services.GetRequiredService<IPasswordHasher>();
 
     try {
+        context.Database.ExecuteSqlRaw(@"
+            CREATE TABLE IF NOT EXISTS ""__EFMigrationsHistory"" (
+                ""MigrationId"" character varying(150) NOT NULL PRIMARY KEY,
+                ""ProductVersion"" character varying(32) NOT NULL
+            );
+
+            ALTER TABLE IF EXISTS pacientes
+                ADD COLUMN IF NOT EXISTS ultima_modificacao timestamp with time zone,
+                ADD COLUMN IF NOT EXISTS nome_social character varying(255),
+                ADD COLUMN IF NOT EXISTS numero_sus character varying(15),
+                ADD COLUMN IF NOT EXISTS endereco_rua character varying(255),
+                ADD COLUMN IF NOT EXISTS endereco_numero character varying(20),
+                ADD COLUMN IF NOT EXISTS endereco_complemento text,
+                ADD COLUMN IF NOT EXISTS endereco_bairro character varying(100),
+                ADD COLUMN IF NOT EXISTS endereco_cidade character varying(100),
+                ADD COLUMN IF NOT EXISTS endereco_estado character varying(2),
+                ADD COLUMN IF NOT EXISTS endereco_cep character varying(10);
+            ALTER TABLE IF EXISTS pacientes
+                ALTER COLUMN ultima_modificacao SET DEFAULT now();
+            UPDATE pacientes SET ultima_modificacao = COALESCE(ultima_modificacao, now())
+                WHERE ultima_modificacao IS NULL;
+
+            INSERT INTO ""__EFMigrationsHistory"" (""MigrationId"", ""ProductVersion"")
+            SELECT migration_id, '9.0.0'
+            FROM (VALUES
+                ('20260720024143_FixForeignKeysAndTypes'),
+                ('20260720025121_InitialCreate'),
+                ('20260720065402_FixRelations_v2')
+            ) AS applied(migration_id)
+            WHERE to_regclass('public.clinicas') IS NOT NULL
+              AND to_regclass('public.pacientes') IS NOT NULL
+              AND to_regclass('public.agendamentos') IS NOT NULL
+            ON CONFLICT (""MigrationId"") DO NOTHING;
+
+            INSERT INTO ""__EFMigrationsHistory"" (""MigrationId"", ""ProductVersion"")
+            SELECT '20261121060519_AddPatientSocialNameAndSusNumber', '9.0.0'
+            WHERE to_regclass('public.pacientes') IS NOT NULL
+              AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'pacientes' AND column_name = 'nome_social')
+              AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'pacientes' AND column_name = 'numero_sus')
+            ON CONFLICT (""MigrationId"") DO NOTHING;
+
+            INSERT INTO ""__EFMigrationsHistory"" (""MigrationId"", ""ProductVersion"")
+            SELECT '20261121082236_AddAppointmentResponsiblesAndTimes', '9.0.0'
+            WHERE to_regclass('public.agendamentos') IS NOT NULL
+              AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'agendamentos' AND column_name = 'StudentId')
+              AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'agendamentos' AND column_name = 'ProfessorId')
+              AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'agendamentos' AND column_name = 'ArrivalTime')
+            ON CONFLICT (""MigrationId"") DO NOTHING;
+        ");
+
         context.Database.Migrate();
 
         var adminEmail = "admin@odontoclinica.edu.br";
