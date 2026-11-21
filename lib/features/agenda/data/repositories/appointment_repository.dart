@@ -25,9 +25,26 @@ class AppointmentRepository implements IAppointmentRepository {
         if (clinicId != null) 'clinicId': clinicId,
       });
 
-      final List<dynamic> data = response.data ?? [];
-      final remoteAppointments = data.map((json) => Appointment.fromJson(json)).toList();
-      _updateLocalCache(remoteAppointments);
+      final data = response.data is List ? response.data as List : const [];
+      final remoteAppointments = <Appointment>[];
+      for (final item in data) {
+        if (item is Map) {
+          try {
+            remoteAppointments.add(_appointmentFromJson(Map<String, dynamic>.from(item)));
+          } catch (e) {
+            _logger.warning('Agendamento remoto inválido ignorado: $e');
+          }
+        }
+      }
+
+      await _updateLocalCache(remoteAppointments);
+
+      return remoteAppointments.where((appointment) {
+        final inRange = !appointment.startTime.isBefore(start) &&
+            !appointment.startTime.isAfter(end);
+        final inClinic = clinicId == null || appointment.clinicId == clinicId;
+        return inRange && inClinic;
+      }).toList();
     } catch (e) {
       _logger.warning('Falha ao buscar agendamentos remotos: $e');
     }
@@ -60,9 +77,13 @@ class AppointmentRepository implements IAppointmentRepository {
       );
       
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final newAppointment = Appointment.fromJson(response.data);
-        await _saveLocal(newAppointment, true);
-        return newAppointment;
+        if (response.data is Map) {
+          final newAppointment = _appointmentFromJson(Map<String, dynamic>.from(response.data));
+          await _saveLocal(newAppointment, true);
+          return newAppointment;
+        }
+        await _saveLocal(appointment, true);
+        return appointment;
       }
     } catch (e) {
       _logger.severe('Erro no agendamento remoto: $e');
@@ -174,27 +195,56 @@ class AppointmentRepository implements IAppointmentRepository {
     } catch (_) {}
   }
 
-  void _updateLocalCache(List<Appointment> appointments) async {
+  Future<void> _updateLocalCache(List<Appointment> appointments) async {
     for (var app in appointments) {
       await _saveLocal(app, true);
     }
   }
 
+  Appointment _appointmentFromJson(Map<String, dynamic> json) {
+    AppointmentStatus status;
+    final rawStatus = json['status'];
+    if (rawStatus is int) {
+      final index = rawStatus >= 1 ? rawStatus - 1 : rawStatus;
+      status = index >= 0 && index < AppointmentStatus.values.length
+          ? AppointmentStatus.values[index]
+          : AppointmentStatus.scheduled;
+    } else {
+      status = AppointmentStatus.values.firstWhere(
+        (e) => e.name == rawStatus?.toString(),
+        orElse: () => AppointmentStatus.scheduled,
+      );
+    }
+
+    DateTime parseDate(dynamic value) {
+      if (value is DateTime) return value;
+      return DateTime.parse(value.toString());
+    }
+
+    return Appointment(
+      id: json['id'].toString(),
+      patientId: json['patientId']?.toString() ?? '',
+      patientName: json['patientName']?.toString() ?? 'Paciente não informado',
+      doctorId: json['doctorId']?.toString() ?? '',
+      doctorName: json['doctorName']?.toString() ?? 'Não informado',
+      studentId: json['studentId']?.toString(),
+      studentName: json['studentName']?.toString(),
+      professorId: json['professorId']?.toString(),
+      professorName: json['professorName']?.toString(),
+      startTime: parseDate(json['startTime']),
+      endTime: parseDate(json['endTime']),
+      status: status,
+      procedureName: json['procedureName']?.toString(),
+      notes: json['notes']?.toString(),
+      clinicId: json['clinicId']?.toString() ?? '',
+      arrivalTime: json['arrivalTime'] == null ? null : parseDate(json['arrivalTime']),
+      actualStartTime: json['actualStartTime'] == null ? null : parseDate(json['actualStartTime']),
+      actualEndTime: json['actualEndTime'] == null ? null : parseDate(json['actualEndTime']),
+    );
+  }
+
   Appointment _mapSchemaToEntity(dynamic row) {
     final dataMap = row.toJson();
-    return Appointment(
-      id: dataMap['id'],
-      patientId: dataMap['patientId'] ?? '', 
-      patientName: dataMap['patientName'],
-      doctorId: dataMap['doctorId'] ?? '',
-      doctorName: dataMap['doctorName'] ?? '',
-      startTime: DateTime.parse(dataMap['startTime']),
-      endTime: DateTime.parse(dataMap['endTime']),
-      status: AppointmentStatus.values.firstWhere(
-        (e) => e.name == dataMap['status'],
-        orElse: () => AppointmentStatus.scheduled,
-      ),
-      clinicId: dataMap['clinicId'] ?? '',
-    );
+    return _appointmentFromJson(dataMap);
   }
 }

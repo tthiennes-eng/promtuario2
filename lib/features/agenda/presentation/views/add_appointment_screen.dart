@@ -124,9 +124,16 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.local_hospital),
                 ),
-                items: _clinicOptions.map((name) => DropdownMenuItem(
-                  value: name, 
-                  child: Text(name)
+                items: {
+                  ..._clinicOptions,
+                  ...clinicsAsync.maybeWhen(
+                    data: (clinics) => clinics.map((clinic) => clinic.name),
+                    orElse: () => const <String>[],
+                  ),
+                  if (_selectedClinicName != null) _selectedClinicName!,
+                }.map((name) => DropdownMenuItem(
+                  value: name,
+                  child: Text(name),
                 )).toList(),
                 onChanged: (name) {
                   setState(() {
