@@ -56,7 +56,13 @@ class ProntuarioScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             anamneseAsync.maybeWhen(
-              data: (data) => _buildAllergyAlert(data),
+              data: (data) => Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildComorbidityAlert(data),
+                  _buildAllergyAlert(data),
+                ],
+              ),
               orElse: () => const SizedBox.shrink(),
             ),
             const SizedBox(height: 24),
@@ -103,6 +109,90 @@ class ProntuarioScreen extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16, left: 4),
       child: Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 1.1)),
+    );
+  }
+
+  Widget _buildComorbidityAlert(Map<String, dynamic>? data) {
+    if (data == null) return const SizedBox.shrink();
+
+    final sistemico = data['sistemico'];
+    if (sistemico is! Map) return const SizedBox.shrink();
+
+    final comorbidades = <String>[];
+
+    void addMapCondition(String key, String label) {
+      final condition = sistemico[key];
+      if (condition is Map && condition['sim'] == true) {
+        final detalhe = condition['qual']?.toString().trim() ?? '';
+        comorbidades.add(detalhe.isEmpty ? label : '$label: $detalhe');
+      } else if (condition is Map && condition['sim'] == 'true') {
+        comorbidades.add(label);
+      }
+    }
+
+    addMapCondition('cardiacos', 'Problemas cardíacos');
+    addMapCondition('digestivos', 'Problemas digestivos');
+    addMapCondition('figado', 'Problemas de fígado');
+    addMapCondition('neurologicos', 'Problemas neurológicos');
+    addMapCondition('coagulacao', 'Problemas de coagulação');
+
+    final sinusite = sistemico['sinusite'];
+    if (sinusite is Map && sinusite['sim'] == true) {
+      comorbidades.add('Sinusite');
+    }
+
+    final pressao = sistemico['pressao'];
+    if (pressao is Map &&
+        ((pressao['qual']?.toString().trim().isNotEmpty ?? false) ||
+            pressao['usaMeds'] == true)) {
+      final detalhe = pressao['qual']?.toString().trim() ?? '';
+      comorbidades.add(detalhe.isEmpty
+          ? 'Problema de pressão arterial'
+          : 'Pressão arterial: $detalhe');
+    }
+
+    final diabetes = sistemico['diabetes'];
+    if (diabetes is Map && diabetes['sim'] == true) {
+      final controlada = diabetes['controlada']?.toString().trim() ?? '';
+      comorbidades.add(controlada.isEmpty
+          ? 'Diabetes'
+          : 'Diabetes ($controlada)');
+    }
+
+    if (comorbidades.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange.shade300, width: 2),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.medical_information_outlined,
+              color: Colors.orange.shade900, size: 28),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('ALERTA DE COMORBIDADE',
+                    style: TextStyle(
+                        color: Colors.orange.shade900,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14)),
+                const SizedBox(height: 4),
+                Text(comorbidades.join(' • '),
+                    style: TextStyle(
+                        color: Colors.orange.shade800, fontSize: 13)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
