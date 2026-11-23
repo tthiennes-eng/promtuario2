@@ -20,44 +20,56 @@ class ProceduresRepository implements IProceduresRepository {
       final List<dynamic> data = rawData is List
           ? rawData
           : (rawData is Map
-              ? (rawData['data'] is List
-                  ? rawData['data'] as List<dynamic>
-                  : const <dynamic>[])
-              : const <dynamic>[]);
+                ? (rawData['data'] is List
+                      ? rawData['data'] as List<dynamic>
+                      : rawData['value'] is List
+                      ? rawData['value'] as List<dynamic>
+                      : rawData['items'] is List
+                      ? rawData['items'] as List<dynamic>
+                      : const <dynamic>[])
+                : const <dynamic>[]);
       final clinics = data
           .whereType<Map>()
           .map((json) => Clinic.fromJson(Map<String, dynamic>.from(json)))
           .toList();
-      
+
       final dynamic db = _localDb;
       for (var clinic in clinics) {
-        await db.into(db.clinicsLocal).insertOnConflictUpdate(
-          drift_db.ClinicsLocalCompanion(
-            id: Value(clinic.id),
-            name: Value(clinic.name),
-            description: Value(clinic.description),
-            location: Value(clinic.location),
-            capacity: Value(clinic.capacity),
-            isActive: Value(clinic.isActive),
-            startHour: Value(clinic.startHour),
-            endHour: Value(clinic.endHour),
-            slotDurationMinutes: Value(clinic.slotDurationMinutes),
-            metadataJson: Value(clinic.metadata != null ? jsonEncode(clinic.metadata) : null),
-          ),
-        );
+        await db
+            .into(db.clinicsLocal)
+            .insertOnConflictUpdate(
+              drift_db.ClinicsLocalCompanion(
+                id: Value(clinic.id),
+                name: Value(clinic.name),
+                description: Value(clinic.description),
+                location: Value(clinic.location),
+                capacity: Value(clinic.capacity),
+                isActive: Value(clinic.isActive),
+                startHour: Value(clinic.startHour),
+                endHour: Value(clinic.endHour),
+                slotDurationMinutes: Value(clinic.slotDurationMinutes),
+                metadataJson: Value(
+                  clinic.metadata != null ? jsonEncode(clinic.metadata) : null,
+                ),
+              ),
+            );
       }
       return clinics;
     } catch (e) {
       final dynamic db = _localDb;
       final localClinics = await db.select(db.clinicsLocal).get();
-      return (localClinics as List).map((row) => Clinic(
-        id: row.id,
-        name: row.name,
-        description: row.description ?? '',
-        location: row.location ?? '',
-        capacity: row.capacity,
-        isActive: row.isActive,
-      )).toList();
+      return (localClinics as List)
+          .map(
+            (row) => Clinic(
+              id: row.id,
+              name: row.name,
+              description: row.description ?? '',
+              location: row.location ?? '',
+              capacity: row.capacity,
+              isActive: row.isActive,
+            ),
+          )
+          .toList();
     }
   }
 
@@ -74,7 +86,9 @@ class ProceduresRepository implements IProceduresRepository {
   @override
   Future<List<Procedure>> getProceduresByClinic(String clinicId) async {
     try {
-      final response = await _apiClient.instance.get('/procedures/clinic/$clinicId');
+      final response = await _apiClient.instance.get(
+        '/procedures/clinic/$clinicId',
+      );
       final List<dynamic> data = response.data;
       return data.map((json) => Procedure.fromJson(json)).toList();
     } catch (_) {

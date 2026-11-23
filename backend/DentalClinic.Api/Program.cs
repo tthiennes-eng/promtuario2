@@ -201,6 +201,31 @@ using (var scope = app.Services.CreateScope())
 
         context.Database.Migrate();
 
+        var defaultClinicNames = new[]
+        {
+            "Clinica I",
+            "Clinica II",
+            "Clinica III",
+            "Clinica IV",
+            "Clinica V",
+            "Clinica Integrada Infantil",
+            "Clinica de Emergência",
+            "Clinica Integrada Adulto I",
+            "Clinica Integrada Adulto II",
+            "Clinica de DTM",
+            "Clinica de Odontopediatria"
+        };
+
+        foreach (var clinicName in defaultClinicNames)
+        {
+            var exists = await context.Clinics.AnyAsync(c => c.Name == clinicName);
+            if (!exists)
+            {
+                context.Clinics.Add(Clinic.CreateBasic(clinicName, "Clínica Escola", 1, 8, 18));
+            }
+        }
+        await context.SaveChangesAsync();
+
         var adminEmail = "admin@odontoclinica.edu.br";
         // Cria usuário sem usar Address para evitar erro de mapeamento
         var user = await context.Users.FirstOrDefaultAsync(u => u.EmailAddress.Value == adminEmail);
