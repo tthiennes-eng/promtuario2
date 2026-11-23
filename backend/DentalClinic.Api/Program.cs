@@ -171,6 +171,15 @@ using (var scope = app.Services.CreateScope())
             UPDATE pacientes SET ultima_modificacao = COALESCE(ultima_modificacao, now())
                 WHERE ultima_modificacao IS NULL;
 
+            -- CORREÇÃO: remove restrições NOT NULL legadas de colunas que hoje
+            -- são opcionais na entidade Patient (email/telefone). Sem isso, o
+            -- INSERT de um paciente vindo do app sem e-mail falhava no banco,
+            -- o paciente ficava só no SQLite local e o agendamento retornava
+            -- "O paciente selecionado não existe no servidor."
+            ALTER TABLE IF EXISTS pacientes
+                ALTER COLUMN email DROP NOT NULL,
+                ALTER COLUMN telefone DROP NOT NULL;
+
             INSERT INTO ""__EFMigrationsHistory"" (""MigrationId"", ""ProductVersion"")
             SELECT migration_id, '9.0.0'
             FROM (VALUES

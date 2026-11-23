@@ -22,9 +22,13 @@ public class PatientValidator : AbstractValidator<Patient>
             .Must(value => string.IsNullOrWhiteSpace(value) || value.Length == 15)
             .WithMessage("O número do SUS deve conter 15 dígitos.");
 
+        // CORREÇÃO: Email passa a ser opcional (validar formato apenas quando preenchido).
+        // A regra NotEmpty() anterior rejeitava cadastros vindos do app Flutter
+        // que não informavam e-mail, impedindo a sincronização do paciente com o
+        // servidor e causando o erro "paciente não existe" ao agendar.
         RuleFor(x => x.Email)
-            .NotEmpty().WithMessage("O email é obrigatório.")
-            .EmailAddress().WithMessage("O formato do email é inválido.");
+            .EmailAddress().WithMessage("O formato do email é inválido.")
+            .When(x => !string.IsNullOrWhiteSpace(x.Email));
 
         // Regra para Data de Nascimento: Sincronizado com propriedade BirthDate
         RuleFor(x => x.BirthDate)
