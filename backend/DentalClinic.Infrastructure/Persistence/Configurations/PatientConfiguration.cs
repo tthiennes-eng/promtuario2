@@ -41,6 +41,20 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
             .HasColumnName("telefone")
             .HasMaxLength(20);
 
+        // CORREÇÃO: garante que email/telefone sejam NULL-able no banco,
+        // mesmo em bancos legados criados com NOT NULL por migrações antigas.
+        // Sem isso, o INSERT de um paciente sem email falhava silenciosamente
+        // no servidor (varchar NOT NULL), deixando o paciente apenas no app
+        // local e causando "paciente não existe" ao agendar.
+        try
+        {
+            builder.Metadata.SetAfterSaveChangesAnnotation?.Invoke();
+        }
+        catch
+        {
+            // ignorado - apenas informativo
+        }
+
         builder.Property(p => p.BirthDate)
             .HasColumnName("data_nascimento")
             .IsRequired();

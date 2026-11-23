@@ -21,14 +21,18 @@ public class Patient : Entity
     [MaxLength(15)]
     public string? SusNumber { get; set; }
 
-    [Required]
+    // CORREÇÃO: Email e Telefone passam a ser opcionais.
+    // Antes, o atributo [Required] fazia a validação de modelo do ASP.NET
+    // rejeitar (HTTP 400) todo cadastro de paciente vindo do app Flutter
+    // que não preenchesse esses campos. O erro era engolido no cliente
+    // (catch silencioso), o paciente ficava apenas no banco local e o
+    // agendamento falhava com "O paciente selecionado não existe no servidor".
     [EmailAddress]
     [MaxLength(255)]
-    public string Email { get; set; } = string.Empty;
+    public string? Email { get; set; }
 
-    [Required]
     [MaxLength(20)]
-    public string Phone { get; set; } = string.Empty;
+    public string? Phone { get; set; }
 
     public DateTime BirthDate { get; set; }
 
