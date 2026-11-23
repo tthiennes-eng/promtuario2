@@ -175,7 +175,7 @@ using (var scope = app.Services.CreateScope())
             -- são opcionais na entidade Patient (email/telefone). Sem isso, o
             -- INSERT de um paciente vindo do app sem e-mail falhava no banco,
             -- o paciente ficava só no SQLite local e o agendamento retornava
-            -- "O paciente selecionado não existe no servidor."
+            -- paciente selecionado inexistente no servidor
             ALTER TABLE IF EXISTS pacientes
                 ALTER COLUMN email DROP NOT NULL,
                 ALTER COLUMN telefone DROP NOT NULL;
