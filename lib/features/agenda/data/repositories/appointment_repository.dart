@@ -23,8 +23,11 @@ class AppointmentRepository implements IAppointmentRepository {
       final response = await _apiClient.instance.get(
         '/appointments',
         queryParameters: {
-          'start': start.toIso8601String(),
-          'end': end.toIso8601String(),
+          // CORRECAO: o servidor espera/retorna timestamps UTC. Enviar o
+          // horario local sem conversao deslocava a janela da consulta e a
+          // agenda nao encontrava os agendamentos ja salvos no servidor.
+          'start': start.toUtc().toIso8601String(),
+          'end': end.toUtc().toIso8601String(),
           if (clinicId != null) 'clinicId': clinicId,
         },
       );
@@ -250,8 +253,9 @@ class AppointmentRepository implements IAppointmentRepository {
     await _apiClient.instance.put(
       '/appointments/$id/reschedule',
       data: {
-        'startTime': newStart.toIso8601String(),
-        'endTime': newEnd.toIso8601String(),
+        // CORRECAO: enviar em UTC para o servidor nao interpretar como UTC
+        'startTime': newStart.toUtc().toIso8601String(),
+        'endTime': newEnd.toUtc().toIso8601String(),
       },
     );
   }
@@ -324,8 +328,13 @@ class AppointmentRepository implements IAppointmentRepository {
     }
 
     DateTime parseDate(dynamic value) {
-      if (value is DateTime) return value;
-      return DateTime.parse(value.toString());
+      final dt = value is DateTime ? value : DateTime.parse(value.toString());
+      // CORRECAO: datas vindas do servidor (UTC) sao convertidas para o
+      // fuso local para que a grade de horarios da agenda coincida com os
+      // slots locais. Sem isso, um agendamento das 09:00 aparecia como 06:00
+      // (ou fora do dia consultado) e nao era exibido na agenda.
+      if (dt.isUtc) return dt.toLocal();
+      return dt;
     }
 
     String? nestedId(dynamic value) {

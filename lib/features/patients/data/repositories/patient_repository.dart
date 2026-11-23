@@ -53,15 +53,27 @@ class PatientRepository implements IPatientRepository {
 
     await _saveLocal(patientWithId, false);
 
+    // CORRECAO: o erro de sincronizacao nao e mais engolido silenciosamente.
+    // Antes, uma falha no POST (ex.: validacao do servidor) deixava o paciente
+    // apenas no banco local e o agendamento falhava depois com "paciente nao
+    // existe no servidor", sem nenhuma mensagem para o usuario.
+    Response response;
     try {
-      final response = await _apiClient.instance.post('patients', data: _mapEntityToJson(patientWithId));
-      
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        await _saveLocal(patientWithId, true);
-        return _mapJsonToEntity(response.data);
+      response = await _apiClient.instance.post('patients', data: _mapEntityToJson(patientWithId));
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      final message = data is Map
+          ? (data['message'] ?? data['title'] ?? data['error'] ?? 'Falha ao salvar o paciente no servidor')
+          : (data?.toString() ?? 'Falha ao salvar o paciente no servidor');
+      throw Exception(message.toString());
+    }
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      await _saveLocal(patientWithId, true);
+      final body = response.data;
+      if (body is Map<String, dynamic>) {
+        return _mapJsonToEntity(body);
       }
-    } catch (e) {
-      debugPrint('Erro na sincronização imediata: $e');
     }
     return patientWithId;
   }
