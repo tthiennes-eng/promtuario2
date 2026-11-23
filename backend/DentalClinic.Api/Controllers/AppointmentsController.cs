@@ -63,17 +63,26 @@ public class AppointmentsController : ControllerBase
         if (await _patientRepository.GetByIdAsync(request.PatientId) == null)
             return BadRequest("O paciente selecionado não existe no servidor.");
 
-        if (await _clinicRepository.GetByIdAsync(request.ClinicId) == null)
+        var clinicName = string.IsNullOrWhiteSpace(request.ClinicName)
+            ? null
+            : request.ClinicName.Trim();
+        var clinic = await _clinicRepository.GetByIdAsync(request.ClinicId);
+
+        if (clinic == null && clinicName != null)
         {
-            var clinicName = string.IsNullOrWhiteSpace(request.ClinicName)
-                ? "Clínica selecionada"
-                : request.ClinicName.Trim();
-            var clinic = Clinic.CreateBasic(clinicName, "Clínica Escola", 1, 8, 18);
+            clinic = (await _clinicRepository.GetAllAsync()).FirstOrDefault(c =>
+                string.Equals(c.Name.Trim(), clinicName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (clinic == null)
+        {
+            clinic = Clinic.CreateBasic(clinicName ?? "Clínica selecionada", "Clínica Escola", 1, 8, 18);
             clinic.Id = request.ClinicId;
             await _clinicRepository.AddAsync(clinic);
         }
 
-        var occupied = await _appointmentRepository.GetByRangeAsync(startTime, endTime, request.ClinicId);
+        var effectiveClinicId = clinic.Id;
+        var occupied = await _appointmentRepository.GetByRangeAsync(startTime, endTime, effectiveClinicId);
         if (occupied.Any(a => a.StartTime < endTime && a.EndTime > startTime))
             return Conflict("Já existe um agendamento nesse horário para esta clínica.");
 
@@ -93,7 +102,7 @@ public class AppointmentsController : ControllerBase
             doctorId,
             startTime,
             endTime,
-            request.ClinicId,
+            effectiveClinicId,
             request.ProcedureName,
             request.Notes,
             request.StudentId,

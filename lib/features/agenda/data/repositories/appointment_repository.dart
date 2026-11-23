@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
+import 'package:uuid/uuid.dart';
 import 'package:promt/core/network/api_client.dart';
 import 'package:promt/core/database/local_database.dart';
 import 'package:promt/features/agenda/domain/entities/appointment.dart';
@@ -10,6 +11,20 @@ class AppointmentRepository implements IAppointmentRepository {
   final ApiClient _apiClient;
   final AppDatabase _localDb;
   final _logger = Logger('AppointmentRepository');
+
+  static const _defaultClinicNames = [
+    'Clinica I',
+    'Clinica II',
+    'Clinica III',
+    'Clinica IV',
+    'Clinica V',
+    'Clinica Integrada Infantil',
+    'Clinica de Emergência',
+    'Clinica Integrada Adulto I',
+    'Clinica Integrada Adulto II',
+    'Clinica de DTM',
+    'Clinica de Odontopediatria',
+  ];
 
   AppointmentRepository(this._apiClient, this._localDb);
 
@@ -37,7 +52,13 @@ class AppointmentRepository implements IAppointmentRepository {
       if (rawData is List) {
         data = rawData;
       } else if (rawData is Map) {
-        for (final key in const ['data', 'items', 'results', 'appointment']) {
+        for (final key in const [
+          'data',
+          'items',
+          'results',
+          'value',
+          'appointment',
+        ]) {
           final value = rawData[key];
           if (value is List) {
             data = value;
@@ -129,6 +150,7 @@ class AppointmentRepository implements IAppointmentRepository {
           'patientId': appointment.patientId,
           'doctorId': appointment.doctorId,
           'clinicId': appointment.clinicId,
+          'clinicName': _clinicNameForId(appointment.clinicId),
           'startTime': appointment.startTime.toUtc().toIso8601String(),
           'endTime': appointment.endTime.toUtc().toIso8601String(),
           'procedureName': appointment.procedureName,
@@ -149,29 +171,56 @@ class AppointmentRepository implements IAppointmentRepository {
               : responseMap;
           if (appointmentJson['id'] != null &&
               appointmentJson['startTime'] != null) {
-            final newAppointment = _appointmentFromJson(appointmentJson);
+            final newAppointment = _appointmentFromJson(appointmentJson)
+                .copyWith(
+                  id: appointmentJson['id'].toString(),
+                  clinicId: appointment.clinicId,
+                  patientName: appointment.patientName,
+                  doctorName: appointment.doctorName,
+                );
+            await _deleteLocal(appointment.id);
             await _saveLocal(newAppointment, true);
             return newAppointment;
           }
         }
+        await _deleteLocal(appointment.id);
         await _saveLocal(appointment, true);
         return appointment;
       }
     } catch (e) {
       _logger.severe('Erro no agendamento remoto: $e');
       if (e is DioException) {
+        if (e.response == null) {
+          return appointment;
+        }
+
         final data = e.response?.data;
-        final message = data is Map
-            ? (data['message'] ??
-                  data['title'] ??
-                  data['error'] ??
-                  'Falha ao salvar no servidor')
-            : (data?.toString() ?? 'Falha ao salvar no servidor');
-        throw Exception(message.toString());
+        String? message;
+        if (data is Map) {
+          message =
+              data['message']?.toString() ??
+              data['title']?.toString() ??
+              data['error']?.toString();
+          final errors = data['errors'];
+          if (errors is Map && errors.isNotEmpty) {
+            final details = errors.values
+                .whereType<Object>()
+                .expand((value) => value is List ? value : [value])
+                .join('; ');
+            if (details.isNotEmpty) message = details;
+          }
+        } else if (data != null) {
+          message = data.toString();
+        }
+        throw Exception(
+          message?.trim().isNotEmpty == true
+              ? message
+              : 'Falha ao salvar no servidor',
+        );
       }
       throw Exception('Falha ao salvar o agendamento no servidor');
     }
-    throw Exception('O servidor nÃ£o confirmou o agendamento');
+    throw Exception('O servidor não confirmou o agendamento');
   }
 
   @override
@@ -223,6 +272,7 @@ class AppointmentRepository implements IAppointmentRepository {
               'patientId': appointment.patientId,
               'doctorId': appointment.doctorId,
               'clinicId': appointment.clinicId,
+              'clinicName': _clinicNameForId(appointment.clinicId),
               'startTime': appointment.startTime.toUtc().toIso8601String(),
               'endTime': appointment.endTime.toUtc().toIso8601String(),
               'procedureName': appointment.procedureName,
@@ -235,9 +285,31 @@ class AppointmentRepository implements IAppointmentRepository {
           );
 
           if (response.statusCode == 200 || response.statusCode == 201) {
-            await (db.update(db.appointmentsLocal)
-                  ..where((t) => (t as dynamic).id.equals((row as dynamic).id)))
-                .write(const AppointmentsLocalCompanion(isSynced: Value(true)));
+            final oldId = (row as dynamic).id as String;
+            await _deleteLocal(oldId);
+
+            if (response.data is Map) {
+              final responseMap = Map<String, dynamic>.from(response.data);
+              final nested = responseMap['data'] ?? responseMap['appointment'];
+              final appointmentJson = nested is Map
+                  ? Map<String, dynamic>.from(nested)
+                  : responseMap;
+              if (appointmentJson['id'] != null &&
+                  appointmentJson['startTime'] != null) {
+                await _saveLocal(
+                  _appointmentFromJson(appointmentJson).copyWith(
+                    id: appointmentJson['id'].toString(),
+                    clinicId: appointment.clinicId,
+                    patientName: appointment.patientName,
+                    doctorName: appointment.doctorName,
+                  ),
+                  true,
+                );
+                continue;
+              }
+            }
+
+            await _saveLocal(appointment, true);
           }
         } catch (_) {}
       }
@@ -260,6 +332,21 @@ class AppointmentRepository implements IAppointmentRepository {
     );
   }
 
+  String? _clinicNameForId(String clinicId) {
+    for (final name in _defaultClinicNames) {
+      final id = const Uuid().v5(Uuid.NAMESPACE_URL, 'promtuario-clinic:$name');
+      if (id == clinicId) return name;
+    }
+    return null;
+  }
+
+  Future<void> _deleteLocal(String id) async {
+    final dynamic db = _localDb;
+    await (db.delete(
+      db.appointmentsLocal,
+    )..where((table) => (table as dynamic).id.equals(id))).go();
+  }
+
   Future<void> _updateLocalStatus(
     String id,
     AppointmentStatus status,
@@ -280,30 +367,28 @@ class AppointmentRepository implements IAppointmentRepository {
 
   Future<void> _saveLocal(Appointment app, bool isSynced) async {
     final dynamic db = _localDb;
-    try {
-      await db
-          .into(db.appointmentsLocal)
-          .insertOnConflictUpdate(
-            AppointmentsLocalCompanion(
-              id: Value(app.id),
-              patientId: Value(app.patientId),
-              patientName: Value(app.patientName),
-              doctorId: Value(app.doctorId),
-              doctorName: Value(app.doctorName),
-              studentId: Value(app.studentId),
-              studentName: Value(app.studentName),
-              professorId: Value(app.professorId),
-              professorName: Value(app.professorName),
-              startTime: Value(app.startTime),
-              endTime: Value(app.endTime),
-              status: Value(app.status.name),
-              procedureName: Value(app.procedureName),
-              notes: Value(app.notes),
-              clinicId: Value(app.clinicId),
-              isSynced: Value(isSynced),
-            ),
-          );
-    } catch (_) {}
+    await db
+        .into(db.appointmentsLocal)
+        .insertOnConflictUpdate(
+          AppointmentsLocalCompanion(
+            id: Value(app.id),
+            patientId: Value(app.patientId),
+            patientName: Value(app.patientName),
+            doctorId: Value(app.doctorId),
+            doctorName: Value(app.doctorName),
+            studentId: Value(app.studentId),
+            studentName: Value(app.studentName),
+            professorId: Value(app.professorId),
+            professorName: Value(app.professorName),
+            startTime: Value(app.startTime),
+            endTime: Value(app.endTime),
+            status: Value(app.status.name),
+            procedureName: Value(app.procedureName),
+            notes: Value(app.notes),
+            clinicId: Value(app.clinicId),
+            isSynced: Value(isSynced),
+          ),
+        );
   }
 
   Future<void> _updateLocalCache(List<Appointment> appointments) async {
@@ -335,6 +420,9 @@ class AppointmentRepository implements IAppointmentRepository {
       // (ou fora do dia consultado) e nao era exibido na agenda.
       if (dt.isUtc) return dt.toLocal();
       return dt;
+      if (value is DateTime) return value.isUtc ? value.toLocal() : value;
+      final parsed = DateTime.parse(value.toString());
+      return parsed.isUtc ? parsed.toLocal() : parsed;
     }
 
     String? nestedId(dynamic value) {

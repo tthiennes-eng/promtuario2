@@ -224,24 +224,49 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
       final proceduresRepo = ref.read(proceduresRepositoryProvider);
       var clinics = await proceduresRepo.getClinics(onlyActive: true);
 
-      // Se não houver clínicas no banco, popula com os nomes padrão para que a agenda funcione
-      if (clinics.isEmpty) {
-        clinics = _defaultClinicNames
-            .map(
-              (name) => Clinic(
-                id: const Uuid().v5(Uuid.NAMESPACE_URL, 'promtuario-clinic:$name'),
-                name: name,
-                description: 'Clínica Escola',
-                isActive: true,
-                capacity: 1,
-                startHour: 8,
-                endHour: 18,
-                slotDurationMinutes: 60,
-                metadata: {},
+      // Mantém todas as clínicas padrão visíveis, mesmo quando o backend
+      // ainda não possui todas cadastradas ou retorna apenas parte delas.
+      final clinicByName = <String, Clinic>{
+        for (final clinic in clinics) clinic.name.trim().toLowerCase(): clinic,
+      };
+
+      final priorityNames = <String>[
+        'Clinica I',
+        'Clinica II',
+        'Clinica III',
+        'Clinica IV',
+        'Clinica V',
+      ];
+      final orderedNames = <String>[
+        ...priorityNames,
+        ..._defaultClinicNames.where((name) => !priorityNames.contains(name)),
+        ...clinicByName.values
+            .map((clinic) => clinic.name)
+            .where(
+              (name) =>
+                  !priorityNames.contains(name) &&
+                  !_defaultClinicNames.contains(name),
+            ),
+      ];
+
+      clinics = orderedNames.map((name) {
+        final key = name.toLowerCase();
+        return clinicByName[key] ??
+            Clinic(
+              id: const Uuid().v5(
+                Uuid.NAMESPACE_URL,
+                'promtuario-clinic:$name',
               ),
-            )
-            .toList();
-      }
+              name: name,
+              description: 'Clínica Escola',
+              isActive: true,
+              capacity: 1,
+              startHour: 8,
+              endHour: 18,
+              slotDurationMinutes: 60,
+              metadata: {},
+            );
+      }).toList();
 
       state = state.copyWith(clinics: clinics);
       if (clinics.isNotEmpty) selectClinic(clinics.first);
@@ -317,6 +342,8 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
   }
 
   Future<void> schedule(Appointment appointment) async {
+    await ref.read(patientRepositoryProvider).syncPatients();
+
     final saved = await ref
         .read(appointmentRepositoryProvider)
         .scheduleAppointment(appointment);
@@ -336,7 +363,8 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
     if (inSelectedDate) {
       state = state.copyWith(appointments: AsyncValue.data(merged));
 
-      final institutional = state.institutionalAppointments.value ?? const <Appointment>[];
+      final institutional =
+          state.institutionalAppointments.value ?? const <Appointment>[];
       final mergedInstitutional = <String, Appointment>{
         for (final item in institutional) item.id: item,
         saved.id: saved,
