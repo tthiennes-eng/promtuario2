@@ -17,7 +17,7 @@ class AddPatientScreen extends ConsumerStatefulWidget {
 class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
-  
+
   final _nameController = TextEditingController();
   final _socialNameController = TextEditingController();
   final _cpfController = TextEditingController();
@@ -48,7 +48,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
       _selectedBirthDate = p.birthDate;
       _birthDateController.text = DateFormat('dd/MM/yyyy').format(p.birthDate);
       _selectedGender = p.gender == 'Feminino' ? 'F' : 'M';
-      
+
       if (p.address != null) {
         _streetController.text = p.address!.street;
         _numberController.text = p.address!.number;
@@ -62,10 +62,18 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
   @override
   void dispose() {
     for (var controller in [
-      _nameController, _socialNameController, _cpfController, _susNumberController,
-      _emailController, _phoneController, _birthDateController,
-      _streetController, _numberController,
-      _neighborhoodController, _cityController, _zipCodeController
+      _nameController,
+      _socialNameController,
+      _cpfController,
+      _susNumberController,
+      _emailController,
+      _phoneController,
+      _birthDateController,
+      _streetController,
+      _numberController,
+      _neighborhoodController,
+      _cityController,
+      _zipCodeController,
     ]) {
       controller.dispose();
     }
@@ -80,15 +88,22 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
         final patient = Patient(
           id: widget.patient?.id ?? const Uuid().v4(),
           fullName: _nameController.text.trim(),
-          socialName: _socialNameController.text.trim().isEmpty ? null : _socialNameController.text.trim(),
+          socialName: _socialNameController.text.trim().isEmpty
+              ? null
+              : _socialNameController.text.trim(),
           cpf: _cpfController.text.replaceAll(RegExp(r'[^\d]'), ''),
-          susNumber: _susNumberController.text.replaceAll(RegExp(r'[^\d]'), '').isEmpty
+          susNumber:
+              _susNumberController.text.replaceAll(RegExp(r'[^\d]'), '').isEmpty
               ? null
               : _susNumberController.text.replaceAll(RegExp(r'[^\d]'), ''),
           birthDate: _selectedBirthDate!,
-          email: _emailController.text.trim(),
-          phone: _phoneController.text.trim(),
-          gender: _selectedGender == 'M' ? 'Masculino' : 'Feminino',
+          email: _emailController.text.trim().isEmpty
+              ? null
+              : _emailController.text.trim(),
+          phone: _phoneController.text.trim().isEmpty
+              ? null
+              : _phoneController.text.trim(),
+          gender: _selectedGender,
           address: PatientAddress(
             street: _streetController.text.trim(),
             number: _numberController.text.trim(),
@@ -104,15 +119,21 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
         if (widget.patient == null) {
           await ref.read(patientViewModelProvider.notifier).addPatient(patient);
         } else {
-          await ref.read(patientViewModelProvider.notifier).editPatient(patient);
+          await ref
+              .read(patientViewModelProvider.notifier)
+              .editPatient(patient);
         }
-        
+
         if (mounted) {
           context.pop();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(widget.patient == null ? 'Paciente cadastrado!' : 'Alterações salvas!'), 
-              backgroundColor: Colors.green
+              content: Text(
+                widget.patient == null
+                    ? 'Paciente cadastrado!'
+                    : 'Alterações salvas!',
+              ),
+              backgroundColor: Colors.green,
             ),
           );
         }
@@ -133,7 +154,9 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
     final isEditing = widget.patient != null;
 
     return Scaffold(
-      appBar: AppBar(title: Text(isEditing ? 'Editar Paciente' : 'Admitir Novo Paciente')),
+      appBar: AppBar(
+        title: Text(isEditing ? 'Editar Paciente' : 'Admitir Novo Paciente'),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
@@ -141,15 +164,26 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Informações Gerais', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF006494), fontSize: 16)),
+              const Text(
+                'Informações Gerais',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF006494),
+                  fontSize: 16,
+                ),
+              ),
               const SizedBox(height: 24),
-              
+
               Row(
                 children: [
                   Expanded(
                     child: TextFormField(
                       controller: _nameController,
-                      decoration: const InputDecoration(labelText: 'Nome Completo', border: OutlineInputBorder(), prefixIcon: Icon(Icons.person)),
+                      decoration: const InputDecoration(
+                        labelText: 'Nome Completo',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.person),
+                      ),
                       validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
                     ),
                   ),
@@ -157,20 +191,28 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _socialNameController,
-                      decoration: const InputDecoration(labelText: 'Nome Social', border: OutlineInputBorder(), prefixIcon: Icon(Icons.person_outline)),
+                      decoration: const InputDecoration(
+                        labelText: 'Nome Social',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.person_outline),
+                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              
+
               Row(
                 children: [
                   Expanded(
                     flex: 2,
                     child: TextFormField(
                       controller: _cpfController,
-                      decoration: const InputDecoration(labelText: 'CPF', border: OutlineInputBorder(), prefixIcon: Icon(Icons.badge)),
+                      decoration: const InputDecoration(
+                        labelText: 'CPF',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.badge),
+                      ),
                       validator: (v) => v!.length < 11 ? 'CPF inválido' : null,
                     ),
                   ),
@@ -180,10 +222,17 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                     child: TextFormField(
                       controller: _susNumberController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Número do SUS', border: OutlineInputBorder(), prefixIcon: Icon(Icons.credit_card)),
+                      decoration: const InputDecoration(
+                        labelText: 'Número do SUS',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.credit_card),
+                      ),
                       validator: (v) {
-                        final digits = v?.replaceAll(RegExp(r'[^\d]'), '') ?? '';
-                        return digits.isEmpty || digits.length == 15 ? null : 'O SUS deve conter 15 dígitos';
+                        final digits =
+                            v?.replaceAll(RegExp(r'[^\d]'), '') ?? '';
+                        return digits.isEmpty || digits.length == 15
+                            ? null
+                            : 'O SUS deve conter 15 dígitos';
                       },
                     ),
                   ),
@@ -192,7 +241,10 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                     flex: 1,
                     child: DropdownButtonFormField<String>(
                       value: _selectedGender,
-                      decoration: const InputDecoration(labelText: 'Sexo', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: 'Sexo',
+                        border: OutlineInputBorder(),
+                      ),
                       items: const [
                         DropdownMenuItem(value: 'M', child: Text('Masc.')),
                         DropdownMenuItem(value: 'F', child: Text('Fem.')),
@@ -203,7 +255,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              
+
               Row(
                 children: [
                   Expanded(
@@ -213,18 +265,26 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                       onTap: () async {
                         final date = await showDatePicker(
                           context: context,
-                          initialDate: DateTime.now().subtract(const Duration(days: 365 * 20)),
+                          initialDate: DateTime.now().subtract(
+                            const Duration(days: 365 * 20),
+                          ),
                           firstDate: DateTime(1900),
                           lastDate: DateTime.now(),
                         );
                         if (date != null) {
                           setState(() {
                             _selectedBirthDate = date;
-                            _birthDateController.text = DateFormat('dd/MM/yyyy').format(date);
+                            _birthDateController.text = DateFormat(
+                              'dd/MM/yyyy',
+                            ).format(date);
                           });
                         }
                       },
-                      decoration: const InputDecoration(labelText: 'Nascimento', border: OutlineInputBorder(), prefixIcon: Icon(Icons.cake)),
+                      decoration: const InputDecoration(
+                        labelText: 'Nascimento',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.cake),
+                      ),
                       validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
                     ),
                   ),
@@ -232,44 +292,94 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _phoneController,
-                      decoration: const InputDecoration(labelText: 'Celular/WhatsApp', border: OutlineInputBorder(), prefixIcon: Icon(Icons.phone)),
+                      decoration: const InputDecoration(
+                        labelText: 'Celular/WhatsApp',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.phone),
+                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              
+
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'E-mail para contato', border: OutlineInputBorder(), prefixIcon: Icon(Icons.email)),
+                decoration: const InputDecoration(
+                  labelText: 'E-mail para contato',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.email),
+                ),
               ),
-              
+
               const SizedBox(height: 16),
               const Divider(),
               const SizedBox(height: 16),
-              
+
               // Endereço integrado agora
               Row(
                 children: [
-                  Expanded(flex: 3, child: TextFormField(controller: _streetController, decoration: const InputDecoration(labelText: 'Logradouro (Rua/Av)', border: OutlineInputBorder(), prefixIcon: Icon(Icons.map)))),
+                  Expanded(
+                    flex: 3,
+                    child: TextFormField(
+                      controller: _streetController,
+                      decoration: const InputDecoration(
+                        labelText: 'Logradouro (Rua/Av)',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.map),
+                      ),
+                    ),
+                  ),
                   const SizedBox(width: 8),
-                  Expanded(flex: 1, child: TextFormField(controller: _numberController, decoration: const InputDecoration(labelText: 'Nº', border: OutlineInputBorder()))),
+                  Expanded(
+                    flex: 1,
+                    child: TextFormField(
+                      controller: _numberController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nº',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
-              
+
               Row(
                 children: [
-                  Expanded(child: TextFormField(controller: _neighborhoodController, decoration: const InputDecoration(labelText: 'Bairro', border: OutlineInputBorder()))),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _neighborhoodController,
+                      decoration: const InputDecoration(
+                        labelText: 'Bairro',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
                   const SizedBox(width: 8),
-                  Expanded(child: TextFormField(controller: _zipCodeController, decoration: const InputDecoration(labelText: 'CEP', border: OutlineInputBorder()))),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _zipCodeController,
+                      decoration: const InputDecoration(
+                        labelText: 'CEP',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
-              
-              TextFormField(controller: _cityController, decoration: const InputDecoration(labelText: 'Cidade', border: OutlineInputBorder(), prefixIcon: Icon(Icons.location_city))),
-              
+
+              TextFormField(
+                controller: _cityController,
+                decoration: const InputDecoration(
+                  labelText: 'Cidade',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.location_city),
+                ),
+              ),
+
               const SizedBox(height: 48),
               SizedBox(
                 width: double.infinity,
@@ -277,12 +387,29 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                 child: FilledButton(
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFF006494),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   onPressed: _isLoading ? null : _submitForm,
-                  child: _isLoading 
-                    ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
-                    : Text(isEditing ? 'SALVAR ALTERAÇÕES' : 'FINALIZAR ADMISSÃO', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          isEditing
+                              ? 'SALVAR ALTERAÇÕES'
+                              : 'FINALIZAR ADMISSÃO',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
             ],
