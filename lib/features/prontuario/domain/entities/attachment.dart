@@ -66,7 +66,7 @@ class Attachment {
 
     return Attachment(
       id: (json['id'] ?? json['Id'] ?? '').toString(),
-      patientId: (json['patientId'] ?? json['PatientId'] ?? json['patient_id'] ?? '').toString(),
+      patientId: (json['patientId'] ?? json['PatientId'] ?? '').toString(),
       localPath: json['localPath'] as String?,
       remoteUrl: (json['remoteUrl'] ?? json['Url'] ?? json['path']) as String?,
       type: parseType(json['type'] ?? json['Type']),

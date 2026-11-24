@@ -73,19 +73,9 @@ class AttachmentRepository implements IAttachmentRepository {
   }
 
   Attachment _mapSchemaToEntity(dynamic row) {
-    // Acessa as propriedades diretamente do objeto gerado pelo Drift (AttachmentsLocalData)
-    final r = row as dynamic;
-    return Attachment(
-      id: r.id as String,
-      patientId: r.patientId as String,
-      localPath: r.localPath as String?,
-      type: AttachmentType.values.firstWhere(
-        (e) => e.name == r.type,
-        orElse: () => AttachmentType.image,
-      ),
-      description: r.description as String?,
-      createdAt: r.createdAt as DateTime,
-      isSynced: r.isSynced as bool,
-    );
+    // row é do tipo AttachmentLocalData gerado pelo Drift
+    // Usamos o método toJson do Drift que já lida com a conversão de campos
+    final data = row.toJson();
+    return Attachment.fromJson(data);
   }
 }
