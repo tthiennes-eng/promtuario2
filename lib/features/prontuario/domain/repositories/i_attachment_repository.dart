@@ -8,7 +8,7 @@ abstract class IAttachmentRepository {
       String patientId, File file, AttachmentType type,
       {String? description});
 
-  /// Reenvia um anexo pendente sem adicionar uma entrada duplicada Ã  fila local.
+  /// Reenvia um anexo pendente sem adicionar uma entrada duplicada à fila local.
   Future<bool> syncPendingAttachment(String attachmentId);
 
   /// Recupera a lista de anexos de um paciente.

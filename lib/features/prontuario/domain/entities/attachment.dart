@@ -1,9 +1,13 @@
+import 'package:promt/core/utils/date_utils.dart';
+
+enum AttachmentType { image, video, document, xRay, other }
+
 class Attachment {
   final String id;
   final String patientId;
   final String? localPath;
   final String? remoteUrl;
-  final String type;
+  final AttachmentType type;
   final String? description;
   final DateTime createdAt;
   final bool isSynced;
@@ -19,40 +23,67 @@ class Attachment {
     this.isSynced = false,
   });
 
-  static DateTime _safeParse(dynamic v) {
-    if (v == null || v.toString().trim().isEmpty || v.toString() == 'null') {
-      return DateTime.now();
-    }
-    try {
-      if (v is DateTime) return v.isUtc ? v.toLocal() : v;
-      final s = v.toString();
-      final dateStr = s.contains('T') || s.contains(' ') ? s : '${s}T00:00:00';
-      final dt = DateTime.parse(dateStr);
-      return dt.isUtc ? dt.toLocal() : dt;
-    } catch (_) {
-      return DateTime.now();
-    }
+  // Getters para compatibilidade com ExamsScreen
+  String get url => remoteUrl ?? localPath ?? '';
+  String get name => description ?? 'Anexo';
+  DateTime get date => createdAt;
+
+  Attachment copyWith({
+    String? id,
+    String? patientId,
+    String? localPath,
+    String? remoteUrl,
+    AttachmentType? type,
+    String? description,
+    DateTime? createdAt,
+    bool? isSynced,
+  }) {
+    return Attachment(
+      id: id ?? this.id,
+      patientId: patientId ?? this.patientId,
+      localPath: localPath ?? this.localPath,
+      remoteUrl: remoteUrl ?? this.remoteUrl,
+      type: type ?? this.type,
+      description: description ?? this.description,
+      createdAt: createdAt ?? this.createdAt,
+      isSynced: isSynced ?? this.isSynced,
+    );
   }
 
   factory Attachment.fromJson(Map<String, dynamic> json) {
+    AttachmentType parseType(dynamic v) {
+      if (v == null) return AttachmentType.image;
+      final str = v.toString().toLowerCase();
+      if (str.contains('image')) return AttachmentType.image;
+      if (str.contains('video')) return AttachmentType.video;
+      if (str.contains('doc')) return AttachmentType.document;
+      if (str.contains('xray') || str.contains('raio')) return AttachmentType.xRay;
+      return AttachmentType.values.firstWhere(
+        (e) => e.name.toLowerCase() == str,
+        orElse: () => AttachmentType.other,
+      );
+    }
+
     return Attachment(
-      id: (json['id'] ?? json['Id'])?.toString() ?? '',
-      patientId: (json['patientId'] ?? json['PatientId'])?.toString() ?? '',
+      id: (json['id'] ?? json['Id'] ?? '').toString(),
+      patientId: (json['patientId'] ?? json['PatientId'] ?? json['patient_id'] ?? '').toString(),
       localPath: json['localPath'] as String?,
       remoteUrl: (json['remoteUrl'] ?? json['Url'] ?? json['path']) as String?,
-      type: (json['type'] ?? json['Type'] ?? 'file') as String,
+      type: parseType(json['type'] ?? json['Type']),
       description: (json['description'] ?? json['Description']) as String?,
-      createdAt: _safeParse(json['createdAt'] ?? json['CreatedAt']),
-      isSynced: (json['isSynced'] ?? true) as bool,
+      createdAt: SafeDateParser.parse(json['createdAt'] ?? json['CreatedAt']),
+      isSynced: (json['isSynced'] ?? json['IsSynced'] ?? false) as bool,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'patientId': patientId,
-        'type': type,
-        'description': description,
-        'createdAt': createdAt.toIso8601String(),
-        'remoteUrl': remoteUrl,
-      };
+    'id': id,
+    'patientId': patientId,
+    'localPath': localPath,
+    'remoteUrl': remoteUrl,
+    'type': type.name,
+    'description': description,
+    'createdAt': createdAt.toIso8601String(),
+    'isSynced': isSynced,
+  };
 }

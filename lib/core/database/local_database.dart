@@ -63,7 +63,7 @@ class UsersLocal extends Table {
 class AttachmentsLocal extends Table {
   TextColumn get id => text()();
   TextColumn get patientId => text()();
-  TextColumn get localPath => text()();
+  TextColumn get localPath => text().nullable()();
   TextColumn get type => text()();
   TextColumn get description => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
@@ -185,7 +185,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4; // Incrementado devido à mudança no AttachmentsLocal
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -197,6 +197,11 @@ class AppDatabase extends _$AppDatabase {
       if (from < 3) {
         await migrator.addColumn(patientsLocal, patientsLocal.socialName);
         await migrator.addColumn(patientsLocal, patientsLocal.susNumber);
+      }
+      if (from < 4) {
+        // Migração para tornar localPath nullable no AttachmentsLocal
+        // O Drift lida com isso recriando a tabela ou alterando se possível
+        await migrator.alterTable(TableMigration(attachmentsLocal));
       }
     },
   );

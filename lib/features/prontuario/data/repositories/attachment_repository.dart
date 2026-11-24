@@ -12,29 +12,13 @@ class AttachmentRepository implements IAttachmentRepository {
 
   AttachmentRepository(this._apiClient, this._localDb);
 
-  static DateTime _safeParse(dynamic v) {
-    if (v == null || v.toString().trim().isEmpty || v.toString() == 'null') {
-      return DateTime.now();
-    }
-    try {
-      if (v is DateTime) return v.isUtc ? v.toLocal() : v;
-      final s = v.toString();
-      final dateStr = s.contains('T') || s.contains(' ') ? s : '${s}T00:00:00';
-      final dt = DateTime.parse(dateStr);
-      return dt.isUtc ? dt.toLocal() : dt;
-    } catch (_) {
-      return DateTime.now();
-    }
-  }
-
   @override
   Future<List<Attachment>> getAttachments(String patientId) async {
-    final dynamic db = _localDb;
     try {
-      final query = db.select(db.attachmentsLocal)
+      final query = _localDb.select(_localDb.attachmentsLocal)
         ..where((t) => t.patientId.equals(patientId));
       final results = await query.get();
-      return (results as List).map((row) => _mapSchemaToEntity(row)).toList();
+      return results.map((row) => _mapSchemaToEntity(row)).toList();
     } catch (_) {
       return [];
     }
@@ -44,7 +28,7 @@ class AttachmentRepository implements IAttachmentRepository {
   Future<Attachment> uploadAttachment(
     String patientId,
     File file,
-    String type, {
+    AttachmentType type, {
     String? description,
   }) async {
     final attachment = Attachment(
@@ -54,6 +38,7 @@ class AttachmentRepository implements IAttachmentRepository {
       type: type,
       description: description,
       createdAt: DateTime.now(),
+      isSynced: false,
     );
     await _saveLocal(attachment);
     return attachment;
@@ -61,9 +46,8 @@ class AttachmentRepository implements IAttachmentRepository {
 
   @override
   Future<void> deleteAttachment(String id) async {
-    final dynamic db = _localDb;
     try {
-      await (db.delete(db.attachmentsLocal)..where((t) => t.id.equals(id))).go();
+      await (_localDb.delete(_localDb.attachmentsLocal)..where((t) => t.id.equals(id))).go();
     } catch (_) {}
   }
 
@@ -73,14 +57,13 @@ class AttachmentRepository implements IAttachmentRepository {
   }
 
   Future<void> _saveLocal(Attachment attachment) async {
-    final dynamic db = _localDb;
     try {
-      await db.into(db.attachmentsLocal).insertOnConflictUpdate(
+      await _localDb.into(_localDb.attachmentsLocal).insertOnConflictUpdate(
         AttachmentsLocalCompanion(
           id: Value(attachment.id),
           patientId: Value(attachment.patientId),
           localPath: Value(attachment.localPath),
-          type: Value(attachment.type),
+          type: Value(attachment.type.name),
           description: Value(attachment.description),
           createdAt: Value(attachment.createdAt),
           isSynced: Value(attachment.isSynced),
@@ -90,16 +73,19 @@ class AttachmentRepository implements IAttachmentRepository {
   }
 
   Attachment _mapSchemaToEntity(dynamic row) {
-    final data = row.toJson();
+    // Acessa as propriedades diretamente do objeto gerado pelo Drift (AttachmentsLocalData)
+    final r = row as dynamic;
     return Attachment(
-      id: (data['id'] ?? '') as String,
-      patientId: (data['patientId'] ?? '') as String,
-      localPath: data['localPath'] as String?,
-      remoteUrl: data['remoteUrl'] as String?,
-      type: (data['type'] ?? 'file') as String,
-      description: data['description'] as String?,
-      createdAt: _safeParse(data['createdAt']),
-      isSynced: data['isSynced'] as bool? ?? false,
+      id: r.id as String,
+      patientId: r.patientId as String,
+      localPath: r.localPath as String?,
+      type: AttachmentType.values.firstWhere(
+        (e) => e.name == r.type,
+        orElse: () => AttachmentType.image,
+      ),
+      description: r.description as String?,
+      createdAt: r.createdAt as DateTime,
+      isSynced: r.isSynced as bool,
     );
   }
 }

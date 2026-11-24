@@ -1,45 +1,77 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:promt/core/utils/date_utils.dart';
 
-part 'wait_list_entry.freezed.dart';
+class WaitListEntry {
+  final String id;
+  final String patientId;
+  final String patientName;
+  final String clinicId;
+  final String priority;
+  final String specialty;
+  final String? observation;
+  final DateTime createdAt;
 
-@freezed
-class WaitListEntry with _$WaitListEntry {
-  const factory WaitListEntry({
-    required String id,
-    required String patientId,
-    required String patientName,
-    required String clinicId,
-    required String priority,
-    required String specialty,
+  const WaitListEntry({
+    required this.id,
+    required this.patientId,
+    required this.patientName,
+    required this.clinicId,
+    required this.priority,
+    required this.specialty,
+    this.observation,
+    required this.createdAt,
+  });
+
+  WaitListEntry copyWith({
+    String? id,
+    String? patientId,
+    String? patientName,
+    String? clinicId,
+    String? priority,
+    String? specialty,
     String? observation,
-    required DateTime createdAt,
-  }) = _WaitListEntry;
-
-  static DateTime _safeParse(dynamic v) {
-    if (v == null || v.toString().trim().isEmpty || v.toString() == 'null') {
-      return DateTime.now();
-    }
-    try {
-      if (v is DateTime) return v.isUtc ? v.toLocal() : v;
-      final s = v.toString();
-      final dateStr = s.contains('T') || s.contains(' ') ? s : '${s}T00:00:00';
-      final dt = DateTime.parse(dateStr);
-      return dt.isUtc ? dt.toLocal() : dt;
-    } catch (_) {
-      return DateTime.now();
-    }
+    DateTime? createdAt,
+  }) {
+    return WaitListEntry(
+      id: id ?? this.id,
+      patientId: patientId ?? this.patientId,
+      patientName: patientName ?? this.patientName,
+      clinicId: clinicId ?? this.clinicId,
+      priority: priority ?? this.priority,
+      specialty: specialty ?? this.specialty,
+      observation: observation ?? this.observation,
+      createdAt: createdAt ?? this.createdAt,
+    );
   }
 
   factory WaitListEntry.fromJson(Map<String, dynamic> json) {
+    String getString(List<String> keys) {
+      for (final k in keys) {
+        final val = json[k];
+        if (val != null && val.toString().isNotEmpty) return val.toString();
+      }
+      return '';
+    }
+
     return WaitListEntry(
-      id: (json['id'] ?? json['Id'])?.toString() ?? '',
-      patientId: (json['patientId'] ?? json['PatientId'])?.toString() ?? '',
-      patientName: (json['patientName'] ?? json['PatientName'] ?? 'Paciente') as String,
-      clinicId: (json['clinicId'] ?? json['ClinicId'])?.toString() ?? '',
-      priority: (json['priority'] ?? json['Priority'] ?? 'Normal') as String,
-      specialty: (json['specialty'] ?? json['Specialty'] ?? 'Geral') as String,
+      id: (json['id'] ?? json['Id'] ?? '').toString(),
+      patientId: getString(['patientId', 'PatientId', 'patient_id']),
+      patientName: getString(['patientName', 'PatientName', 'fullName', 'FullName']),
+      clinicId: getString(['clinicId', 'ClinicId', 'clinic_id']),
+      priority: getString(['priority', 'Priority']),
+      specialty: getString(['specialty', 'Specialty']),
       observation: (json['observation'] ?? json['Observation'])?.toString(),
-      createdAt: _safeParse(json['createdAt'] ?? json['CreatedAt']),
+      createdAt: SafeDateParser.parse(json['createdAt'] ?? json['CreatedAt']),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'patientId': patientId,
+    'patientName': patientName,
+    'clinicId': clinicId,
+    'priority': priority,
+    'specialty': specialty,
+    'observation': observation,
+    'createdAt': createdAt.toIso8601String(),
+  };
 }

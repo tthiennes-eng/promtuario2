@@ -33,42 +33,6 @@ class Patient {
     this.isSynced = true,
   });
 
-  factory Patient.fromJson(Map<String, dynamic> json) {
-    return Patient(
-      id: (json['id'] ?? json['Id'])?.toString() ?? '',
-      fullName: (json['fullName'] ?? json['FullName'] ?? 'Sem Nome') as String,
-      socialName: (json['socialName'] ?? json['SocialName']) as String?,
-      cpf: (json['cpf'] ?? json['CPF'] ?? '') as String,
-      susNumber: (json['susNumber'] ?? json['SusNumber']) as String?,
-      birthDate: SafeDateParser.parse(json['birthDate'] ?? json['BirthDate']),
-      email: (json['email'] ?? json['Email']) as String?,
-      phone: (json['phone'] ?? json['Phone']) as String?,
-      gender: (json['gender'] ?? json['Gender']) as String?,
-      address: json['address'] != null ? PatientAddress.fromJson(Map<String, dynamic>.from(json['address'])) : null,
-      createdAt: SafeDateParser.parse(json['createdAt'] ?? json['CreatedAt']),
-      updatedAt: (json['updatedAt'] ?? json['UpdatedAt']) != null ? SafeDateParser.parse(json['updatedAt'] ?? json['UpdatedAt']) : null,
-      lgpdConsent: (json['lgpdConsent'] ?? json['LgpdConsent'] ?? false) as bool,
-      isSynced: (json['isSynced'] ?? true) as bool,
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'fullName': fullName,
-        'socialName': socialName,
-        'cpf': cpf,
-        'susNumber': susNumber,
-        'birthDate': birthDate.toIso8601String(),
-        'email': email,
-        'phone': phone,
-        'gender': gender,
-        'address': address?.toJson(),
-        'createdAt': createdAt.toIso8601String(),
-        'updatedAt': updatedAt?.toIso8601String(),
-        'lgpdConsent': lgpdConsent,
-        'isSynced': isSynced,
-      };
-
   Patient copyWith({
     String? id,
     String? fullName,
@@ -102,6 +66,42 @@ class Patient {
       isSynced: isSynced ?? this.isSynced,
     );
   }
+
+  factory Patient.fromJson(Map<String, dynamic> json) {
+    return Patient(
+      id: (json['id'] ?? json['Id'] ?? '').toString(),
+      fullName: (json['fullName'] ?? json['FullName'] ?? 'Sem Nome').toString(),
+      socialName: (json['socialName'] ?? json['SocialName'])?.toString(),
+      cpf: (json['cpf'] ?? json['CPF'] ?? '').toString(),
+      susNumber: (json['susNumber'] ?? json['SusNumber'])?.toString(),
+      birthDate: SafeDateParser.parse(json['birthDate'] ?? json['BirthDate']),
+      email: (json['email'] ?? json['Email'])?.toString(),
+      phone: (json['phone'] ?? json['Phone'])?.toString(),
+      gender: (json['gender'] ?? json['Gender'])?.toString(),
+      address: json['address'] != null ? PatientAddress.fromJson(Map<String, dynamic>.from(json['address'])) : null,
+      createdAt: SafeDateParser.parse(json['createdAt'] ?? json['CreatedAt']),
+      updatedAt: (json['updatedAt'] ?? json['UpdatedAt']) != null ? SafeDateParser.parse(json['updatedAt'] ?? json['UpdatedAt']) : null,
+      lgpdConsent: (json['lgpdConsent'] ?? json['LgpdConsent'] ?? false) as bool,
+      isSynced: (json['isSynced'] ?? true) as bool,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'fullName': fullName,
+    'socialName': socialName,
+    'cpf': cpf,
+    'susNumber': susNumber,
+    'birthDate': birthDate.toIso8601String(),
+    'email': email,
+    'phone': phone,
+    'gender': gender,
+    'address': address?.toJson(),
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt?.toIso8601String(),
+    'lgpdConsent': lgpdConsent,
+    'isSynced': isSynced,
+  };
 }
 
 class PatientAddress {
@@ -125,23 +125,23 @@ class PatientAddress {
 
   factory PatientAddress.fromJson(Map<String, dynamic> json) {
     return PatientAddress(
-      street: (json['street'] ?? json['Street'] ?? '') as String,
-      number: (json['number'] ?? json['Number'] ?? '') as String,
-      complement: (json['complement'] ?? json['Complement']) as String?,
-      neighborhood: (json['neighborhood'] ?? json['Neighborhood'] ?? '') as String,
-      city: (json['city'] ?? json['City'] ?? '') as String,
-      state: (json['state'] ?? json['State'] ?? '') as String,
-      zipCode: (json['zipCode'] ?? json['ZipCode'] ?? '') as String,
+      street: (json['street'] ?? json['Street'] ?? '').toString(),
+      number: (json['number'] ?? json['Number'] ?? '').toString(),
+      complement: (json['complement'] ?? json['Complement'])?.toString(),
+      neighborhood: (json['neighborhood'] ?? json['Neighborhood'] ?? '').toString(),
+      city: (json['city'] ?? json['City'] ?? '').toString(),
+      state: (json['state'] ?? json['State'] ?? '').toString(),
+      zipCode: (json['zipCode'] ?? json['ZipCode'] ?? '').toString(),
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'street': street,
-        'number': number,
-        'complement': complement,
-        'neighborhood': neighborhood,
-        'city': city,
-        'state': state,
-        'zipCode': zipCode,
-      };
+    'street': street,
+    'number': number,
+    'complement': complement,
+    'neighborhood': neighborhood,
+    'city': city,
+    'state': state,
+    'zipCode': zipCode,
+  };
 }

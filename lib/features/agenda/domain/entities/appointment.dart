@@ -1,6 +1,4 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
-
-part 'appointment.freezed.dart';
+import 'package:promt/core/utils/date_utils.dart';
 
 enum AppointmentStatus {
   scheduled, confirmed, arrived, inProgress, completed, cancelled, noShow, missed;
@@ -19,54 +17,98 @@ enum AppointmentStatus {
   }
 }
 
-@freezed
-class Appointment with _$Appointment {
-  const factory Appointment({
-    required String id,
-    required String patientId,
-    required String patientName,
-    required String doctorId,
-    required String doctorName,
+class Appointment {
+  final String id;
+  final String patientId;
+  final String patientName;
+  final String doctorId;
+  final String doctorName;
+  final String? studentId;
+  final String? studentName;
+  final String? professorId;
+  final String? professorName;
+  final DateTime startTime;
+  final DateTime endTime;
+  final AppointmentStatus status;
+  final String? procedureName;
+  final String? notes;
+  final String clinicId;
+  final DateTime? arrivalTime;
+  final DateTime? actualStartTime;
+  final DateTime? actualEndTime;
+
+  const Appointment({
+    required this.id,
+    required this.patientId,
+    required this.patientName,
+    required this.doctorId,
+    required this.doctorName,
+    this.studentId,
+    this.studentName,
+    this.professorId,
+    this.professorName,
+    required this.startTime,
+    required this.endTime,
+    required this.status,
+    this.procedureName,
+    this.notes,
+    required this.clinicId,
+    this.arrivalTime,
+    this.actualStartTime,
+    this.actualEndTime,
+  });
+
+  Appointment copyWith({
+    String? id,
+    String? patientId,
+    String? patientName,
+    String? doctorId,
+    String? doctorName,
     String? studentId,
     String? studentName,
     String? professorId,
     String? professorName,
-    required DateTime startTime,
-    required DateTime endTime,
-    required AppointmentStatus status,
+    DateTime? startTime,
+    DateTime? endTime,
+    AppointmentStatus? status,
     String? procedureName,
     String? notes,
-    required String clinicId,
+    String? clinicId,
     DateTime? arrivalTime,
     DateTime? actualStartTime,
     DateTime? actualEndTime,
-  }) = _Appointment;
-
-  static DateTime _safeParseDate(dynamic v) {
-    if (v == null || v.toString().trim().isEmpty || v.toString() == 'null') {
-      return DateTime.now();
-    }
-    try {
-      if (v is DateTime) return v.isUtc ? v.toLocal() : v;
-      if (v is int) {
-        if (v < 10000000000) return DateTime.fromMillisecondsSinceEpoch(v * 1000).toLocal();
-        return DateTime.fromMillisecondsSinceEpoch(v).toLocal();
-      }
-      final s = v.toString().trim();
-      final n = int.tryParse(s);
-      if (n != null) {
-        if (n < 10000000000) return DateTime.fromMillisecondsSinceEpoch(n * 1000).toLocal();
-        return DateTime.fromMillisecondsSinceEpoch(n).toLocal();
-      }
-      final dateStr = (s.contains('T') || s.contains(' ')) ? s : '${s}T00:00:00';
-      final dt = DateTime.parse(dateStr);
-      return dt.isUtc ? dt.toLocal() : dt;
-    } catch (_) {
-      return DateTime.now();
-    }
+  }) {
+    return Appointment(
+      id: id ?? this.id,
+      patientId: patientId ?? this.patientId,
+      patientName: patientName ?? this.patientName,
+      doctorId: doctorId ?? this.doctorId,
+      doctorName: doctorName ?? this.doctorName,
+      studentId: studentId ?? this.studentId,
+      studentName: studentName ?? this.studentName,
+      professorId: professorId ?? this.professorId,
+      professorName: professorName ?? this.professorName,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
+      status: status ?? this.status,
+      procedureName: procedureName ?? this.procedureName,
+      notes: notes ?? this.notes,
+      clinicId: clinicId ?? this.clinicId,
+      arrivalTime: arrivalTime ?? this.arrivalTime,
+      actualStartTime: actualStartTime ?? this.actualStartTime,
+      actualEndTime: actualEndTime ?? this.actualEndTime,
+    );
   }
 
   factory Appointment.fromJson(Map<String, dynamic> json) {
+    String getString(List<String> keys) {
+      for (final k in keys) {
+        final val = json[k];
+        if (val != null && val.toString().isNotEmpty) return val.toString();
+      }
+      return '';
+    }
+
     AppointmentStatus parseStatus(dynamic v) {
       if (v is int) {
         final idx = v >= 1 ? v - 1 : v;
@@ -79,15 +121,8 @@ class Appointment with _$Appointment {
       );
     }
 
-    String getString(List<String> keys) {
-      for (final k in keys) {
-        if (json[k] != null && json[k].toString().isNotEmpty) return json[k].toString();
-      }
-      return '';
-    }
-
     return Appointment(
-      id: (json['id'] ?? json['Id'])?.toString() ?? '',
+      id: (json['id'] ?? json['Id'] ?? '').toString(),
       patientId: getString(['patientId', 'PatientId', 'patient_id']),
       patientName: getString(['patientName', 'PatientName', 'fullName', 'FullName', 'patient_name']),
       doctorId: getString(['doctorId', 'DoctorId', 'doctor_id']),
@@ -96,15 +131,15 @@ class Appointment with _$Appointment {
       studentName: (json['studentName'] ?? json['StudentName'])?.toString(),
       professorId: (json['professorId'] ?? json['ProfessorId'])?.toString(),
       professorName: (json['professorName'] ?? json['ProfessorName'])?.toString(),
-      startTime: _safeParseDate(json['startTime'] ?? json['StartTime'] ?? json['start']),
-      endTime: _safeParseDate(json['endTime'] ?? json['EndTime'] ?? json['end']),
+      startTime: SafeDateParser.parse(json['startTime'] ?? json['StartTime'] ?? json['start']),
+      endTime: SafeDateParser.parse(json['endTime'] ?? json['EndTime'] ?? json['end']),
       status: parseStatus(json['status'] ?? json['Status']),
       procedureName: getString(['procedureName', 'ProcedureName']),
       notes: getString(['notes', 'Notes', 'observation']),
       clinicId: getString(['clinicId', 'ClinicId', 'clinic_id']),
-      arrivalTime: json['arrivalTime'] != null ? _safeParseDate(json['arrivalTime']) : null,
-      actualStartTime: json['actualStartTime'] != null ? _safeParseDate(json['actualStartTime']) : null,
-      actualEndTime: json['actualEndTime'] != null ? _safeParseDate(json['actualEndTime']) : null,
+      arrivalTime: SafeDateParser.parseNullable(json['arrivalTime'] ?? json['ArrivalTime']),
+      actualStartTime: SafeDateParser.parseNullable(json['actualStartTime'] ?? json['ActualStartTime']),
+      actualEndTime: SafeDateParser.parseNullable(json['actualEndTime'] ?? json['ActualEndTime']),
     );
   }
 

@@ -1,8 +1,13 @@
 class SafeDateParser {
   /// Converte qualquer valor (DateTime, int, String) para DateTime Local de forma resiliente.
   static DateTime parse(dynamic v) {
+    return parseNullable(v) ?? DateTime.now();
+  }
+
+  /// Versão que retorna null se o valor for inválido ou nulo.
+  static DateTime? parseNullable(dynamic v) {
     if (v == null || v.toString().trim().isEmpty || v.toString() == 'null') {
-      return DateTime.now();
+      return null;
     }
     
     // 1. Se já for DateTime, garante fuso local
@@ -10,15 +15,17 @@ class SafeDateParser {
     
     // 2. Se for um número (Timestamp vindo do Drift ou API)
     if (v is int) {
+      // Drift armazena segundos por padrão em algumas versões. 
+      // Se < 10^11, tratamos como segundos.
       if (v < 100000000000) return DateTime.fromMillisecondsSinceEpoch(v * 1000).toLocal();
       return DateTime.fromMillisecondsSinceEpoch(v).toLocal();
     }
     
     final s = v.toString().trim();
     
-    // 3. Tentar parse de String numérica
+    // 3. Tentar parse de String numérica (timestamp em texto)
     final n = int.tryParse(s);
-    if (n != null) {
+    if (n != null && s.length >= 10) {
       if (n < 100000000000) return DateTime.fromMillisecondsSinceEpoch(n * 1000).toLocal();
       return DateTime.fromMillisecondsSinceEpoch(n).toLocal();
     }
@@ -50,7 +57,7 @@ class SafeDateParser {
       final dt = DateTime.parse(dateStr);
       return dt.isUtc ? dt.toLocal() : dt;
     } catch (e) {
-      return DateTime.now();
+      return null;
     }
   }
 }

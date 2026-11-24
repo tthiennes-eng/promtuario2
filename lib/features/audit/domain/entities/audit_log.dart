@@ -1,41 +1,65 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:promt/core/utils/date_utils.dart';
 
-part 'audit_log.freezed.dart';
+class AuditLog {
+  final String id;
+  final String usuarioId;
+  final String acao;
+  final String detalhes;
+  final DateTime dataHora;
+  final String? ipAddress;
 
-@freezed
-class AuditLog with _$AuditLog {
-  const factory AuditLog({
-    required String id,
-    required String usuarioId,
-    required String acao,
-    required String detalhes,
-    required DateTime dataHora,
+  const AuditLog({
+    required this.id,
+    required this.usuarioId,
+    required this.acao,
+    required this.detalhes,
+    required this.dataHora,
+    this.ipAddress,
+  });
+
+  AuditLog copyWith({
+    String? id,
+    String? usuarioId,
+    String? acao,
+    String? detalhes,
+    DateTime? dataHora,
     String? ipAddress,
-  }) = _AuditLog;
-
-  static DateTime _safeParse(dynamic v) {
-    if (v == null || v.toString().trim().isEmpty || v.toString() == 'null') {
-      return DateTime.now();
-    }
-    try {
-      if (v is DateTime) return v.isUtc ? v.toLocal() : v;
-      final s = v.toString();
-      final dateStr = s.contains('T') || s.contains(' ') ? s : '${s}T00:00:00';
-      final dt = DateTime.parse(dateStr);
-      return dt.isUtc ? dt.toLocal() : dt;
-    } catch (_) {
-      return DateTime.now();
-    }
+  }) {
+    return AuditLog(
+      id: id ?? this.id,
+      usuarioId: usuarioId ?? this.usuarioId,
+      acao: acao ?? this.acao,
+      detalhes: detalhes ?? this.detalhes,
+      dataHora: dataHora ?? this.dataHora,
+      ipAddress: ipAddress ?? this.ipAddress,
+    );
   }
 
   factory AuditLog.fromJson(Map<String, dynamic> json) {
+    String getString(List<String> keys) {
+      for (final k in keys) {
+        final val = json[k];
+        if (val != null && val.toString().isNotEmpty) return val.toString();
+      }
+      return '';
+    }
+
     return AuditLog(
-      id: (json['id'] ?? json['Id'])?.toString() ?? '',
-      usuarioId: (json['usuarioId'] ?? json['UsuarioId'] ?? '') as String,
-      acao: (json['acao'] ?? json['Acao'] ?? '') as String,
-      detalhes: (json['detalhes'] ?? json['Detalhes'] ?? '') as String,
-      dataHora: _safeParse(json['dataHora'] ?? json['DataHora']),
-      ipAddress: (json['ipAddress'] ?? json['IpAddress']) as String?,
+      id: (json['id'] ?? json['Id'] ?? '').toString(),
+      usuarioId: getString(['usuarioId', 'UsuarioId', 'usuario_id', 'userId', 'UserId']),
+      acao: getString(['acao', 'Acao', 'action', 'Action']),
+      detalhes: getString(['detalhes', 'Detalhes', 'details', 'Details']),
+      dataHora: SafeDateParser.parse(json['dataHora'] ?? json['DataHora'] ?? json['timestamp'] ?? json['Timestamp']),
+      ipAddress: (json['ipAddress'] ?? json['IpAddress'] ?? json['ip_address'])?.toString(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'usuarioId': usuarioId,
+    'acao': acao,
+    'detalhes': detalhes,
+    'dataHora': dataHora.toIso8601String(),
+    'ipAddress': ipAddress,
+  };
 }
