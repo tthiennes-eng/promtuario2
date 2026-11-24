@@ -4,6 +4,7 @@ import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
 import 'package:promt/core/network/api_client.dart';
 import 'package:promt/core/database/local_database.dart';
+import 'package:promt/core/utils/date_utils.dart';
 import 'package:promt/features/agenda/domain/entities/appointment.dart';
 import 'package:promt/features/agenda/domain/repositories/i_appointment_repository.dart';
 
@@ -13,17 +14,10 @@ class AppointmentRepository implements IAppointmentRepository {
   final _logger = Logger('AppointmentRepository');
 
   static const _defaultClinicNames = [
-    'Clinica I',
-    'Clinica II',
-    'Clinica III',
-    'Clinica IV',
-    'Clinica V',
-    'Clinica Integrada Infantil',
-    'Clinica de Emergência',
-    'Clinica Integrada Adulto I',
-    'Clinica Integrada Adulto II',
-    'Clinica de DTM',
-    'Clinica de Odontopediatria',
+    'Clinica I', 'Clinica II', 'Clinica III', 'Clinica IV', 'Clinica V',
+    'Clinica Integrada Infantil', 'Clinica de Emergência',
+    'Clinica Integrada Adulto I', 'Clinica Integrada Adulto II',
+    'Clinica de DTM', 'Clinica de Odontopediatria',
   ];
 
   AppointmentRepository(this._apiClient, this._localDb);
@@ -64,7 +58,7 @@ class AppointmentRepository implements IAppointmentRepository {
           try {
             remoteAppointments.add(_appointmentFromJson(Map<String, dynamic>.from(item)));
           } catch (e) {
-            _logger.warning('Erro ao processar agendamento remoto: $e');
+            _logger.warning('Agendamento remoto inválido: $e');
           }
         }
       }
@@ -85,7 +79,8 @@ class AppointmentRepository implements IAppointmentRepository {
         for (final app in localAppointments) app.id: app,
         for (final app in remoteAppointments) app.id: app,
       }.values.where((app) {
-        final inRange = !app.startTime.isBefore(start) && !app.startTime.isAfter(end);
+        final st = SafeDateParser.parse(app.startTime);
+        final inRange = !st.isBefore(start) && !st.isAfter(end);
         final inClinic = clinicId == null || app.clinicId == clinicId;
         return inRange && inClinic;
       }).toList()
@@ -93,7 +88,7 @@ class AppointmentRepository implements IAppointmentRepository {
 
       return merged;
     } catch (e) {
-      _logger.warning('Falha ao buscar agendamentos remotos, usando local: $e');
+      _logger.warning('Busca remota falhou, usando local: $e');
       final results = await (_localDb.select(_localDb.appointmentsLocal)
             ..where((t) {
               var expr = t.startTime.isBetweenValues(start, end);
@@ -130,16 +125,14 @@ class AppointmentRepository implements IAppointmentRepository {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = response.data;
         if (responseData is Map) {
-          final nested = responseData['data'] ?? responseData['appointment'] ?? responseData['Data'];
-          final json = nested is Map ? Map<String, dynamic>.from(nested) : Map<String, dynamic>.from(responseData);
-          
+          final nested = responseData['data'] ?? responseData['appointment'] ?? responseData['Data'] ?? responseData['Appointment'];
+          final json = Map<String, dynamic>.from(nested is Map ? nested : responseData);
           final parsed = _appointmentFromJson(json);
           final saved = parsed.copyWith(
-            id: (json['id'] ?? json['Id'])?.toString() ?? appointment.id,
+            id: (json['id'] ?? json['Id'] ?? appointment.id).toString(),
             clinicId: parsed.clinicId.isEmpty ? appointment.clinicId : parsed.clinicId,
-            patientName: parsed.patientName == 'Paciente não informado' ? appointment.patientName : parsed.patientName,
+            patientName: parsed.patientName == 'Paciente' || parsed.patientName.isEmpty ? appointment.patientName : parsed.patientName,
           );
-
           await _deleteLocal(appointment.id);
           await _saveLocal(saved, true);
           return saved;
@@ -147,27 +140,9 @@ class AppointmentRepository implements IAppointmentRepository {
       }
       return appointment;
     } catch (e) {
-      _logger.severe('Erro no agendamento: $e');
       throw Exception('Falha ao salvar agendamento: $e');
     }
   }
-
-  @override
-  Future<void> updateAppointmentStatus(String id, AppointmentStatus status) async {
-    try {
-      await _apiClient.instance.patch('/appointments/$id/status', data: {'status': status.index + 1});
-      await _updateLocalStatus(id, status, true);
-    } catch (e) {
-      await _updateLocalStatus(id, status, false);
-    }
-  }
-
-  @override
-  Future<void> registerArrival(String id) async => await _apiClient.instance.patch('/appointments/$id/arrival');
-  @override
-  Future<void> registerStart(String id) async => await _apiClient.instance.patch('/appointments/$id/start');
-  @override
-  Future<void> registerFinish(String id) async => await _apiClient.instance.patch('/appointments/$id/finish');
 
   @override
   Future<void> syncAppointments() async {
@@ -179,6 +154,22 @@ class AppointmentRepository implements IAppointmentRepository {
     }
   }
 
+  @override
+  Future<void> updateAppointmentStatus(String id, AppointmentStatus status) async {
+    try {
+      await _apiClient.instance.patch('/appointments/$id/status', data: {'status': status.index + 1});
+      await _updateLocalStatus(id, status, true);
+    } catch (_) {
+      await _updateLocalStatus(id, status, false);
+    }
+  }
+
+  @override
+  Future<void> registerArrival(String id) async => await _apiClient.instance.patch('/appointments/$id/arrival');
+  @override
+  Future<void> registerStart(String id) async => await _apiClient.instance.patch('/appointments/$id/start');
+  @override
+  Future<void> registerFinish(String id) async => await _apiClient.instance.patch('/appointments/$id/finish');
   @override
   Future<void> rescheduleAppointment(String id, DateTime newStart, DateTime newEnd) async {
     await _apiClient.instance.put('/appointments/$id/reschedule', data: {
@@ -232,49 +223,78 @@ class AppointmentRepository implements IAppointmentRepository {
   }
 
   Appointment _appointmentFromJson(Map<String, dynamic> json) {
-    final rawStatus = json['status'] ?? json['Status'];
-    AppointmentStatus status = AppointmentStatus.scheduled;
-    if (rawStatus is int) {
-      int idx = rawStatus >= 1 ? rawStatus - 1 : rawStatus;
-      if (idx >= 0 && idx < AppointmentStatus.values.length) status = AppointmentStatus.values[idx];
-    } else if (rawStatus != null) {
-      status = AppointmentStatus.values.firstWhere((e) => e.name == rawStatus.toString(), orElse: () => AppointmentStatus.scheduled);
+    AppointmentStatus parseStatus(dynamic v) {
+      if (v is int) {
+        final idx = v >= 1 ? v - 1 : v;
+        if (idx >= 0 && idx < AppointmentStatus.values.length) return AppointmentStatus.values[idx];
+      }
+      final str = v?.toString().toLowerCase() ?? '';
+      return AppointmentStatus.values.firstWhere((e) => e.name.toLowerCase() == str, orElse: () => AppointmentStatus.scheduled);
     }
 
-    DateTime parseDate(dynamic v) {
-      if (v == null) return DateTime.now();
-      final dt = v is DateTime ? v : DateTime.parse(v.toString());
-      return dt.isUtc ? dt.toLocal() : dt;
+    String getNestedString(dynamic value, List<String> keys) {
+      if (value == null) return '';
+      if (value is String) return value;
+      if (value is Map) {
+        for (final k in keys) {
+          if (value[k] != null) return value[k].toString();
+        }
+      }
+      return value.toString();
     }
 
-    String getString(List<String> keys) {
-      for (final k in keys) {
-        if (json[k] != null) return json[k].toString();
+    String resolveValue(List<String> topKeys, List<String> nestedKeys) {
+      for (final k in topKeys) {
+        if (json[k] != null) {
+          return getNestedString(json[k], nestedKeys);
+        }
       }
       return '';
     }
 
     return Appointment(
       id: (json['id'] ?? json['Id'])?.toString() ?? '',
-      patientId: getString(['patientId', 'PatientId', 'patient_id']),
-      patientName: getString(['patientName', 'PatientName', 'patient_name', 'fullName', 'FullName']),
-      doctorId: getString(['doctorId', 'DoctorId', 'doctor_id']),
-      doctorName: getString(['doctorName', 'DoctorName', 'doctor_name']),
-      studentId: getString(['studentId', 'StudentId', 'student_id']),
-      studentName: getString(['studentName', 'StudentName', 'student_name']),
-      professorId: getString(['professorId', 'ProfessorId', 'professor_id']),
-      professorName: getString(['professorName', 'ProfessorName', 'professor_name']),
-      startTime: parseDate(json['startTime'] ?? json['StartTime'] ?? json['start']),
-      endTime: parseDate(json['endTime'] ?? json['EndTime'] ?? json['end']),
-      status: status,
-      procedureName: getString(['procedureName', 'ProcedureName', 'procedure_name']),
-      notes: getString(['notes', 'Notes', 'observation']),
-      clinicId: getString(['clinicId', 'ClinicId', 'clinic_id']),
+      patientId: resolveValue(['patientId', 'PatientId', 'patient', 'Patient'], ['id', 'Id', 'patientId']),
+      patientName: resolveValue(['patientName', 'PatientName', 'patient', 'Patient', 'fullName', 'FullName'], ['name', 'Name', 'fullName', 'FullName', 'patientName']),
+      doctorId: resolveValue(['doctorId', 'DoctorId', 'doctor', 'Doctor'], ['id', 'Id', 'doctorId']),
+      doctorName: resolveValue(['doctorName', 'DoctorName', 'doctor', 'Doctor'], ['name', 'Name', 'fullName', 'FullName']),
+      studentId: (json['studentId'] ?? json['StudentId'])?.toString(),
+      studentName: (json['studentName'] ?? json['StudentName'])?.toString(),
+      professorId: (json['professorId'] ?? json['ProfessorId'])?.toString(),
+      professorName: (json['professorName'] ?? json['ProfessorName'])?.toString(),
+      startTime: SafeDateParser.parse(json['startTime'] ?? json['StartTime'] ?? json['start']),
+      endTime: SafeDateParser.parse(json['endTime'] ?? json['EndTime'] ?? json['end']),
+      status: parseStatus(json['status'] ?? json['Status']),
+      procedureName: (json['procedureName'] ?? json['ProcedureName'])?.toString(),
+      notes: (json['notes'] ?? json['Notes'] ?? json['observation'])?.toString(),
+      clinicId: resolveValue(['clinicId', 'ClinicId', 'clinic', 'Clinic'], ['id', 'Id']),
+      arrivalTime: json['arrivalTime'] != null ? SafeDateParser.parse(json['arrivalTime']) : null,
+      actualStartTime: json['actualStartTime'] != null ? SafeDateParser.parse(json['actualStartTime']) : null,
+      actualEndTime: json['actualEndTime'] != null ? SafeDateParser.parse(json['actualEndTime']) : null,
     );
   }
 
   Appointment _mapSchemaToEntity(dynamic row) {
-    final data = row.toJson();
-    return _appointmentFromJson(data);
+    final r = row as dynamic;
+    return Appointment(
+      id: r.id as String,
+      patientId: r.patientId as String,
+      patientName: r.patientName as String,
+      doctorId: r.doctorId as String,
+      doctorName: r.doctorName as String,
+      studentId: r.studentId as String?,
+      studentName: r.studentName as String?,
+      professorId: r.professorId as String?,
+      professorName: r.professorName as String?,
+      startTime: SafeDateParser.parse(r.startTime),
+      endTime: SafeDateParser.parse(r.endTime),
+      status: AppointmentStatus.values.firstWhere(
+        (e) => e.name == r.status,
+        orElse: () => AppointmentStatus.scheduled,
+      ),
+      procedureName: r.procedureName as String?,
+      notes: r.notes as String?,
+      clinicId: r.clinicId as String,
+    );
   }
 }

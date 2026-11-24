@@ -1,6 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-// Enums unificados para evitar erro de exaustividade no switch
 enum ToothSurface { mesial, distal, occlusal, buccal, lingual, palatal, root }
 enum ConditionType { healthy, decayed, restored, missing, implant, endodontic, prosthesis }
 
@@ -19,30 +18,16 @@ class ToothCondition {
 
   factory ToothCondition.fromJson(Map<String, dynamic> json) {
     return ToothCondition(
-      toothNumber: json['toothNumber'] as int? ?? 0,
-      surfaces: (json['surfaces'] as List?)
-              ?.map((e) => ToothSurface.values.firstWhere((s) => s.name == e))
+      toothNumber: json['toothNumber'] as int? ?? json['ToothNumber'] as int? ?? 0,
+      surfaces: (json['surfaces'] as List? ?? json['Surfaces'] as List?)
+              ?.map((e) => ToothSurface.values.firstWhere((s) => s.name == e.toString()))
               .toList() ??
           [],
       condition: ConditionType.values.firstWhere(
-        (e) => e.name == json['condition'],
+        (e) => e.name == (json['condition'] ?? json['Condition']),
         orElse: () => ConditionType.healthy,
       ),
-      observation: json['observation'] as String?,
-    );
-  }
-
-  ToothCondition copyWith({
-    int? toothNumber,
-    List<ToothSurface>? surfaces,
-    ConditionType? condition,
-    String? observation,
-  }) {
-    return ToothCondition(
-      toothNumber: toothNumber ?? this.toothNumber,
-      surfaces: surfaces ?? this.surfaces,
-      condition: condition ?? this.condition,
-      observation: observation ?? this.observation,
+      observation: (json['observation'] ?? json['Observation']) as String?,
     );
   }
 }
@@ -62,32 +47,31 @@ class Odontogram {
     required this.updatedBy,
   });
 
-  factory Odontogram.fromJson(Map<String, dynamic> json) {
-    return Odontogram(
-      id: json['id'] as String? ?? '',
-      patientId: json['patientId'] as String? ?? '',
-      teeth: (json['teeth'] as List?)
-              ?.map((e) => ToothCondition.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : DateTime.now(),
-      updatedBy: json['updatedBy'] as String? ?? '',
-    );
+  static DateTime _safeParse(dynamic v) {
+    if (v == null || v.toString().trim().isEmpty || v.toString() == 'null') {
+      return DateTime.now();
+    }
+    try {
+      if (v is DateTime) return v.isUtc ? v.toLocal() : v;
+      final s = v.toString();
+      final dateStr = s.contains('T') || s.contains(' ') ? s : '${s}T00:00:00';
+      final dt = DateTime.parse(dateStr);
+      return dt.isUtc ? dt.toLocal() : dt;
+    } catch (_) {
+      return DateTime.now();
+    }
   }
 
-  Odontogram copyWith({
-    String? id,
-    String? patientId,
-    List<ToothCondition>? teeth,
-    DateTime? updatedAt,
-    String? updatedBy,
-  }) {
+  factory Odontogram.fromJson(Map<String, dynamic> json) {
     return Odontogram(
-      id: id ?? this.id,
-      patientId: patientId ?? this.patientId,
-      teeth: teeth ?? this.teeth,
-      updatedAt: updatedAt ?? this.updatedAt,
-      updatedBy: updatedBy ?? this.updatedBy,
+      id: (json['id'] ?? json['Id'])?.toString() ?? '',
+      patientId: (json['patientId'] ?? json['PatientId'])?.toString() ?? '',
+      teeth: (json['teeth'] as List? ?? json['Teeth'] as List?)
+              ?.map((e) => ToothCondition.fromJson(Map<String, dynamic>.from(e as Map)))
+              .toList() ??
+          [],
+      updatedAt: _safeParse(json['updatedAt'] ?? json['UpdatedAt']),
+      updatedBy: (json['updatedBy'] ?? json['UpdatedBy'] ?? '') as String,
     );
   }
 }

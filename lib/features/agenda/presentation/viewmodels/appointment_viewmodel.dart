@@ -56,30 +56,17 @@ class AppointmentState {
         return list.where((app) {
           if (period != AgendaDayPeriod.all) {
             final hour = app.startTime.hour;
-            if (period == AgendaDayPeriod.morning && (hour < 7 || hour >= 12))
-              return false;
-            if (period == AgendaDayPeriod.afternoon &&
-                (hour < 12 || hour >= 18))
-              return false;
+            if (period == AgendaDayPeriod.morning && (hour < 7 || hour >= 12)) return false;
+            if (period == AgendaDayPeriod.afternoon && (hour < 12 || hour >= 18)) return false;
             if (period == AgendaDayPeriod.night && hour < 18) return false;
           }
 
-          final appJson = app.toJson();
-          final student = appJson['studentName']?.toString() ?? app.doctorName;
-          final professor = appJson['professorName']?.toString() ?? "";
+          final student = app.studentName?.toLowerCase() ?? app.doctorName.toLowerCase();
+          final professor = app.professorName?.toLowerCase() ?? "";
 
-          if (filterStudent != null &&
-              !student.toLowerCase().contains(filterStudent!.toLowerCase()))
-            return false;
-          if (filterProfessor != null &&
-              !professor.toLowerCase().contains(filterProfessor!.toLowerCase()))
-            return false;
-          if (filterProcedure != null &&
-              !(app.procedureName?.toLowerCase().contains(
-                    filterProcedure!.toLowerCase(),
-                  ) ??
-                  false))
-            return false;
+          if (filterStudent != null && !student.contains(filterStudent!.toLowerCase())) return false;
+          if (filterProfessor != null && !professor.contains(filterProfessor!.toLowerCase())) return false;
+          if (filterProcedure != null && !(app.procedureName?.toLowerCase().contains(filterProcedure!.toLowerCase()) ?? false)) return false;
           if (filterStatus != null && app.status != filterStatus) return false;
 
           return true;
@@ -94,46 +81,29 @@ class AppointmentState {
 
     final allSlots = <TimeSlot>[];
     final date = selectedDate;
-
-    final clinicJson = selectedClinic!.toJson();
-    final startHour = clinicJson['startHour'] as int? ?? 8;
-    final endHour = clinicJson['endHour'] as int? ?? 18;
-    final duration = clinicJson['slotDurationMinutes'] as int? ?? 60;
+    final startHour = selectedClinic!.startHour;
+    final endHour = selectedClinic!.endHour;
+    final duration = selectedClinic!.slotDurationMinutes > 0 ? selectedClinic!.slotDurationMinutes : 60;
 
     final dayAppointments = appointments.value ?? [];
 
     for (int hour = startHour; hour < endHour; hour++) {
-      // Pula horários de almoço (11h, 12h, 13h) conforme solicitado
-      if (hour == 11 || hour == 12 || hour == 13) continue;
+      if (hour == 12 || hour == 13) continue; // Almoço
 
-      for (int min = 0; min < 60; min += (duration > 0 ? duration : 60)) {
+      for (int min = 0; min < 60; min += duration) {
         final slotStart = DateTime(date.year, date.month, date.day, hour, min);
-        final slotEnd = slotStart.add(
-          Duration(minutes: duration > 0 ? duration : 60),
-        );
+        final slotEnd = slotStart.add(Duration(minutes: duration));
 
-        final appsInSlot = dayAppointments
-            .where(
-              (a) =>
-                  (a.startTime.isAtSameMomentAs(slotStart)) ||
-                  (a.startTime.isAfter(slotStart) &&
-                      a.startTime.isBefore(slotEnd)),
-            )
-            .toList();
+        final appsInSlot = dayAppointments.where((a) {
+          final startTime = a.startTime.isUtc ? a.startTime.toLocal() : a.startTime;
+          return startTime.isAtSameMomentAs(slotStart) || (startTime.isAfter(slotStart) && startTime.isBefore(slotEnd));
+        }).toList();
 
         if (appsInSlot.isEmpty) {
-          allSlots.add(
-            TimeSlot(startTime: slotStart, endTime: slotEnd, isFree: true),
-          );
+          allSlots.add(TimeSlot(startTime: slotStart, endTime: slotEnd, isFree: true));
         } else {
           for (final app in appsInSlot) {
-            allSlots.add(
-              TimeSlot(
-                startTime: slotStart,
-                endTime: slotEnd,
-                appointment: app,
-              ),
-            );
+            allSlots.add(TimeSlot(startTime: slotStart, endTime: slotEnd, appointment: app));
           }
         }
       }
@@ -156,12 +126,9 @@ class AppointmentState {
   }) {
     return AppointmentState(
       appointments: appointments ?? this.appointments,
-      institutionalAppointments:
-          institutionalAppointments ?? this.institutionalAppointments,
+      institutionalAppointments: institutionalAppointments ?? this.institutionalAppointments,
       selectedDate: selectedDate ?? this.selectedDate,
-      selectedClinic: clearClinic
-          ? null
-          : (selectedClinic ?? this.selectedClinic),
+      selectedClinic: clearClinic ? null : (selectedClinic ?? this.selectedClinic),
       clinics: clinics ?? this.clinics,
       period: period ?? this.period,
       filterStudent: filterStudent ?? this.filterStudent,
@@ -186,20 +153,6 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
 
   final Ref ref;
 
-  final List<String> _defaultClinicNames = [
-    'Clinica I',
-    'Clinica II',
-    'Clinica III',
-    'Clinica IV',
-    'Clinica V',
-    'Clinica Integrada Infantil',
-    'Clinica de Emergência',
-    'Clinica Integrada Adulto I',
-    'Clinica Integrada Adulto II',
-    'Clinica de DTM',
-    'Clinica de Odontopediatria',
-  ];
-
   void _invalidateConsumers() {
     ref.invalidate(allAppointmentsProvider);
     ref.invalidate(dashboardSummaryProvider);
@@ -207,98 +160,19 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
 
   void _initRealtime() {
     final realtime = ref.read(realtimeServiceProvider);
-    realtime.on('AppointmentUpdated', (args) {
-      _invalidateConsumers();
-      refresh();
-      fetchInstitutionalData();
-    });
-    realtime.on('AppointmentCreated', (args) {
-      _invalidateConsumers();
-      refresh();
-      fetchInstitutionalData();
-    });
+    realtime.on('AppointmentUpdated', (args) => refresh());
+    realtime.on('AppointmentCreated', (args) => refresh());
   }
 
   Future<void> _loadInitialData() async {
     try {
-      final proceduresRepo = ref.read(proceduresRepositoryProvider);
-      var clinics = await proceduresRepo.getClinics(onlyActive: true);
-
-      // Mantém todas as clínicas padrão visíveis, mesmo quando o backend
-      // ainda não possui todas cadastradas ou retorna apenas parte delas.
-      final clinicByName = <String, Clinic>{
-        for (final clinic in clinics) clinic.name.trim().toLowerCase(): clinic,
-      };
-
-      final priorityNames = <String>[
-        'Clinica I',
-        'Clinica II',
-        'Clinica III',
-        'Clinica IV',
-        'Clinica V',
-      ];
-      final orderedNames = <String>[
-        ...priorityNames,
-        ..._defaultClinicNames.where((name) => !priorityNames.contains(name)),
-        ...clinicByName.values
-            .map((clinic) => clinic.name)
-            .where(
-              (name) =>
-                  !priorityNames.contains(name) &&
-                  !_defaultClinicNames.contains(name),
-            ),
-      ];
-
-      clinics = orderedNames.map((name) {
-        final key = name.toLowerCase();
-        return clinicByName[key] ??
-            Clinic(
-              id: const Uuid().v5(
-                Uuid.NAMESPACE_URL,
-                'promtuario-clinic:$name',
-              ),
-              name: name,
-              description: 'Clínica Escola',
-              isActive: true,
-              capacity: 1,
-              startHour: 8,
-              endHour: 18,
-              slotDurationMinutes: 60,
-              metadata: {},
-            );
-      }).toList();
-
+      final clinics = await ref.read(proceduresRepositoryProvider).getClinics(onlyActive: true);
       state = state.copyWith(clinics: clinics);
       if (clinics.isNotEmpty) selectClinic(clinics.first);
+      else await refresh();
     } catch (e, stack) {
       state = state.copyWith(appointments: AsyncValue.error(e, stack));
     }
-  }
-
-  void setFilters({
-    AgendaDayPeriod? period,
-    String? student,
-    String? professor,
-    String? procedure,
-    AppointmentStatus? status,
-  }) {
-    state = state.copyWith(
-      period: period,
-      filterStudent: student,
-      filterProfessor: professor,
-      filterProcedure: procedure,
-      filterStatus: status,
-    );
-  }
-
-  void clearFilters() {
-    state = state.copyWith(
-      period: AgendaDayPeriod.all,
-      filterStudent: null,
-      filterProfessor: null,
-      filterProcedure: null,
-      filterStatus: null,
-    );
   }
 
   Future<void> selectClinic(Clinic? clinic) async {
@@ -319,16 +193,14 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
       return await repository.getAppointments(
         start: DateTime(date.year, date.month, date.day, 0, 0),
         end: DateTime(date.year, date.month, date.day, 23, 59, 59),
-        clinicId: state.selectedClinic?.id, // Null busca todas as clínicas
+        clinicId: state.selectedClinic?.id,
       );
     });
     state = state.copyWith(appointments: result);
   }
 
   Future<void> fetchInstitutionalData() async {
-    state = state.copyWith(
-      institutionalAppointments: const AsyncValue.loading(),
-    );
+    state = state.copyWith(institutionalAppointments: const AsyncValue.loading());
     final result = await AsyncValue.guard(() async {
       final repository = ref.read(appointmentRepositoryProvider);
       final date = state.selectedDate;
@@ -342,51 +214,14 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
   }
 
   Future<void> schedule(Appointment appointment) async {
-    await ref.read(patientRepositoryProvider).syncPatients();
-
-    final saved = await ref
-        .read(appointmentRepositoryProvider)
-        .scheduleAppointment(appointment);
-
-    final date = state.selectedDate;
-    final inSelectedDate =
-        saved.startTime.year == date.year &&
-        saved.startTime.month == date.month &&
-        saved.startTime.day == date.day;
-
-    final current = state.appointments.value ?? const <Appointment>[];
-    final merged = <String, Appointment>{
-      for (final item in current) item.id: item,
-      saved.id: saved,
-    }.values.toList()..sort((a, b) => a.startTime.compareTo(b.startTime));
-
-    if (inSelectedDate) {
-      state = state.copyWith(appointments: AsyncValue.data(merged));
-
-      final institutional =
-          state.institutionalAppointments.value ?? const <Appointment>[];
-      final mergedInstitutional = <String, Appointment>{
-        for (final item in institutional) item.id: item,
-        saved.id: saved,
-      }.values.toList()..sort((a, b) => a.startTime.compareTo(b.startTime));
-      state = state.copyWith(
-        institutionalAppointments: AsyncValue.data(mergedInstitutional),
-      );
-    } else {
-      state = state.copyWith(
-        institutionalAppointments: const AsyncValue.loading(),
-      );
-    }
-
+    await ref.read(appointmentRepositoryProvider).scheduleAppointment(appointment);
     _invalidateConsumers();
     await refresh();
     await fetchInstitutionalData();
   }
 
   Future<void> updateStatus(String id, AppointmentStatus status) async {
-    await ref
-        .read(appointmentRepositoryProvider)
-        .updateAppointmentStatus(id, status);
+    await ref.read(appointmentRepositoryProvider).updateAppointmentStatus(id, status);
     _invalidateConsumers();
     await refresh();
   }
@@ -411,40 +246,26 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
 
   Map<String, dynamic> getDayStats() {
     final list = state.appointments.value ?? [];
+    int total = list.length;
+    int completed = list.where((a) => a.status == AppointmentStatus.completed).length;
+    int missed = list.where((a) => a.status == AppointmentStatus.missed || a.status == AppointmentStatus.noShow).length;
+    
     double occupancy = 0.0;
-
-    if (state.selectedClinic != null) {
-      final clinic = state.selectedClinic!;
-      final clinicJson = clinic.toJson();
-      final startHour = clinicJson['startHour'] as int? ?? 8;
-      final endHour = clinicJson['endHour'] as int? ?? 18;
-      final duration = clinicJson['slotDurationMinutes'] as int? ?? 60;
-
-      final workingMinutes = (endHour - startHour) * 60;
-      final slotsPerChair = workingMinutes / (duration > 0 ? duration : 60);
-      final totalCapacity =
-          slotsPerChair * (clinic.capacity > 0 ? clinic.capacity : 1);
-
-      if (totalCapacity > 0) {
-        occupancy = list.length / totalCapacity;
-      }
+    if (state.selectedClinic != null && state.selectedClinic!.capacity > 0) {
+      final hours = (state.selectedClinic!.endHour - state.selectedClinic!.startHour) - 2; // -2 almoço
+      final totalCapacity = hours * state.selectedClinic!.capacity;
+      occupancy = total / totalCapacity;
     }
 
     return {
-      'total': list.length,
-      'completed': list
-          .where((a) => a.status == AppointmentStatus.completed)
-          .length,
-      'missed': list.where((a) => a.status == AppointmentStatus.missed).length,
-      'canceled': list
-          .where((a) => a.status == AppointmentStatus.cancelled)
-          .length,
+      'total': total,
+      'completed': completed,
+      'missed': missed,
       'occupancy': occupancy,
     };
   }
 }
 
-final appointmentViewModelProvider =
-    StateNotifierProvider<AppointmentViewModel, AppointmentState>((ref) {
-      return AppointmentViewModel(ref);
-    });
+final appointmentViewModelProvider = StateNotifierProvider<AppointmentViewModel, AppointmentState>((ref) {
+  return AppointmentViewModel(ref);
+});

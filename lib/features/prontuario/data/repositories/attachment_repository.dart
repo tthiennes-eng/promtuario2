@@ -12,6 +12,21 @@ class AttachmentRepository implements IAttachmentRepository {
 
   AttachmentRepository(this._apiClient, this._localDb);
 
+  static DateTime _safeParse(dynamic v) {
+    if (v == null || v.toString().trim().isEmpty || v.toString() == 'null') {
+      return DateTime.now();
+    }
+    try {
+      if (v is DateTime) return v.isUtc ? v.toLocal() : v;
+      final s = v.toString();
+      final dateStr = s.contains('T') || s.contains(' ') ? s : '${s}T00:00:00';
+      final dt = DateTime.parse(dateStr);
+      return dt.isUtc ? dt.toLocal() : dt;
+    } catch (_) {
+      return DateTime.now();
+    }
+  }
+
   @override
   Future<List<Attachment>> getAttachments(String patientId) async {
     final dynamic db = _localDb;
@@ -29,7 +44,7 @@ class AttachmentRepository implements IAttachmentRepository {
   Future<Attachment> uploadAttachment(
     String patientId,
     File file,
-    AttachmentType type, {
+    String type, {
     String? description,
   }) async {
     final attachment = Attachment(
@@ -65,7 +80,7 @@ class AttachmentRepository implements IAttachmentRepository {
           id: Value(attachment.id),
           patientId: Value(attachment.patientId),
           localPath: Value(attachment.localPath),
-          type: Value(attachment.type.name),
+          type: Value(attachment.type),
           description: Value(attachment.description),
           createdAt: Value(attachment.createdAt),
           isSynced: Value(attachment.isSynced),
@@ -77,16 +92,13 @@ class AttachmentRepository implements IAttachmentRepository {
   Attachment _mapSchemaToEntity(dynamic row) {
     final data = row.toJson();
     return Attachment(
-      id: data['id'] as String,
-      patientId: data['patientId'] as String,
-      localPath: data['localPath'] as String,
+      id: (data['id'] ?? '') as String,
+      patientId: (data['patientId'] ?? '') as String,
+      localPath: data['localPath'] as String?,
       remoteUrl: data['remoteUrl'] as String?,
-      type: AttachmentType.values.firstWhere(
-        (e) => e.name == (data['type'] as String? ?? 'image'),
-        orElse: () => AttachmentType.image,
-      ),
+      type: (data['type'] ?? 'file') as String,
       description: data['description'] as String?,
-      createdAt: DateTime.parse(data['createdAt'] as String),
+      createdAt: _safeParse(data['createdAt']),
       isSynced: data['isSynced'] as bool? ?? false,
     );
   }

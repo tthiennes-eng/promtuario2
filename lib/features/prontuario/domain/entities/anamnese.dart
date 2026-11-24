@@ -13,13 +13,28 @@ class Anamnese {
     required this.updatedBy,
   });
 
+  static DateTime _safeParse(dynamic v) {
+    if (v == null || v.toString().trim().isEmpty || v.toString() == 'null') {
+      return DateTime.now();
+    }
+    try {
+      if (v is DateTime) return v.isUtc ? v.toLocal() : v;
+      final s = v.toString();
+      final dateStr = s.contains('T') || s.contains(' ') ? s : '${s}T00:00:00';
+      final dt = DateTime.parse(dateStr);
+      return dt.isUtc ? dt.toLocal() : dt;
+    } catch (_) {
+      return DateTime.now();
+    }
+  }
+
   factory Anamnese.fromJson(Map<String, dynamic> json) {
     return Anamnese(
-      id: json['id'] as String? ?? '',
-      patientId: json['patientId'] as String? ?? '',
-      responses: Map<String, dynamic>.from(json['responses'] as Map? ?? {}),
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : DateTime.now(),
-      updatedBy: json['updatedBy'] as String? ?? '',
+      id: (json['id'] ?? json['Id'])?.toString() ?? '',
+      patientId: (json['patientId'] ?? json['PatientId'])?.toString() ?? '',
+      responses: Map<String, dynamic>.from(json['responses'] as Map? ?? json['Responses'] as Map? ?? {}),
+      updatedAt: _safeParse(json['updatedAt'] ?? json['UpdatedAt']),
+      updatedBy: (json['updatedBy'] ?? json['UpdatedBy'] ?? '') as String,
     );
   }
 

@@ -25,17 +25,32 @@ class NotificationItem {
     this.data,
   });
 
+  static DateTime _safeParse(dynamic v) {
+    if (v == null || v.toString().trim().isEmpty || v.toString() == 'null') {
+      return DateTime.now();
+    }
+    try {
+      if (v is DateTime) return v.isUtc ? v.toLocal() : v;
+      final s = v.toString();
+      final dateStr = s.contains('T') || s.contains(' ') ? s : '${s}T00:00:00';
+      final dt = DateTime.parse(dateStr);
+      return dt.isUtc ? dt.toLocal() : dt;
+    } catch (_) {
+      return DateTime.now();
+    }
+  }
+
   factory NotificationItem.fromJson(Map<String, dynamic> json) {
     return NotificationItem(
-      id: json['id'] as String? ?? '',
-      title: json['title'] as String? ?? '',
-      message: json['message'] as String? ?? '',
+      id: (json['id'] ?? json['Id'])?.toString() ?? '',
+      title: (json['title'] ?? json['Title'] ?? '') as String,
+      message: (json['message'] ?? json['Message'] ?? '') as String,
       type: NotificationType.values.firstWhere(
-        (e) => e.name == (json['type'] as String? ?? NotificationType.info.name),
+        (e) => e.name == (json['type'] ?? json['Type']),
         orElse: () => NotificationType.info,
       ),
-      timestamp: json['timestamp'] != null ? DateTime.parse(json['timestamp']) : DateTime.now(),
-      isRead: json['isRead'] as bool? ?? false,
+      timestamp: _safeParse(json['timestamp'] ?? json['Timestamp']),
+      isRead: (json['isRead'] ?? json['IsRead'] ?? false) as bool,
       data: json['data'] as Map<String, dynamic>?,
     );
   }
@@ -49,24 +64,4 @@ class NotificationItem {
         'isRead': isRead,
         'data': data,
       };
-
-  NotificationItem copyWith({
-    String? id,
-    String? title,
-    String? message,
-    NotificationType? type,
-    DateTime? timestamp,
-    bool? isRead,
-    Map<String, dynamic>? data,
-  }) {
-    return NotificationItem(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      message: message ?? this.message,
-      type: type ?? this.type,
-      timestamp: timestamp ?? this.timestamp,
-      isRead: isRead ?? this.isRead,
-      data: data ?? this.data,
-    );
-  }
 }

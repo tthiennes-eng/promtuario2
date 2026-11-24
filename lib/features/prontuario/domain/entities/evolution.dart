@@ -25,19 +25,34 @@ class Evolution {
     this.clinicName,
   });
 
+  static DateTime _safeParse(dynamic v) {
+    if (v == null || v.toString().trim().isEmpty || v.toString() == 'null') {
+      return DateTime.now();
+    }
+    try {
+      if (v is DateTime) return v.isUtc ? v.toLocal() : v;
+      final s = v.toString();
+      final dateStr = s.contains('T') || s.contains(' ') ? s : '${s}T00:00:00';
+      final dt = DateTime.parse(dateStr);
+      return dt.isUtc ? dt.toLocal() : dt;
+    } catch (_) {
+      return DateTime.now();
+    }
+  }
+
   factory Evolution.fromJson(Map<String, dynamic> json) {
     return Evolution(
-      id: json['id'] as String? ?? '',
-      patientId: json['patientId'] as String? ?? '',
-      studentId: json['studentId'] as String?,
-      studentName: json['studentName'] as String?,
-      professorId: json['professorId'] as String?,
-      professorName: json['professorName'] as String?,
-      description: json['description'] as String? ?? '',
-      isSignedByProfessor: json['isSignedByProfessor'] as bool? ?? false,
-      signedAt: json['signedAt'] != null ? DateTime.parse(json['signedAt']) : null,
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
-      clinicName: json['clinicName'] as String?,
+      id: (json['id'] ?? json['Id'])?.toString() ?? '',
+      patientId: (json['patientId'] ?? json['PatientId'])?.toString() ?? '',
+      studentId: (json['studentId'] ?? json['StudentId'])?.toString(),
+      studentName: (json['studentName'] ?? json['StudentName'])?.toString(),
+      professorId: (json['professorId'] ?? json['ProfessorId'])?.toString(),
+      professorName: (json['professorName'] ?? json['ProfessorName'])?.toString(),
+      description: (json['description'] ?? json['Description'] ?? '') as String,
+      isSignedByProfessor: (json['isSignedByProfessor'] ?? json['IsSignedByProfessor'] ?? false) as bool,
+      signedAt: (json['signedAt'] ?? json['SignedAt']) != null ? _safeParse(json['signedAt'] ?? json['SignedAt']) : null,
+      createdAt: _safeParse(json['createdAt'] ?? json['CreatedAt']),
+      clinicName: (json['clinicName'] ?? json['ClinicName']) as String?,
     );
   }
 

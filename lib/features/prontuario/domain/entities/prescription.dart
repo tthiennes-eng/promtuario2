@@ -11,9 +11,9 @@ class PrescriptionItem {
 
   factory PrescriptionItem.fromJson(Map<String, dynamic> json) {
     return PrescriptionItem(
-      medicineName: json['medicineName'] as String? ?? '',
-      dosage: json['dosage'] as String? ?? '',
-      instructions: json['instructions'] as String? ?? '',
+      medicineName: (json['medicineName'] ?? json['MedicineName'] ?? '') as String,
+      dosage: (json['dosage'] ?? json['Dosage'] ?? '') as String,
+      instructions: (json['instructions'] ?? json['Instructions'] ?? '') as String,
     );
   }
 
@@ -22,18 +22,6 @@ class PrescriptionItem {
         'dosage': dosage,
         'instructions': instructions,
       };
-
-  PrescriptionItem copyWith({
-    String? medicineName,
-    String? dosage,
-    String? instructions,
-  }) {
-    return PrescriptionItem(
-      medicineName: medicineName ?? this.medicineName,
-      dosage: dosage ?? this.dosage,
-      instructions: instructions ?? this.instructions,
-    );
-  }
 }
 
 class Prescription {
@@ -57,20 +45,33 @@ class Prescription {
     DateTime? date,
   }) : createdAt = date ?? DateTime.now();
 
-  DateTime get date => createdAt;
+  static DateTime _safeParse(dynamic v) {
+    if (v == null || v.toString().trim().isEmpty || v.toString() == 'null') {
+      return DateTime.now();
+    }
+    try {
+      if (v is DateTime) return v.isUtc ? v.toLocal() : v;
+      final s = v.toString();
+      final dateStr = s.contains('T') || s.contains(' ') ? s : '${s}T00:00:00';
+      final dt = DateTime.parse(dateStr);
+      return dt.isUtc ? dt.toLocal() : dt;
+    } catch (_) {
+      return DateTime.now();
+    }
+  }
 
   factory Prescription.fromJson(Map<String, dynamic> json) {
     return Prescription(
-      id: json['id'] as String? ?? '',
-      patientId: json['patientId'] as String? ?? '',
-      clinicId: json['clinicId'] as String? ?? '',
+      id: (json['id'] ?? json['Id'])?.toString() ?? '',
+      patientId: (json['patientId'] ?? json['PatientId'])?.toString() ?? '',
+      clinicId: (json['clinicId'] ?? json['ClinicId'])?.toString() ?? '',
       items: (json['items'] as List<dynamic>? ?? [])
           .map((e) => PrescriptionItem.fromJson(Map<String, dynamic>.from(e)))
           .toList(),
-      doctorId: json['doctorId'] as String? ?? '',
-      doctorName: json['doctorName'] as String? ?? '',
-      observations: json['observations'] as String?,
-      date: json['date'] != null ? DateTime.parse(json['date']) : (json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null),
+      doctorId: (json['doctorId'] ?? json['DoctorId'])?.toString() ?? '',
+      doctorName: (json['doctorName'] ?? json['DoctorName'] ?? '') as String,
+      observations: (json['observations'] ?? json['Observations']) as String?,
+      date: _safeParse(json['date'] ?? json['Date'] ?? json['createdAt'] ?? json['CreatedAt']),
     );
   }
 
@@ -84,28 +85,6 @@ class Prescription {
         'observations': observations,
         'date': createdAt.toIso8601String(),
       };
-
-  Prescription copyWith({
-    String? id,
-    String? patientId,
-    String? clinicId,
-    List<PrescriptionItem>? items,
-    String? doctorId,
-    String? doctorName,
-    String? observations,
-    DateTime? date,
-  }) {
-    return Prescription(
-      id: id ?? this.id,
-      patientId: patientId ?? this.patientId,
-      clinicId: clinicId ?? this.clinicId,
-      items: items ?? this.items,
-      doctorId: doctorId ?? this.doctorId,
-      doctorName: doctorName ?? this.doctorName,
-      observations: observations ?? this.observations,
-      date: date ?? createdAt,
-    );
-  }
 }
 
 class MedicalCertificate {
@@ -129,18 +108,31 @@ class MedicalCertificate {
     DateTime? date,
   }) : createdAt = date ?? DateTime.now();
 
-  DateTime get date => createdAt;
+  static DateTime _safeParse(dynamic v) {
+    if (v == null || v.toString().trim().isEmpty || v.toString() == 'null') {
+      return DateTime.now();
+    }
+    try {
+      if (v is DateTime) return v.isUtc ? v.toLocal() : v;
+      final s = v.toString();
+      final dateStr = s.contains('T') || s.contains(' ') ? s : '${s}T00:00:00';
+      final dt = DateTime.parse(dateStr);
+      return dt.isUtc ? dt.toLocal() : dt;
+    } catch (_) {
+      return DateTime.now();
+    }
+  }
 
   factory MedicalCertificate.fromJson(Map<String, dynamic> json) {
     return MedicalCertificate(
-      id: json['id'] as String? ?? '',
-      patientId: json['patientId'] as String? ?? '',
-      content: json['content'] as String? ?? '',
-      daysOfRest: json['daysOfRest'] as int? ?? 0,
-      doctorId: json['doctorId'] as String? ?? '',
-      doctorName: json['doctorName'] as String? ?? '',
-      cid: json['cid'] as String?,
-      date: json['date'] != null ? DateTime.parse(json['date']) : (json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null),
+      id: (json['id'] ?? json['Id'])?.toString() ?? '',
+      patientId: (json['patientId'] ?? json['PatientId'])?.toString() ?? '',
+      content: (json['content'] ?? json['Content'] ?? '') as String,
+      daysOfRest: (json['daysOfRest'] ?? json['DaysOfRest'] ?? 0) as int,
+      doctorId: (json['doctorId'] ?? json['DoctorId'])?.toString() ?? '',
+      doctorName: (json['doctorName'] ?? json['DoctorName'] ?? '') as String,
+      cid: (json['cid'] ?? json['CID']) as String?,
+      date: _safeParse(json['date'] ?? json['Date'] ?? json['createdAt'] ?? json['CreatedAt']),
     );
   }
 
@@ -154,26 +146,4 @@ class MedicalCertificate {
         'cid': cid,
         'date': createdAt.toIso8601String(),
       };
-
-  MedicalCertificate copyWith({
-    String? id,
-    String? patientId,
-    String? content,
-    int? daysOfRest,
-    String? doctorId,
-    String? doctorName,
-    String? cid,
-    DateTime? date,
-  }) {
-    return MedicalCertificate(
-      id: id ?? this.id,
-      patientId: patientId ?? this.patientId,
-      content: content ?? this.content,
-      daysOfRest: daysOfRest ?? this.daysOfRest,
-      doctorId: doctorId ?? this.doctorId,
-      doctorName: doctorName ?? this.doctorName,
-      cid: cid ?? this.cid,
-      date: date ?? createdAt,
-    );
-  }
 }

@@ -415,16 +415,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               final now = DateTime.now();
               final startOfDay = DateTime(now.year, now.month, now.day);
               final endOfDay = startOfDay.add(const Duration(days: 1));
-              final todayAppointments = (snapshot.data ?? []).where((
-                appointment,
-              ) {
-                final isToday =
-                    !appointment.startTime.isBefore(startOfDay) &&
-                    appointment.startTime.isBefore(endOfDay);
-                final isCancelled =
-                    appointment.status == AppointmentStatus.cancelled ||
-                    appointment.status == AppointmentStatus.noShow ||
-                    appointment.status == AppointmentStatus.missed;
+              
+              final todayAppointments = (snapshot.data ?? []).where((appointment) {
+                // Garante que a comparação seja feita no fuso horário LOCAL
+                final startTime = appointment.startTime.isUtc 
+                    ? appointment.startTime.toLocal() 
+                    : appointment.startTime;
+                    
+                final isToday = !startTime.isBefore(startOfDay) && startTime.isBefore(endOfDay);
+                
+                final status = appointment.status;
+                final isCancelled = status == AppointmentStatus.cancelled ||
+                    status == AppointmentStatus.noShow ||
+                    status == AppointmentStatus.missed;
+                    
                 return isToday && !isCancelled;
               }).toList()..sort((a, b) => a.startTime.compareTo(b.startTime));
 
@@ -443,8 +447,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   separatorBuilder: (_, __) => const Divider(height: 1),
                   itemBuilder: (_, index) {
                     final appointment = todayAppointments[index];
-                    final responsible =
-                        appointment.studentName?.trim().isNotEmpty == true
+                    final responsible = appointment.studentName?.trim().isNotEmpty == true
                         ? appointment.studentName!
                         : appointment.doctorName;
                     final procedure = appointment.procedureName?.trim();
@@ -453,10 +456,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       contentPadding: const EdgeInsets.symmetric(vertical: 8),
                       leading: CircleAvatar(
                         backgroundColor: Colors.green.withOpacity(0.12),
-                        child: const Icon(
-                          Icons.person_outline,
-                          color: Colors.green,
-                        ),
+                        child: const Icon(Icons.person_outline, color: Colors.green),
                       ),
                       title: Text(
                         appointment.patientName,
@@ -467,7 +467,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       subtitle: Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
-                          '${DateFormat('HH:mm').format(appointment.startTime)}'
+                          '${DateFormat('HH:mm').format(appointment.startTime.toLocal())}'
                           '${procedure != null && procedure.isNotEmpty ? ' • $procedure' : ''}'
                           '\nResponsável: $responsible'
                           '\nStatus: ${appointment.status.displayName}',

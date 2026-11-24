@@ -40,7 +40,6 @@ class PontoSondagem {
 
 class DenteSondagem {
   final int toothNumber;
-  // 6 pontos: 0:MV, 1:V, 2:DV (Vestibular) | 3:ML, 4:L, 5:DL (Lingual/Palatina)
   final List<PontoSondagem> pontos;
   int mobilidade; // 0, 1, 2, 3
   String furca; // N/A, I, II, III
@@ -82,6 +81,21 @@ class PeriogramaModel {
     required this.dentes,
   });
 
+  static DateTime _safeParse(dynamic v) {
+    if (v == null || v.toString().trim().isEmpty || v.toString() == 'null') {
+      return DateTime.now();
+    }
+    try {
+      if (v is DateTime) return v.isUtc ? v.toLocal() : v;
+      final s = v.toString();
+      final dateStr = s.contains('T') || s.contains(' ') ? s : '${s}T00:00:00';
+      final dt = DateTime.parse(dateStr);
+      return dt.isUtc ? dt.toLocal() : dt;
+    } catch (_) {
+      return DateTime.now();
+    }
+  }
+
   Map<String, dynamic> toMap() => {
     'id': id,
     'patientId': patientId,
@@ -91,11 +105,16 @@ class PeriogramaModel {
   };
 
   factory PeriogramaModel.fromMap(Map<String, dynamic> map) => PeriogramaModel(
-    id: map['id'],
-    patientId: map['patientId'],
-    date: DateTime.parse(map['date']),
-    tipo: TipoExamePeriodontal.values.byName(map['tipo']),
-    dentes: (map['dentes'] as List).map((d) => DenteSondagem.fromMap(d)).toList(),
+    id: (map['id'] ?? map['Id'])?.toString() ?? '',
+    patientId: (map['patientId'] ?? map['PatientId'])?.toString() ?? '',
+    date: _safeParse(map['date'] ?? map['Date']),
+    tipo: TipoExamePeriodontal.values.firstWhere(
+      (e) => e.name == (map['tipo'] ?? map['Tipo']),
+      orElse: () => TipoExamePeriodontal.primeiro,
+    ),
+    dentes: (map['dentes'] as List? ?? map['Dentes'] as List? ?? [])
+        .map((d) => DenteSondagem.fromMap(Map<String, dynamic>.from(d)))
+        .toList(),
   );
 
   String toJson() => jsonEncode(toMap());

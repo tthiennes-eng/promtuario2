@@ -1,3 +1,5 @@
+import 'package:promt/core/utils/date_utils.dart';
+
 class Patient {
   final String id;
   final String fullName;
@@ -33,20 +35,20 @@ class Patient {
 
   factory Patient.fromJson(Map<String, dynamic> json) {
     return Patient(
-      id: json['id'] as String? ?? '',
-      fullName: json['fullName'] as String? ?? '',
-      socialName: json['socialName'] as String? ?? json['SocialName'] as String?,
-      cpf: json['cpf'] as String? ?? '',
-      susNumber: json['susNumber'] as String? ?? json['SusNumber'] as String?,
-      birthDate: json['birthDate'] != null ? DateTime.parse(json['birthDate']) : DateTime.now(),
-      email: json['email'] as String?,
-      phone: json['phone'] as String?,
-      gender: json['gender'] as String?,
+      id: (json['id'] ?? json['Id'])?.toString() ?? '',
+      fullName: (json['fullName'] ?? json['FullName'] ?? 'Sem Nome') as String,
+      socialName: (json['socialName'] ?? json['SocialName']) as String?,
+      cpf: (json['cpf'] ?? json['CPF'] ?? '') as String,
+      susNumber: (json['susNumber'] ?? json['SusNumber']) as String?,
+      birthDate: SafeDateParser.parse(json['birthDate'] ?? json['BirthDate']),
+      email: (json['email'] ?? json['Email']) as String?,
+      phone: (json['phone'] ?? json['Phone']) as String?,
+      gender: (json['gender'] ?? json['Gender']) as String?,
       address: json['address'] != null ? PatientAddress.fromJson(Map<String, dynamic>.from(json['address'])) : null,
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
-      lgpdConsent: json['lgpdConsent'] as bool? ?? false,
-      isSynced: json['isSynced'] as bool? ?? true,
+      createdAt: SafeDateParser.parse(json['createdAt'] ?? json['CreatedAt']),
+      updatedAt: (json['updatedAt'] ?? json['UpdatedAt']) != null ? SafeDateParser.parse(json['updatedAt'] ?? json['UpdatedAt']) : null,
+      lgpdConsent: (json['lgpdConsent'] ?? json['LgpdConsent'] ?? false) as bool,
+      isSynced: (json['isSynced'] ?? true) as bool,
     );
   }
 
@@ -123,13 +125,13 @@ class PatientAddress {
 
   factory PatientAddress.fromJson(Map<String, dynamic> json) {
     return PatientAddress(
-      street: json['street'] as String? ?? '',
-      number: json['number'] as String? ?? '',
-      complement: json['complement'] as String?,
-      neighborhood: json['neighborhood'] as String? ?? '',
-      city: json['city'] as String? ?? '',
-      state: json['state'] as String? ?? '',
-      zipCode: json['zipCode'] as String? ?? '',
+      street: (json['street'] ?? json['Street'] ?? '') as String,
+      number: (json['number'] ?? json['Number'] ?? '') as String,
+      complement: (json['complement'] ?? json['Complement']) as String?,
+      neighborhood: (json['neighborhood'] ?? json['Neighborhood'] ?? '') as String,
+      city: (json['city'] ?? json['City'] ?? '') as String,
+      state: (json['state'] ?? json['State'] ?? '') as String,
+      zipCode: (json['zipCode'] ?? json['ZipCode'] ?? '') as String,
     );
   }
 
@@ -142,24 +144,4 @@ class PatientAddress {
         'state': state,
         'zipCode': zipCode,
       };
-
-  PatientAddress copyWith({
-    String? street,
-    String? number,
-    String? complement,
-    String? neighborhood,
-    String? city,
-    String? state,
-    String? zipCode,
-  }) {
-    return PatientAddress(
-      street: street ?? this.street,
-      number: number ?? this.number,
-      complement: complement ?? this.complement,
-      neighborhood: neighborhood ?? this.neighborhood,
-      city: city ?? this.city,
-      state: state ?? this.state,
-      zipCode: zipCode ?? this.zipCode,
-    );
-  }
 }

@@ -15,6 +15,21 @@ class PatientRepository implements IPatientRepository {
 
   PatientRepository(this._apiClient, this._localDb);
 
+  DateTime _safeParseDate(dynamic v) {
+    if (v == null || v.toString().trim().isEmpty || v.toString() == 'null') {
+      return DateTime.now();
+    }
+    try {
+      if (v is DateTime) return v.isUtc ? v.toLocal() : v;
+      final s = v.toString();
+      final dateStr = s.contains('T') || s.contains(' ') ? s : '${s}T00:00:00';
+      final dt = DateTime.parse(dateStr);
+      return dt.isUtc ? dt.toLocal() : dt;
+    } catch (e) {
+      return DateTime.now();
+    }
+  }
+
   @override
   Future<List<entity.Patient>> getPatients({
     int page = 1,
@@ -60,10 +75,6 @@ class PatientRepository implements IPatientRepository {
 
     await _saveLocal(patientWithId, false);
 
-    // CORRECAO: o erro de sincronizacao nao e mais engolido silenciosamente.
-    // Antes, uma falha no POST (ex.: validacao do servidor) deixava o paciente
-    // apenas no banco local e o agendamento falhava depois com "paciente nao
-    // existe no servidor", sem nenhuma mensagem para o usuario.
     Response response;
     try {
       response = await _apiClient.instance.post(
@@ -74,31 +85,9 @@ class PatientRepository implements IPatientRepository {
       final data = e.response?.data;
       String? message;
       if (data is Map) {
-        message =
-            data['message']?.toString() ??
-            data['title']?.toString() ??
-            data['error']?.toString();
-        final errors = data['errors'];
-        if (errors is Map && errors.isNotEmpty) {
-          final details = errors.entries
-              .map((entry) {
-                final value = entry.value;
-                final text = value is List
-                    ? value.join('; ')
-                    : value.toString();
-                return text.isEmpty ? entry.key.toString() : '$text';
-              })
-              .join('; ');
-          if (details.isNotEmpty) message = details;
-        }
-      } else if (data != null) {
-        message = data.toString();
+        message = data['message']?.toString() ?? data['title']?.toString() ?? data['error']?.toString();
       }
-      throw Exception(
-        message?.trim().isNotEmpty == true
-            ? message
-            : 'Falha ao salvar o paciente no servidor',
-      );
+      throw Exception(message ?? 'Falha ao salvar o paciente no servidor');
     }
 
     if (response.statusCode == 200 || response.statusCode == 201) {
@@ -114,17 +103,13 @@ class PatientRepository implements IPatientRepository {
   @override
   Future<void> updatePatient(entity.Patient patient) async {
     await _saveLocal(patient, false);
-
     try {
       final response = await _apiClient.instance.put(
         'patients/${patient.id}',
         data: {'Patient': _mapEntityToJson(patient)},
       );
-
       if (response.statusCode == 200 || response.statusCode == 204) {
-        await (_localDb.update(
-          _localDb.patientsLocal,
-        )..where((t) => t.id.equals(patient.id))).write(
+        await (_localDb.update(_localDb.patientsLocal)..where((t) => t.id.equals(patient.id))).write(
           const drift_db.PatientsLocalCompanion(isSynced: Value(true)),
         );
       }
@@ -135,81 +120,47 @@ class PatientRepository implements IPatientRepository {
 
   @override
   Future<void> syncPatients() async {
-    final pendingPatients = await (_localDb.select(
-      _localDb.patientsLocal,
-    )..where((t) => t.isSynced.equals(false))).get();
-
+    final pendingPatients = await (_localDb.select(_localDb.patientsLocal)..where((t) => t.isSynced.equals(false))).get();
     for (final row in pendingPatients) {
       try {
         final patientEntity = _mapSchemaToEntity(row);
         Response response;
         try {
-          response = await _apiClient.instance.put(
-            'patients/${row.id}',
-            data: _mapEntityToJson(patientEntity),
-          );
+          response = await _apiClient.instance.put('patients/${row.id}', data: _mapEntityToJson(patientEntity));
         } on DioException catch (e) {
           if (e.response?.statusCode == 404) {
-            response = await _apiClient.instance.post(
-              'patients',
-              data: _mapEntityToJson(patientEntity),
-            );
+            response = await _apiClient.instance.post('patients', data: _mapEntityToJson(patientEntity));
           } else {
             rethrow;
           }
         }
-
-        if (response.statusCode == 200 ||
-            response.statusCode == 201 ||
-            response.statusCode == 204) {
-          await (_localDb.update(
-            _localDb.patientsLocal,
-          )..where((t) => t.id.equals(row.id))).write(
+        if (response.statusCode == 200 || response.statusCode == 201 || response.statusCode == 204) {
+          await (_localDb.update(_localDb.patientsLocal)..where((t) => t.id.equals(row.id))).write(
             const drift_db.PatientsLocalCompanion(isSynced: Value(true)),
           );
         }
       } catch (e) {
-        debugPrint('Falha ao sincronizar paciente ${row.fullName}: $e');
+        debugPrint('Falha ao sincronizar paciente: $e');
       }
-    }
-
-    try {
-      final response = await _apiClient.instance.get('patients');
-      if (response.data != null) {
-        final data = response.data;
-        final List<dynamic> items = data is Map ? (data['items'] ?? []) : data;
-        final remotePatients = items
-            .map((json) => _mapJsonToEntity(json))
-            .toList();
-        await _updateLocalCache(remotePatients);
-      }
-    } catch (e) {
-      debugPrint('Falha ao buscar pacientes atualizados do servidor: $e');
     }
   }
 
   entity.Patient _mapJsonToEntity(Map<String, dynamic> json) {
     return entity.Patient(
       id: json['id']?.toString() ?? '',
-      fullName: json['fullName'] ?? 'Sem Nome',
-      socialName:
-          json['socialName'] as String? ?? json['SocialName'] as String?,
-      cpf: json['cpf'] ?? '',
-      susNumber: json['susNumber'] as String? ?? json['SusNumber'] as String?,
-      birthDate: DateTime.parse(
-        json['birthDate'] ?? DateTime.now().toIso8601String(),
-      ),
-      email: json['email'],
-      phone: json['phone'],
-      gender: json['gender'],
-      lgpdConsent: json['lgpdConsent'] ?? false,
-      createdAt: DateTime.parse(
-        json['createdAt'] ?? DateTime.now().toIso8601String(),
-      ),
+      fullName: json['fullName'] ?? json['FullName'] ?? 'Sem Nome',
+      socialName: json['socialName'] ?? json['SocialName'],
+      cpf: json['cpf'] ?? json['CPF'] ?? '',
+      susNumber: json['susNumber'] ?? json['SusNumber'],
+      birthDate: _safeParseDate(json['birthDate'] ?? json['BirthDate']),
+      email: json['email'] ?? json['Email'],
+      phone: json['phone'] ?? json['Phone'],
+      gender: json['gender'] ?? json['Gender'],
+      lgpdConsent: json['lgpdConsent'] ?? json['LgpdConsent'] ?? false,
+      createdAt: _safeParseDate(json['createdAt'] ?? json['CreatedAt']),
     );
   }
 
-  // CORREÇÃO: O tipo gerado para a tabela PatientsLocal com @DataClassName('PatientLocal') é drift_db.PatientLocal
   entity.Patient _mapSchemaToEntity(drift_db.PatientLocal row) {
     return entity.Patient(
       id: row.id,
@@ -234,8 +185,8 @@ class PatientRepository implements IPatientRepository {
       'SocialName': patient.socialName,
       'CPF': patient.cpf,
       'SusNumber': patient.susNumber,
-      'Email': patient.email?.trim().isEmpty == true ? null : patient.email,
-      'Phone': patient.phone?.trim().isEmpty == true ? null : patient.phone,
+      'Email': patient.email,
+      'Phone': patient.phone,
       'BirthDate': patient.birthDate.toIso8601String(),
       'Gender': patient.gender,
       'LgpdConsent': patient.lgpdConsent,
@@ -245,9 +196,7 @@ class PatientRepository implements IPatientRepository {
   }
 
   Future<void> _saveLocal(entity.Patient patient, bool isSynced) async {
-    await _localDb
-        .into(_localDb.patientsLocal)
-        .insertOnConflictUpdate(
+    await _localDb.into(_localDb.patientsLocal).insertOnConflictUpdate(
           drift_db.PatientsLocalCompanion.insert(
             id: patient.id,
             fullName: patient.fullName,
@@ -272,22 +221,17 @@ class PatientRepository implements IPatientRepository {
   }
 
   @override
-  Future<entity.Patient> getPatientById(String id) async =>
-      (await getLocalPatients()).firstWhere((p) => p.id == id);
+  Future<entity.Patient> getPatientById(String id) async => (await getLocalPatients()).firstWhere((p) => p.id == id);
 
   @override
   Future<List<PatientChangeLog>> getPatientHistory(String patientId) async {
     try {
-      final response = await _apiClient.instance.get(
-        'patients/$patientId/history',
-      );
+      final response = await _apiClient.instance.get('patients/$patientId/history');
       if (response.data != null) {
         final List<dynamic> list = response.data;
         return list.map((json) => PatientChangeLog.fromJson(json)).toList();
       }
-    } catch (e) {
-      debugPrint('Erro ao buscar histórico: $e');
-    }
+    } catch (_) {}
     return [];
   }
 }

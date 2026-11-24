@@ -29,19 +29,34 @@ class TreatmentPlan {
     required this.createdAt,
   });
 
+  static DateTime _safeParse(dynamic v) {
+    if (v == null || v.toString().trim().isEmpty || v.toString() == 'null') {
+      return DateTime.now();
+    }
+    try {
+      if (v is DateTime) return v.isUtc ? v.toLocal() : v;
+      final s = v.toString();
+      final dateStr = s.contains('T') || s.contains(' ') ? s : '${s}T00:00:00';
+      final dt = DateTime.parse(dateStr);
+      return dt.isUtc ? dt.toLocal() : dt;
+    } catch (_) {
+      return DateTime.now();
+    }
+  }
+
   factory TreatmentPlan.fromJson(Map<String, dynamic> json) {
     return TreatmentPlan(
-      id: json['id'] as String? ?? '',
-      patientId: json['patientId'] as String? ?? '',
-      description: json['description'] as String? ?? '',
-      items: (json['items'] as List<dynamic>? ?? [])
+      id: (json['id'] ?? json['Id'])?.toString() ?? '',
+      patientId: (json['patientId'] ?? json['PatientId'])?.toString() ?? '',
+      description: (json['description'] ?? json['Description'] ?? '') as String,
+      items: (json['items'] as List<dynamic>? ?? json['Items'] as List<dynamic>? ?? [])
           .map((e) => TreatmentItem.fromJson(Map<String, dynamic>.from(e)))
           .toList(),
       status: TreatmentPlanStatus.values.firstWhere(
-        (e) => e.name == (json['status'] as String? ?? 'draft'),
+        (e) => e.name == (json['status'] ?? json['Status'] ?? 'draft').toString().toLowerCase(),
         orElse: () => TreatmentPlanStatus.draft,
       ),
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+      createdAt: _safeParse(json['createdAt'] ?? json['CreatedAt']),
     );
   }
 
@@ -92,15 +107,15 @@ class TreatmentItem {
 
   factory TreatmentItem.fromJson(Map<String, dynamic> json) {
     return TreatmentItem(
-      id: json['id'] as String? ?? '',
-      procedureId: json['procedureId'] as String? ?? '',
-      procedureName: json['procedureName'] as String? ?? '',
-      toothNumber: json['toothNumber'] as int?,
+      id: (json['id'] ?? json['Id'])?.toString() ?? '',
+      procedureId: (json['procedureId'] ?? json['ProcedureId'])?.toString() ?? '',
+      procedureName: (json['procedureName'] ?? json['ProcedureName'] ?? '') as String,
+      toothNumber: json['toothNumber'] as int? ?? json['ToothNumber'] as int?,
       status: TreatmentItemStatus.values.firstWhere(
-        (e) => e.name == (json['status'] as String? ?? 'pending'),
+        (e) => e.name == (json['status'] ?? json['Status'] ?? 'pending').toString().toLowerCase(),
         orElse: () => TreatmentItemStatus.pending,
       ),
-      observation: json['observation'] as String?,
+      observation: (json['observation'] ?? json['Observation']) as String?,
     );
   }
 
