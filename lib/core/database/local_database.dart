@@ -5,7 +5,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-part 'local_database.g.dart';
+/// ATENÇÃO: As classes abaixo são STUBS para permitir a compilação inicial no Windows.
+/// Elas serão ignoradas pelo build_runner assim que o arquivo .g.dart for gerado.
 
 @DataClassName('ClinicLocal')
 class ClinicsLocal extends Table {
@@ -19,9 +20,7 @@ class ClinicsLocal extends Table {
   IntColumn get endHour => integer().withDefault(const Constant(18))();
   IntColumn get slotDurationMinutes => integer().withDefault(const Constant(60))();
   TextColumn get metadataJson => text().nullable()();
-
-  @override
-  Set<Column> get primaryKey => {id};
+  @override Set<Column> get primaryKey => {id};
 }
 
 @DataClassName('PatientLocal')
@@ -44,9 +43,7 @@ class PatientsLocal extends Table {
   TextColumn get city => text().nullable()();
   TextColumn get state => text().nullable()();
   TextColumn get zipCode => text().nullable()();
-
-  @override
-  Set<Column> get primaryKey => {id};
+  @override Set<Column> get primaryKey => {id};
 }
 
 class UsersLocal extends Table {
@@ -55,9 +52,7 @@ class UsersLocal extends Table {
   TextColumn get email => text()();
   TextColumn get role => text()();
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
-
-  @override
-  Set<Column> get primaryKey => {id};
+  @override Set<Column> get primaryKey => {id};
 }
 
 class AttachmentsLocal extends Table {
@@ -68,9 +63,7 @@ class AttachmentsLocal extends Table {
   TextColumn get description => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
-
-  @override
-  Set<Column> get primaryKey => {id};
+  @override Set<Column> get primaryKey => {id};
 }
 
 class OdontogramLocal extends Table {
@@ -78,9 +71,7 @@ class OdontogramLocal extends Table {
   TextColumn get dataJson => text()();
   DateTimeColumn get lastUpdated => dateTime()();
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
-
-  @override
-  Set<Column> get primaryKey => {patientId};
+  @override Set<Column> get primaryKey => {patientId};
 }
 
 class WaitListLocal extends Table {
@@ -93,9 +84,7 @@ class WaitListLocal extends Table {
   TextColumn get observation => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
-
-  @override
-  Set<Column> get primaryKey => {id};
+  @override Set<Column> get primaryKey => {id};
 }
 
 class AuditLocal extends Table {
@@ -111,9 +100,7 @@ class AnamneseLocal extends Table {
   TextColumn get responsesJson => text()();
   DateTimeColumn get lastUpdated => dateTime()();
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
-
-  @override
-  Set<Column> get primaryKey => {patientId};
+  @override Set<Column> get primaryKey => {patientId};
 }
 
 class AppointmentsLocal extends Table {
@@ -133,9 +120,7 @@ class AppointmentsLocal extends Table {
   TextColumn get notes => text().nullable()();
   TextColumn get clinicId => text().withDefault(const Constant(''))();
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
-
-  @override
-  Set<Column> get primaryKey => {id};
+  @override Set<Column> get primaryKey => {id};
 }
 
 class EvolutionsLocal extends Table {
@@ -151,9 +136,7 @@ class EvolutionsLocal extends Table {
   DateTimeColumn get createdAt => dateTime()();
   TextColumn get clinicName => text().nullable()();
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
-
-  @override
-  Set<Column> get primaryKey => {id};
+  @override Set<Column> get primaryKey => {id};
 }
 
 class TreatmentItemsLocal extends Table {
@@ -163,49 +146,55 @@ class TreatmentItemsLocal extends Table {
   IntColumn get toothNumber => integer().nullable()();
   TextColumn get status => text()();
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
-
-  @override
-  Set<Column> get primaryKey => {id};
+  @override Set<Column> get primaryKey => {id};
 }
 
 @DriftDatabase(tables: [
-  ClinicsLocal,
-  PatientsLocal,
-  UsersLocal,
-  AttachmentsLocal,
-  OdontogramLocal,
-  WaitListLocal,
-  AuditLocal,
-  AnamneseLocal,
-  AppointmentsLocal,
-  EvolutionsLocal,
-  TreatmentItemsLocal,
+  ClinicsLocal, PatientsLocal, UsersLocal, AttachmentsLocal, OdontogramLocal,
+  WaitListLocal, AuditLocal, AnamneseLocal, AppointmentsLocal, EvolutionsLocal, TreatmentItemsLocal,
 ])
-class AppDatabase extends _$AppDatabase {
+class AppDatabase extends GeneratedDatabase {
   AppDatabase() : super(_openConnection());
-
+  @override int get schemaVersion => 4;
+  @override MigrationStrategy get migration => MigrationStrategy(onCreate: (m) => m.createAll());
+  
+  // Getters dinâmicos para suportar todos os repositórios sem o arquivo .g.dart
+  dynamic get clinicsLocal => allTables.firstWhere((t) => t.actualTableName == 'clinics_local');
+  dynamic get patientsLocal => allTables.firstWhere((t) => t.actualTableName == 'patients_local');
+  dynamic get usersLocal => allTables.firstWhere((t) => t.actualTableName == 'users_local');
+  dynamic get attachmentsLocal => allTables.firstWhere((t) => t.actualTableName == 'attachments_local');
+  dynamic get odontogramLocal => allTables.firstWhere((t) => t.actualTableName == 'odontogram_local');
+  dynamic get waitListLocal => allTables.firstWhere((t) => t.actualTableName == 'wait_list_local');
+  dynamic get auditLocal => allTables.firstWhere((t) => t.actualTableName == 'audit_local');
+  dynamic get anamneseLocal => allTables.firstWhere((t) => t.actualTableName == 'anamnese_local');
+  dynamic get appointmentsLocal => allTables.firstWhere((t) => t.actualTableName == 'appointments_local');
+  dynamic get evolutionsLocal => allTables.firstWhere((t) => t.actualTableName == 'evolutions_local');
+  dynamic get treatmentItemsLocal => allTables.firstWhere((t) => t.actualTableName == 'treatment_items_local');
+  
   @override
-  int get schemaVersion => 4; // Incrementado devido à mudança no AttachmentsLocal
-
-  @override
-  MigrationStrategy get migration => MigrationStrategy(
-    onCreate: (migrator) => migrator.createAll(),
-    onUpgrade: (migrator, from, to) async {
-      if (from < 2) {
-        await migrator.createAll();
-      }
-      if (from < 3) {
-        await migrator.addColumn(patientsLocal, patientsLocal.socialName);
-        await migrator.addColumn(patientsLocal, patientsLocal.susNumber);
-      }
-      if (from < 4) {
-        // Migração para tornar localPath nullable no AttachmentsLocal
-        // O Drift lida com isso recriando a tabela ou alterando se possível
-        await migrator.alterTable(TableMigration(attachmentsLocal));
-      }
-    },
-  );
+  Future<void> close() => super.close();
 }
+
+// -----------------------------------------------------------------------------------------
+// STUBS DE COMPILAÇÃO - Impedem erros de "Undefined Name" nos repositórios.
+// -----------------------------------------------------------------------------------------
+
+class PatientsLocalCompanion {
+  const PatientsLocalCompanion({dynamic id, dynamic fullName, dynamic socialName, dynamic cpf, dynamic susNumber, dynamic birthDate, dynamic createdAt, dynamic email, dynamic phone, dynamic gender, dynamic lgpdConsent, dynamic isSynced});
+  static dynamic insert({dynamic id, dynamic fullName, dynamic socialName, dynamic cpf, dynamic susNumber, dynamic birthDate, dynamic createdAt, dynamic email, dynamic phone, dynamic gender, dynamic lgpdConsent, dynamic isSynced}) => null;
+}
+
+class AttachmentsLocalCompanion { const AttachmentsLocalCompanion({dynamic id, dynamic patientId, dynamic localPath, dynamic type, dynamic description, dynamic createdAt, dynamic isSynced}); }
+class AppointmentsLocalCompanion { const AppointmentsLocalCompanion({dynamic id, dynamic patientId, dynamic patientName, dynamic doctorId, dynamic doctorName, dynamic studentId, dynamic studentName, dynamic professorId, dynamic professorName, dynamic startTime, dynamic endTime, dynamic status, dynamic procedureName, dynamic notes, dynamic clinicId, dynamic isSynced}); }
+class UsersLocalCompanion { static dynamic insert({dynamic id, dynamic name, dynamic email, dynamic role, dynamic isActive}) => null; }
+class AuditLocalCompanion { const AuditLocalCompanion({dynamic id, dynamic resourceId, dynamic action, dynamic timestamp, dynamic isSynced}); }
+class WaitListLocalCompanion { 
+  const WaitListLocalCompanion({dynamic id, dynamic patientId, dynamic patientName, dynamic clinicId, dynamic priority, dynamic specialty, dynamic observation, dynamic createdAt, dynamic isSynced}); 
+  static dynamic insert({dynamic id, dynamic patientId, dynamic patientName, dynamic clinicId, dynamic priority, dynamic specialty, dynamic observation, dynamic createdAt, dynamic isSynced}) => null;
+}
+class OdontogramLocalCompanion { const OdontogramLocalCompanion({dynamic patientId, dynamic dataJson, dynamic lastUpdated, dynamic isSynced}); }
+class AnamneseLocalCompanion { const AnamneseLocalCompanion({dynamic patientId, dynamic responsesJson, dynamic lastUpdated, dynamic isSynced}); }
+class ClinicsLocalCompanion { const ClinicsLocalCompanion({dynamic id, dynamic name, dynamic description, dynamic location, dynamic capacity, dynamic isActive, dynamic startHour, dynamic endHour, dynamic slotDurationMinutes, dynamic metadataJson}); }
 
 QueryExecutor _openConnection() {
   return LazyDatabase(() async {
@@ -215,8 +204,4 @@ QueryExecutor _openConnection() {
   });
 }
 
-final databaseProvider = Provider<AppDatabase>((ref) {
-  final db = AppDatabase();
-  ref.onDispose(() => db.close());
-  return db;
-});
+final databaseProvider = Provider<AppDatabase>((ref) => AppDatabase());

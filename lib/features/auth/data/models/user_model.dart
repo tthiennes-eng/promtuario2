@@ -1,6 +1,7 @@
 import '../../domain/entities/user.dart';
 
-/// Modelo de usuário simplificado para permitir a compilação inicial sem Freezed.
+/// Modelo de usuário simplificado sem dependência de geração de código (Freezed/JSON)
+/// para destravar o ambiente de compilação no Windows.
 class UserModel {
   final String id;
   final String name;
@@ -19,7 +20,7 @@ class UserModel {
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: (json['id'] ?? json['Id'] ?? '').toString(),
-      name: (json['name'] ?? json['Name'] ?? '').toString(),
+      name: (json['name'] ?? json['Name'] ?? 'Usuário').toString(),
       email: (json['email'] ?? json['Email'] ?? '').toString(),
       role: (json['role'] ?? json['Role'] ?? 'aluno').toString(),
       isActive: json['isActive'] ?? json['IsActive'] ?? true,
