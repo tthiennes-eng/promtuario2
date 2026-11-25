@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:state_notifier/state_notifier.dart'; // Importação explícita para resolver o erro de tipo
 import 'package:promt/core/providers/providers.dart';
 import 'package:promt/features/prontuario/domain/entities/attachment.dart';
 

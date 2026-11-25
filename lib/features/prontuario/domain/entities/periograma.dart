@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:promt/core/utils/date_utils.dart';
 
 enum TipoExamePeriodontal { primeiro, reavaliacao, manutencao }
 
@@ -81,21 +82,6 @@ class PeriogramaModel {
     required this.dentes,
   });
 
-  static DateTime _safeParse(dynamic v) {
-    if (v == null || v.toString().trim().isEmpty || v.toString() == 'null') {
-      return DateTime.now();
-    }
-    try {
-      if (v is DateTime) return v.isUtc ? v.toLocal() : v;
-      final s = v.toString();
-      final dateStr = s.contains('T') || s.contains(' ') ? s : '${s}T00:00:00';
-      final dt = DateTime.parse(dateStr);
-      return dt.isUtc ? dt.toLocal() : dt;
-    } catch (_) {
-      return DateTime.now();
-    }
-  }
-
   Map<String, dynamic> toMap() => {
     'id': id,
     'patientId': patientId,
@@ -104,18 +90,20 @@ class PeriogramaModel {
     'dentes': dentes.map((d) => d.toMap()).toList(),
   };
 
-  factory PeriogramaModel.fromMap(Map<String, dynamic> map) => PeriogramaModel(
-    id: (map['id'] ?? map['Id'])?.toString() ?? '',
-    patientId: (map['patientId'] ?? map['PatientId'])?.toString() ?? '',
-    date: _safeParse(map['date'] ?? map['Date']),
-    tipo: TipoExamePeriodontal.values.firstWhere(
-      (e) => e.name == (map['tipo'] ?? map['Tipo']),
-      orElse: () => TipoExamePeriodontal.primeiro,
-    ),
-    dentes: (map['dentes'] as List? ?? map['Dentes'] as List? ?? [])
-        .map((d) => DenteSondagem.fromMap(Map<String, dynamic>.from(d)))
-        .toList(),
-  );
+  factory PeriogramaModel.fromMap(Map<String, dynamic> map) {
+    return PeriogramaModel(
+      id: (map['id'] ?? map['Id'] ?? '').toString(),
+      patientId: (map['patientId'] ?? map['PatientId'] ?? '').toString(),
+      date: SafeDateParser.parse(map['date'] ?? map['Date']),
+      tipo: TipoExamePeriodontal.values.firstWhere(
+        (e) => e.name == (map['tipo'] ?? map['Tipo']),
+        orElse: () => TipoExamePeriodontal.primeiro,
+      ),
+      dentes: (map['dentes'] as List? ?? map['Dentes'] as List? ?? [])
+          .map((d) => DenteSondagem.fromMap(Map<String, dynamic>.from(d)))
+          .toList(),
+    );
+  }
 
   String toJson() => jsonEncode(toMap());
 }

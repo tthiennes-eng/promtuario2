@@ -16,7 +16,7 @@ class SafeDateParser {
       
       // 2. Se for um número (Timestamp vindo do Drift ou API)
       if (v is int) {
-        // Drift armazena em segundos se < 10^11
+        // Drift armazena segundos por padrão se < 10^11
         if (v < 100000000000) return DateTime.fromMillisecondsSinceEpoch(v * 1000).toLocal();
         return DateTime.fromMillisecondsSinceEpoch(v).toLocal();
       }

@@ -122,7 +122,7 @@ class Appointment {
     }
 
     return Appointment(
-      id: (json['id'] ?? json['Id'] ?? '').toString(),
+      id: (json['id'] ?? json['Id'])?.toString() ?? '',
       patientId: getString(['patientId', 'PatientId', 'patient_id']),
       patientName: getString(['patientName', 'PatientName', 'fullName', 'FullName', 'patient_name']),
       doctorId: getString(['doctorId', 'DoctorId', 'doctor_id']),

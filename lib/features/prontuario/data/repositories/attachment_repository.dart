@@ -19,7 +19,7 @@ class AttachmentRepository implements IAttachmentRepository {
         ..where((t) => t.patientId.equals(patientId));
       final results = await query.get();
       return results.map((row) => _mapSchemaToEntity(row)).toList();
-    } catch (_) {
+    } catch (e) {
       return [];
     }
   }
@@ -62,9 +62,10 @@ class AttachmentRepository implements IAttachmentRepository {
         AttachmentsLocalCompanion(
           id: Value(attachment.id),
           patientId: Value(attachment.patientId),
-          localPath: Value(attachment.localPath),
+          // Fallback seguro para satisfazer o tipo String exigido pelo gerador no Windows
+          localPath: Value(attachment.localPath ?? ''),
           type: Value(attachment.type.name),
-          description: Value(attachment.description),
+          description: Value(attachment.description ?? ''),
           createdAt: Value(attachment.createdAt),
           isSynced: Value(attachment.isSynced),
         ),
@@ -73,9 +74,19 @@ class AttachmentRepository implements IAttachmentRepository {
   }
 
   Attachment _mapSchemaToEntity(dynamic row) {
-    // row é do tipo AttachmentLocalData gerado pelo Drift
-    // Usamos o método toJson do Drift que já lida com a conversão de campos
-    final data = row.toJson();
-    return Attachment.fromJson(data);
+    // row é do tipo gerado pelo drift (AttachmentsLocalData)
+    // Usamos o acesso direto às propriedades para garantir segurança de tipos
+    return Attachment(
+      id: row.id as String,
+      patientId: row.patientId as String,
+      localPath: row.localPath as String?,
+      type: AttachmentType.values.firstWhere(
+        (e) => e.name == row.type,
+        orElse: () => AttachmentType.other,
+      ),
+      description: row.description as String?,
+      createdAt: row.createdAt as DateTime,
+      isSynced: row.isSynced as bool,
+    );
   }
 }
