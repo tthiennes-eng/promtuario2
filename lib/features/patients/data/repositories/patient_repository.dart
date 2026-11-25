@@ -110,7 +110,7 @@ class PatientRepository implements IPatientRepository {
       );
       if (response.statusCode == 200 || response.statusCode == 204) {
         await (_localDb.update(_localDb.patientsLocal)..where((t) => t.id.equals(patient.id))).write(
-          const drift_db.PatientsLocalCompanion(isSynced: Value(true)),
+          drift_db.PatientsLocalCompanion(isSynced: Value(true)), // CORRIGIDO: Removido 'const'
         );
       }
     } catch (e) {
@@ -136,7 +136,7 @@ class PatientRepository implements IPatientRepository {
         }
         if (response.statusCode == 200 || response.statusCode == 201 || response.statusCode == 204) {
           await (_localDb.update(_localDb.patientsLocal)..where((t) => t.id.equals(row.id))).write(
-            const drift_db.PatientsLocalCompanion(isSynced: Value(true)),
+            drift_db.PatientsLocalCompanion(isSynced: Value(true)), // CORRIGIDO: Removido 'const'
           );
         }
       } catch (e) {

@@ -79,7 +79,7 @@ class WaitListRepository implements IWaitListRepository {
         await _apiClient.instance.post('/wait-list', data: entry.toJson());
         
         await (_localDb.update(_localDb.waitListLocal)..where((t) => t.id.equals(row.id))).write(
-          const WaitListLocalCompanion(isSynced: Value(true)),
+          WaitListLocalCompanion(isSynced: Value(true)), // Removido 'const'
         );
       } catch (_) {}
     }
