@@ -12,15 +12,13 @@ class AuditRepository implements IAuditRepository {
 
   @override
   Future<void> registerAccess(String resourceId, String action) async {
-    final dynamic db = _localDb;
-    // CORREÇÃO: Usando dynamic para evitar crash de FFI por tipo inexistente
     try {
-      await db.into(db.auditLocal).insert(
+      await _localDb.into(_localDb.auditLocal).insert(
         AuditLocalCompanion(
           resourceId: Value(resourceId),
           action: Value(action),
           timestamp: Value(DateTime.now()),
-          isSynced: const Value(false),
+          isSynced: Value(false),
         ),
       );
     } catch (_) {}

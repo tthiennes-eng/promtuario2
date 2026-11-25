@@ -23,14 +23,10 @@ class UserManagementRepository implements IUserManagementRepository {
       final data = response.data as List;
       final users = data.map((json) => UserModel.fromJson(json as Map<String, dynamic>).toEntity()).toList();
 
-      // Atualiza o cache local
       _updateLocalCache(users);
-
       return users;
     } catch (e) {
-      // Offline: Busca no banco local - Atualizado para usersLocal
-      final localQuery = _localDb.select(_localDb.usersLocal);
-      final results = await localQuery.get();
+      final results = await _localDb.select(_localDb.usersLocal).get();
       
       return results.map((row) => User(
         id: row.id,
@@ -64,7 +60,6 @@ class UserManagementRepository implements IUserManagementRepository {
 
   void _updateLocalCache(List<User> users) async {
     for (var user in users) {
-      // Atualizado para usersLocal e UsersLocalCompanion
       await _localDb.into(_localDb.usersLocal).insertOnConflictUpdate(
         UsersLocalCompanion.insert(
           id: user.id,

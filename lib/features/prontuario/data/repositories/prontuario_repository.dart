@@ -70,7 +70,6 @@ class ProntuarioRepository implements IProntuarioRepository {
 
     try {
       final dynamic db = _localDb;
-      // patients -> patientsLocal
       final patient = await (db.select(db.patientsLocal)
             ..where((t) => (t as dynamic).id.equals(odontogram.patientId)))
           .getSingleOrNull();
@@ -140,7 +139,7 @@ class ProntuarioRepository implements IProntuarioRepository {
             
             await (db.update(db.odontogramLocal)
                   ..where((t) => (t as dynamic).patientId.equals((row as dynamic).patientId)))
-                .write(drift_db.OdontogramLocalCompanion(isSynced: Value(true)));
+                .write(drift_db.OdontogramLocalCompanion(isSynced: Value(true))); // Removido const
           }
         } catch (_) {}
       }

@@ -4,7 +4,6 @@ import 'package:promt/core/database/local_database.dart';
 import 'package:promt/features/agenda/domain/entities/wait_list_entry.dart';
 import 'package:promt/features/agenda/domain/repositories/i_wait_list_repository.dart';
 
-/// Implementação do repositório de Lista de Espera com suporte a Cache Offline.
 class WaitListRepository implements IWaitListRepository {
   final ApiClient _apiClient;
   final AppDatabase _localDb;
@@ -20,9 +19,7 @@ class WaitListRepository implements IWaitListRepository {
 
       final List<dynamic> data = response.data;
       final entries = data.map((json) => WaitListEntry.fromJson(json)).toList();
-
       _updateLocalCache(entries);
-
       return entries;
     } catch (e) {
       final results = await (_localDb.select(_localDb.waitListLocal)
@@ -79,7 +76,7 @@ class WaitListRepository implements IWaitListRepository {
         await _apiClient.instance.post('/wait-list', data: entry.toJson());
         
         await (_localDb.update(_localDb.waitListLocal)..where((t) => t.id.equals(row.id))).write(
-          WaitListLocalCompanion(isSynced: Value(true)), // Removido 'const'
+          WaitListLocalCompanion(isSynced: Value(true)), // Removido const
         );
       } catch (_) {}
     }

@@ -1,20 +1,38 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../domain/entities/user.dart';
 
-part 'user_model.freezed.dart';
-part 'user_model.g.dart';
+/// Modelo de usuário simplificado para permitir a compilação inicial sem Freezed.
+class UserModel {
+  final String id;
+  final String name;
+  final String email;
+  final String role;
+  final bool isActive;
 
-@freezed
-class UserModel with _$UserModel {
-  const factory UserModel({
-    required String id,
-    required String name,
-    required String email,
-    required String role,
-    @Default(true) bool isActive,
-  }) = _UserModel;
+  UserModel({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.role,
+    this.isActive = true,
+  });
 
-  factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
+      id: (json['id'] ?? json['Id'] ?? '').toString(),
+      name: (json['name'] ?? json['Name'] ?? '').toString(),
+      email: (json['email'] ?? json['Email'] ?? '').toString(),
+      role: (json['role'] ?? json['Role'] ?? 'aluno').toString(),
+      isActive: json['isActive'] ?? json['IsActive'] ?? true,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'email': email,
+    'role': role,
+    'isActive': isActive,
+  };
 }
 
 extension UserModelX on UserModel {
