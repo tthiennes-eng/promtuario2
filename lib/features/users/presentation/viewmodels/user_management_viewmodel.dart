@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:promt/core/providers/providers.dart';
 import 'package:promt/features/auth/domain/entities/user.dart';
 
