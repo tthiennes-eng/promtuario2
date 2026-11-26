@@ -55,10 +55,7 @@ dev_dependencies:
 
   # Code Generation
   build_runner: ^2.4.9
-  riverpod_generator: ^2.4.0
   drift_dev: ^2.20.0
-  freezed: ^2.5.2
-  json_serializable: ^6.8.0
 
 flutter:
   uses-material-design: true
