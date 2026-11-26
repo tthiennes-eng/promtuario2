@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/services/prontuario_pdf_service.dart';
 import '../viewmodels/endodontia_viewmodel.dart';
 
 // ==========================================
@@ -349,6 +350,31 @@ class _PprScreenState extends ConsumerState<PprScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf_outlined),
+            tooltip: 'Exportar Ficha PPR em PDF',
+            onPressed: () async {
+              try {
+                final file = await ProntuarioPdfService.generatePprPdf(
+                  patientName: widget.patientName,
+                  pprData: _model.toMap(),
+                );
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('PDF da ficha PPR salvo em: ${file.path}'),
+                    backgroundColor: Colors.green,
+                    duration: const Duration(seconds: 5),
+                  ),
+                );
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Erro ao gerar PDF: $e'), backgroundColor: Colors.red),
+                );
+              }
+            },
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: FilledButton.icon(

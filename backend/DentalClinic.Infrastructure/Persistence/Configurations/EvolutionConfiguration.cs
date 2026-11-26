@@ -36,7 +36,7 @@ public class EvolutionConfiguration : IEntityTypeConfiguration<Evolution>
             );
 
         builder.Property(e => e.CreatedAt).HasColumnName("data_atendimento");
-        builder.Ignore(e => e.SignedAt);
+        builder.Property(e => e.SignedAt).HasColumnName("assinado_em");
         builder.Ignore(e => e.UpdatedAt);
 
         // Relacionamentos

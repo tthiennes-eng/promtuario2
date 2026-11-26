@@ -46,9 +46,9 @@ public sealed class Evolution : Entity
         };
     }
 
-    public void Sign(Guid professorId)
+    public void Sign(Guid professorId, bool allowOverride = false)
     {
-        if (ProfessorId != professorId)
+        if (!allowOverride && ProfessorId != Guid.Empty && ProfessorId != professorId)
             throw new InvalidOperationException("Apenas o professor responsável pode assinar esta evolução.");
 
         IsSignedByProfessor = true;

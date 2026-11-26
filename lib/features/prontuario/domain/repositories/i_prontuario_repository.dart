@@ -7,14 +7,19 @@ import 'package:promt/features/prontuario/domain/entities/evolution.dart';
 abstract class IProntuarioRepository {
   Future<Odontogram> getOdontogram(String patientId);
   Future<void> saveOdontogram(Odontogram odontogram);
-  
-  Future<void> addEvolution(String patientId, String description, String professorId);
+
+  Future<void> addEvolution(
+    String patientId,
+    String description,
+    String professorId, {
+    String? clinicId,
+  });
   Future<List<Evolution>> getEvolutions(String patientId);
   Future<void> signEvolution(String evolutionId);
 
   Future<Prescription> createPrescription(Prescription prescription);
   Future<List<Prescription>> getPrescriptionHistory(String patientId);
-  
+
   Future<MedicalCertificate> createCertificate(MedicalCertificate certificate);
   Future<List<MedicalCertificate>> getCertificateHistory(String patientId);
 
@@ -28,8 +33,22 @@ abstract class IProntuarioRepository {
   Future<Map<String, dynamic>?> getPeriograma(String patientId);
   Future<void> savePeriograma(String patientId, Map<String, dynamic> data);
 
+  Future<List<Map<String, dynamic>>> getClinicalSheetHistory(
+    String patientId,
+    String sheetType,
+  );
+  Future<Map<String, dynamic>> getProntuarioSummary(String patientId);
+  Future<List<Map<String, dynamic>>> getClinicalTimeline(String patientId);
+
   Future<List<TreatmentPlan>> getTreatmentPlans(String patientId);
   Future<void> saveTreatmentPlan(TreatmentPlan plan);
+  Future<TreatmentPlan?> updateTreatmentItemStatus(
+    String planId,
+    String itemId,
+    String status,
+  );
+  Future<TreatmentPlan?> approveTreatmentPlan(String planId);
+  Future<TreatmentPlan?> removeTreatmentItem(String planId, String itemId);
 
   Future<void> syncPendingData();
 }

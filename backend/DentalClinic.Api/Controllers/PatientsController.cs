@@ -145,11 +145,25 @@ public class PatientsController : ControllerBase
         if (existing.IsActive != patient.IsActive)
             changes["IsActive"] = new { old = existing.IsActive, @new = patient.IsActive };
 
-        // Atualizar timestamp de modificação para sincronização
-        patient.LastModifiedAt = DateTime.UtcNow;
+        // Atualizar campos no registro já rastreado pelo EF Core para evitar conflito de tracking
+        existing.FullName = patient.FullName;
+        existing.SocialName = patient.SocialName;
+        existing.CPF = patient.CPF;
+        existing.SusNumber = patient.SusNumber;
+        existing.Email = patient.Email;
+        existing.Phone = patient.Phone;
+        existing.BirthDate = patient.BirthDate;
+        existing.Gender = patient.Gender;
+        if (patient.Address != null)
+        {
+            existing.Address = patient.Address;
+        }
+        existing.LgpdConsent = patient.LgpdConsent;
+        existing.IsActive = patient.IsActive;
+        existing.LastModifiedAt = DateTime.UtcNow;
 
         // Persistir alterações do paciente
-        await _patientRepository.UpdateAsync(patient);
+        await _patientRepository.UpdateAsync(existing);
 
         // Se houver mudanças, criar log de alteração
         if (changes.Count > 0)

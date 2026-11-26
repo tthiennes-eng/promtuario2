@@ -1,5 +1,7 @@
 enum TreatmentPlanStatus {
   draft,
+  approved,
+  inProgress,
   active,
   completed,
   canceled,
@@ -44,6 +46,26 @@ class TreatmentPlan {
     }
   }
 
+  static TreatmentPlanStatus _parsePlanStatus(dynamic raw) {
+    if (raw is int) {
+      return switch (raw) {
+        1 => TreatmentPlanStatus.draft,
+        2 => TreatmentPlanStatus.approved,
+        3 => TreatmentPlanStatus.inProgress,
+        4 => TreatmentPlanStatus.completed,
+        5 => TreatmentPlanStatus.canceled,
+        _ => TreatmentPlanStatus.draft,
+      };
+    }
+    final s = (raw ?? 'draft').toString().toLowerCase();
+    if (s == 'cancelled' || s == 'canceled') return TreatmentPlanStatus.canceled;
+    if (s == 'inprogress') return TreatmentPlanStatus.inProgress;
+    return TreatmentPlanStatus.values.firstWhere(
+      (e) => e.name.toLowerCase() == s,
+      orElse: () => TreatmentPlanStatus.draft,
+    );
+  }
+
   factory TreatmentPlan.fromJson(Map<String, dynamic> json) {
     return TreatmentPlan(
       id: (json['id'] ?? json['Id'])?.toString() ?? '',
@@ -52,10 +74,7 @@ class TreatmentPlan {
       items: (json['items'] as List<dynamic>? ?? json['Items'] as List<dynamic>? ?? [])
           .map((e) => TreatmentItem.fromJson(Map<String, dynamic>.from(e)))
           .toList(),
-      status: TreatmentPlanStatus.values.firstWhere(
-        (e) => e.name == (json['status'] ?? json['Status'] ?? 'draft').toString().toLowerCase(),
-        orElse: () => TreatmentPlanStatus.draft,
-      ),
+      status: _parsePlanStatus(json['status'] ?? json['Status']),
       createdAt: _safeParse(json['createdAt'] ?? json['CreatedAt']),
     );
   }
@@ -105,16 +124,32 @@ class TreatmentItem {
     this.observation,
   });
 
+  static TreatmentItemStatus _parseItemStatus(dynamic raw) {
+    if (raw is int) {
+      return switch (raw) {
+        1 => TreatmentItemStatus.pending,
+        2 => TreatmentItemStatus.inProgress,
+        3 => TreatmentItemStatus.completed,
+        4 => TreatmentItemStatus.canceled,
+        _ => TreatmentItemStatus.pending,
+      };
+    }
+    final s = (raw ?? 'pending').toString().toLowerCase();
+    if (s == 'cancelled' || s == 'canceled') return TreatmentItemStatus.canceled;
+    if (s == 'inprogress') return TreatmentItemStatus.inProgress;
+    return TreatmentItemStatus.values.firstWhere(
+      (e) => e.name.toLowerCase() == s,
+      orElse: () => TreatmentItemStatus.pending,
+    );
+  }
+
   factory TreatmentItem.fromJson(Map<String, dynamic> json) {
     return TreatmentItem(
       id: (json['id'] ?? json['Id'])?.toString() ?? '',
       procedureId: (json['procedureId'] ?? json['ProcedureId'])?.toString() ?? '',
       procedureName: (json['procedureName'] ?? json['ProcedureName'] ?? '') as String,
       toothNumber: json['toothNumber'] as int? ?? json['ToothNumber'] as int?,
-      status: TreatmentItemStatus.values.firstWhere(
-        (e) => e.name == (json['status'] ?? json['Status'] ?? 'pending').toString().toLowerCase(),
-        orElse: () => TreatmentItemStatus.pending,
-      ),
+      status: _parseItemStatus(json['status'] ?? json['Status']),
       observation: (json['observation'] ?? json['Observation']) as String?,
     );
   }

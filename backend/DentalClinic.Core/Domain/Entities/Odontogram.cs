@@ -40,6 +40,13 @@ public sealed class Odontogram : Entity
         UpdatedBy = userId;
         UpdatedAt = DateTime.UtcNow;
     }
+
+    public void ReplaceTeeth(List<ToothCondition> teeth, Guid userId)
+    {
+        Teeth = teeth ?? new List<ToothCondition>();
+        UpdatedBy = userId;
+        UpdatedAt = DateTime.UtcNow;
+    }
 }
 
 public record ToothCondition(int ToothNumber, List<ToothSurface> Surfaces, ConditionType Condition, string? Observation);

@@ -27,11 +27,13 @@ class PatientMenuButton extends StatelessWidget {
       MenuAction(icon: Icons.healing, label: 'Ficha de Endodontia', actionId: 'endodontia'),
       MenuAction(icon: Icons.architecture_outlined, label: 'PPR', actionId: 'ppr'),
       MenuAction(icon: Icons.assignment_outlined, label: 'Plano de Tratamento', actionId: 'plano'),
+      MenuAction(icon: Icons.timeline_outlined, label: 'Linha do Tempo Clínica', actionId: 'timeline'),
     ];
 
     final documentActions = [
       MenuAction(icon: Icons.description_outlined, label: 'Emitir Receita', actionId: 'receita'),
       MenuAction(icon: Icons.article_outlined, label: 'Emitir Atestado', actionId: 'atestado'),
+      MenuAction(icon: Icons.verified_user_outlined, label: 'TCLE / Consentimento (LGPD)', actionId: 'tcle'),
     ];
 
     return PopupMenuButton<String>(

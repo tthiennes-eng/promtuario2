@@ -19,18 +19,58 @@ class ProntuarioRepository implements IProntuarioRepository {
 
   ProntuarioRepository(this._apiClient, this._localDb, [this._currentUser]);
 
-  Future<String> _getDefaultClinicId() async {
+  static const _emptyGuid = '00000000-0000-0000-0000-000000000000';
+
+  /// Extrai (sheetType, realPatientId) a partir de chaves prefixadas usadas
+  /// nas fichas clínicas (ex.: "anamnese_<uuid>", "ppr_<uuid>", "tcle_<uuid>").
+  (String sheetType, String realPatientId) _parseSheetKey(String key) {
+    const knownPrefixes = [
+      'anamnese_',
+      'extraoral_',
+      'intraoral_',
+      'periograma_',
+      'endodontia_',
+      'ppr_',
+      'tcle_',
+    ];
+    for (final prefix in knownPrefixes) {
+      if (key.startsWith(prefix)) {
+        final type = prefix.substring(0, prefix.length - 1);
+        return (type, key.substring(prefix.length));
+      }
+    }
+    return ('endodontia', key);
+  }
+
+  Future<String> _resolveClinicId(String? preferredClinicId) async {
+    if (preferredClinicId != null &&
+        preferredClinicId.isNotEmpty &&
+        preferredClinicId != _emptyGuid) {
+      return preferredClinicId;
+    }
     try {
       final response = await _apiClient.instance.get('Clinics');
       if (response.data is List && (response.data as List).isNotEmpty) {
         return response.data[0]['id'].toString();
       }
     } catch (_) {}
-    return '00000000-0000-0000-0000-000000000000';
+    return _emptyGuid;
   }
 
   @override
   Future<Odontogram> getOdontogram(String patientId) async {
+    try {
+      final response = await _apiClient.instance.get('Prontuario/$patientId/odontogram');
+      if (response.data != null && response.data != 'null' && response.data != '') {
+        final jsonData = response.data is String ? jsonDecode(response.data) : response.data;
+        if (jsonData is Map) {
+          final odontogram = Odontogram.fromJson(Map<String, dynamic>.from(jsonData));
+          await _saveLocalOdontogram(odontogram, true);
+          return odontogram;
+        }
+      }
+    } catch (_) {}
+
     try {
       final local = await (_localDb.select(_localDb.odontogramLocal)
             ..where((t) => t.patientId.equals(patientId)))
@@ -41,18 +81,7 @@ class ProntuarioRepository implements IProntuarioRepository {
       }
     } catch (_) {}
 
-    try {
-      final response = await _apiClient.instance.get('Prontuario/$patientId/odontogram');
-      if (response.data == null || response.data == 'null') return _initialOdontogram(patientId);
-      
-      final jsonData = response.data is String ? jsonDecode(response.data) : response.data;
-      final odontogram = Odontogram.fromJson(jsonData);
-      
-      await _saveLocalOdontogram(odontogram, true);
-      return odontogram;
-    } catch (_) {
-      return _initialOdontogram(patientId);
-    }
+    return _initialOdontogram(patientId);
   }
 
   Odontogram _initialOdontogram(String patientId) => Odontogram(
@@ -68,14 +97,8 @@ class ProntuarioRepository implements IProntuarioRepository {
     await _saveLocalOdontogram(odontogram, false);
 
     try {
-      final patient = await (_localDb.select(_localDb.patientsLocal)
-            ..where((t) => t.id.equals(odontogram.patientId)))
-          .getSingleOrNull();
-
-      if (patient != null && patient.isSynced) {
-        await _sendOdontogramToApi(odontogram);
-        await _saveLocalOdontogram(odontogram, true);
-      }
+      await _sendOdontogramToApi(odontogram);
+      await _saveLocalOdontogram(odontogram, true);
     } catch (e) {
       debugPrint('Erro ao sincronizar odontograma: $e');
     }
@@ -88,7 +111,7 @@ class ProntuarioRepository implements IProntuarioRepository {
         'toothNumber': t.toothNumber,
         'surfaces': t.surfaces.map((s) => s.name.substring(0, 1).toUpperCase() + s.name.substring(1)).toList(),
         'condition': t.condition.name.substring(0, 1).toUpperCase() + t.condition.name.substring(1),
-        'observation': t.observation
+        'observation': t.observation,
       }).toList(),
     };
     await _apiClient.instance.post('Prontuario/odontogram', data: data);
@@ -119,24 +142,33 @@ class ProntuarioRepository implements IProntuarioRepository {
   @override
   Future<void> syncPendingData() async {
     try {
-      final pendingOdontograms = await (_localDb.select(_localDb.odontogramLocal)
+      final pendingRows = await (_localDb.select(_localDb.odontogramLocal)
             ..where((t) => t.isSynced.equals(false)))
           .get();
 
-      for (final row in pendingOdontograms) {
+      for (final row in pendingRows) {
         try {
-          final patient = await (_localDb.select(_localDb.patientsLocal)
-                ..where((t) => t.id.equals(row.patientId)))
-              .getSingleOrNull();
-
-          if (patient != null && patient.isSynced) {
+          if (row.patientId.startsWith('endo_')) {
+            final rawKey = row.patientId.substring('endo_'.length);
+            final (sheetType, realId) = _parseSheetKey(rawKey);
+            await _apiClient.instance.post(
+              'Prontuario/$realId/fichas/$sheetType',
+              data: jsonDecode(row.dataJson),
+            );
+          } else if (row.patientId.startsWith('peri_')) {
+            final realId = row.patientId.substring('peri_'.length);
+            await _apiClient.instance.post(
+              'Prontuario/$realId/fichas/periograma',
+              data: jsonDecode(row.dataJson),
+            );
+          } else {
             final odontogram = Odontogram.fromJson(jsonDecode(row.dataJson));
             await _sendOdontogramToApi(odontogram);
-            
-            await (_localDb.update(_localDb.odontogramLocal)
-                  ..where((t) => t.patientId.equals(row.patientId)))
-                .write(const drift_db.OdontogramLocalCompanion(isSynced: Value(true)));
           }
+
+          await (_localDb.update(_localDb.odontogramLocal)
+                ..where((t) => t.patientId.equals(row.patientId)))
+              .write(const drift_db.OdontogramLocalCompanion(isSynced: Value(true)));
         } catch (_) {}
       }
     } catch (_) {}
@@ -151,15 +183,50 @@ class ProntuarioRepository implements IProntuarioRepository {
         'procedureId': i.procedureId,
         'procedureName': i.procedureName,
         'toothNumber': i.toothNumber,
-        'observation': i.observation
+        'observation': i.observation,
+        'value': 0,
       }).toList(),
     };
     await _apiClient.instance.post('TreatmentPlans', data: data);
   }
 
   @override
+  Future<TreatmentPlan?> updateTreatmentItemStatus(
+    String planId,
+    String itemId,
+    String status,
+  ) async {
+    final response = await _apiClient.instance.patch(
+      'TreatmentPlans/$planId/items/$itemId/status',
+      data: {'status': status},
+    );
+    if (response.data is Map) {
+      return TreatmentPlan.fromJson(Map<String, dynamic>.from(response.data));
+    }
+    return null;
+  }
+
+  @override
+  Future<TreatmentPlan?> approveTreatmentPlan(String planId) async {
+    final response = await _apiClient.instance.patch('TreatmentPlans/$planId/approve');
+    if (response.data is Map) {
+      return TreatmentPlan.fromJson(Map<String, dynamic>.from(response.data));
+    }
+    return null;
+  }
+
+  @override
+  Future<TreatmentPlan?> removeTreatmentItem(String planId, String itemId) async {
+    final response = await _apiClient.instance.delete('TreatmentPlans/$planId/items/$itemId');
+    if (response.data is Map) {
+      return TreatmentPlan.fromJson(Map<String, dynamic>.from(response.data));
+    }
+    return null;
+  }
+
+  @override
   Future<Prescription> createPrescription(Prescription prescription) async {
-    final clinicId = await _getDefaultClinicId();
+    final clinicId = await _resolveClinicId(prescription.clinicId);
     final data = {
       'patientId': prescription.patientId,
       'clinicId': clinicId,
@@ -167,41 +234,51 @@ class ProntuarioRepository implements IProntuarioRepository {
       'items': prescription.items.map((i) => {
         'medicineName': i.medicineName,
         'dosage': i.dosage,
-        'instructions': i.instructions
+        'instructions': i.instructions,
       }).toList(),
     };
     final response = await _apiClient.instance.post('Documentos/receitas', data: data);
-    return Prescription.fromJson(response.data);
+    return Prescription.fromJson(Map<String, dynamic>.from(response.data));
   }
 
   @override
   Future<MedicalCertificate> createCertificate(MedicalCertificate certificate) async {
-    final clinicId = await _getDefaultClinicId();
+    final clinicId = await _resolveClinicId(null);
     final data = {
       'patientId': certificate.patientId,
       'clinicId': clinicId,
       'content': certificate.content,
       'daysOfRest': certificate.daysOfRest,
-      'cid': certificate.cid
+      'cid': certificate.cid,
     };
     final response = await _apiClient.instance.post('Documentos/atestados', data: data);
-    return MedicalCertificate.fromJson(response.data);
+    return MedicalCertificate.fromJson(Map<String, dynamic>.from(response.data));
   }
 
   @override
   Future<List<Prescription>> getPrescriptionHistory(String patientId) async {
     try {
       final response = await _apiClient.instance.get('Documentos/receitas/$patientId');
-      return (response.data as List).map((json) => Prescription.fromJson(json)).toList();
-    } catch (_) { return []; }
+      return (response.data as List)
+          .whereType<Map>()
+          .map((json) => Prescription.fromJson(Map<String, dynamic>.from(json)))
+          .toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   @override
   Future<List<MedicalCertificate>> getCertificateHistory(String patientId) async {
     try {
       final response = await _apiClient.instance.get('Documentos/atestados/$patientId');
-      return (response.data as List).map((json) => MedicalCertificate.fromJson(json)).toList();
-    } catch (_) { return []; }
+      return (response.data as List)
+          .whereType<Map>()
+          .map((json) => MedicalCertificate.fromJson(Map<String, dynamic>.from(json)))
+          .toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   @override
@@ -209,10 +286,12 @@ class ProntuarioRepository implements IProntuarioRepository {
     try {
       final response = await _apiClient.instance.get('Prontuario/$patientId/anamnese');
       if (response.data != null) {
-        await _saveLocalAnamnese(patientId, response.data is Map
-            ? Map<String, dynamic>.from(response.data)
-            : <String, dynamic>{}, true);
-        return [Anamnese.fromJson(response.data)];
+        await _saveLocalAnamnese(
+          patientId,
+          response.data is Map ? Map<String, dynamic>.from(response.data) : <String, dynamic>{},
+          true,
+        );
+        return [Anamnese.fromJson(Map<String, dynamic>.from(response.data))];
       }
     } catch (_) {}
 
@@ -228,11 +307,17 @@ class ProntuarioRepository implements IProntuarioRepository {
   }
 
   @override
-  Future<void> addEvolution(String patientId, String description, String professorId) async {
+  Future<void> addEvolution(
+    String patientId,
+    String description,
+    String professorId, {
+    String? clinicId,
+  }) async {
     await _apiClient.instance.post('Evolutions', data: {
       'patientId': patientId,
       'description': description,
-      'professorId': professorId,
+      if (professorId.isNotEmpty) 'professorId': professorId,
+      if (clinicId != null && clinicId.isNotEmpty) 'clinicId': clinicId,
     });
   }
 
@@ -240,8 +325,13 @@ class ProntuarioRepository implements IProntuarioRepository {
   Future<List<Evolution>> getEvolutions(String patientId) async {
     try {
       final response = await _apiClient.instance.get('Prontuario/$patientId/evolutions');
-      return (response.data as List).map((json) => Evolution.fromJson(json)).toList();
-    } catch (_) { return []; }
+      return (response.data as List)
+          .whereType<Map>()
+          .map((json) => Evolution.fromJson(Map<String, dynamic>.from(json)))
+          .toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   @override
@@ -249,10 +339,12 @@ class ProntuarioRepository implements IProntuarioRepository {
     await _apiClient.instance.post('Evolutions/$evolutionId/sign', data: {});
   }
 
-  @override Future<Anamnese?> getAnamneseByPatientId(String id) async {
+  @override
+  Future<Anamnese?> getAnamneseByPatientId(String id) async {
     final results = await getAnamneses(id);
     return results.isNotEmpty ? results.first : null;
   }
+
   @override
   Future<void> saveAnamnese(String id, Map<String, dynamic> r) async {
     await _saveLocalAnamnese(id, r, false);
@@ -279,93 +371,203 @@ class ProntuarioRepository implements IProntuarioRepository {
 
   @override
   Future<Map<String, dynamic>?> getEndodontia(String patientId) async {
+    final (sheetType, realPatientId) = _parseSheetKey(patientId);
+
+    try {
+      final response = await _apiClient.instance.get(
+        'Prontuario/$realPatientId/fichas/$sheetType',
+      );
+      if (response.data != null && response.data != '') {
+        final decoded = response.data is String
+            ? jsonDecode(response.data as String)
+            : response.data;
+        if (decoded is Map) {
+          final map = Map<String, dynamic>.from(decoded);
+          await _saveLocalEndo(patientId, map, isSynced: true);
+          return map;
+        }
+      }
+    } catch (_) {}
+
     try {
       final local = await (_localDb.select(_localDb.odontogramLocal)
             ..where((t) => t.patientId.equals('endo_$patientId')))
           .getSingleOrNull();
-      if (local != null) return jsonDecode(local.dataJson);
+      if (local != null) {
+        final decoded = jsonDecode(local.dataJson);
+        if (decoded is Map) return Map<String, dynamic>.from(decoded);
+      }
     } catch (_) {}
 
-    try {
-      final response = await _apiClient.instance.get('Prontuario/$patientId/endodontia');
-      if (response.data == null || response.data == "") return null;
-      
-      final data = response.data is String ? jsonDecode(response.data) : response.data;
-      await _saveLocalEndo(patientId, data);
-      return data;
-    } catch (_) { return null; }
+    return null;
   }
 
   @override
   Future<void> saveEndodontia(String patientId, Map<String, dynamic> data) async {
-    await _saveLocalEndo(patientId, data);
+    final (sheetType, realPatientId) = _parseSheetKey(patientId);
+    await _saveLocalEndo(patientId, data, isSynced: false);
     try {
-      await _apiClient.instance.post('Prontuario/$patientId/endodontia', data: data);
+      await _apiClient.instance.post(
+        'Prontuario/$realPatientId/fichas/$sheetType',
+        data: data,
+      );
+      await _saveLocalEndo(patientId, data, isSynced: true);
     } catch (e) {
-      debugPrint('Endodontia salva localmente. Erro ao sincronizar: $e');
+      debugPrint('Ficha $sheetType salva localmente. Erro ao sincronizar: $e');
     }
   }
 
   @override
   Future<Map<String, dynamic>?> getPeriograma(String patientId) async {
     try {
-      final local = await (_localDb.select(_localDb.odontogramLocal)
-            ..where((t) => t.patientId.equals('peri_$patientId')))
-          .getSingleOrNull();
-      if (local != null) return jsonDecode(local.dataJson);
+      final response = await _apiClient.instance.get(
+        'Prontuario/$patientId/fichas/periograma',
+      );
+      if (response.data != null && response.data != '') {
+        final decoded = response.data is String
+            ? jsonDecode(response.data as String)
+            : response.data;
+        if (decoded is Map) {
+          final map = Map<String, dynamic>.from(decoded);
+          await _saveLocalPeri(patientId, map, isSynced: true);
+          return map;
+        }
+      }
     } catch (_) {}
 
     try {
-      final response = await _apiClient.instance.get('Prontuario/$patientId/periograma');
-      if (response.data == null || response.data == "") return null;
-      final data = response.data is String ? jsonDecode(response.data) : response.data;
-      await _saveLocalPeri(patientId, data);
-      return data;
-    } catch (_) { return null; }
+      final local = await (_localDb.select(_localDb.odontogramLocal)
+            ..where((t) => t.patientId.equals('peri_$patientId')))
+          .getSingleOrNull();
+      if (local != null) {
+        final decoded = jsonDecode(local.dataJson);
+        if (decoded is Map) return Map<String, dynamic>.from(decoded);
+      }
+    } catch (_) {}
+
+    return null;
   }
 
   @override
   Future<void> savePeriograma(String patientId, Map<String, dynamic> data) async {
-    await _saveLocalPeri(patientId, data);
+    await _saveLocalPeri(patientId, data, isSynced: false);
     try {
-      await _apiClient.instance.post('Prontuario/$patientId/periograma', data: data);
+      await _apiClient.instance.post(
+        'Prontuario/$patientId/fichas/periograma',
+        data: data,
+      );
+      await _saveLocalPeri(patientId, data, isSynced: true);
     } catch (e) {
-      debugPrint('Periograma salva localmente. Erro ao sincronizar: $e');
+      debugPrint('Periograma salvo localmente. Erro ao sincronizar: $e');
     }
   }
 
-  Future<void> _saveLocalPeri(String patientId, Map<String, dynamic> data) async {
+  @override
+  Future<List<Map<String, dynamic>>> getClinicalSheetHistory(
+    String patientId,
+    String sheetType,
+  ) async {
+    try {
+      final response = await _apiClient.instance.get(
+        'Prontuario/$patientId/fichas/$sheetType/history',
+      );
+      if (response.data is List) {
+        return (response.data as List)
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  @override
+  Future<Map<String, dynamic>> getProntuarioSummary(String patientId) async {
+    try {
+      final response = await _apiClient.instance.get('Prontuario/$patientId/summary');
+      if (response.data is Map) {
+        return Map<String, dynamic>.from(response.data);
+      }
+    } catch (_) {}
+
+    // Fallback offline usando o cache SQLite local
+    final sheets = <String, dynamic>{};
+    final localRows = await _localDb.select(_localDb.odontogramLocal).get();
+    for (final row in localRows) {
+      if (row.patientId == 'peri_$patientId') {
+        sheets['periograma'] = {'version': 1, 'updatedAt': row.lastUpdated.toIso8601String()};
+      } else if (row.patientId.startsWith('endo_')) {
+        final key = row.patientId.substring('endo_'.length);
+        final (type, realId) = _parseSheetKey(key);
+        if (realId == patientId) {
+          sheets[type] = {'version': 1, 'updatedAt': row.lastUpdated.toIso8601String()};
+        }
+      }
+    }
+    return {'sheets': sheets};
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getClinicalTimeline(String patientId) async {
+    try {
+      final response = await _apiClient.instance.get('Prontuario/$patientId/timeline');
+      if (response.data is List) {
+        return (response.data as List)
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  Future<void> _saveLocalPeri(
+    String patientId,
+    Map<String, dynamic> data, {
+    bool isSynced = true,
+  }) async {
     await _localDb.into(_localDb.odontogramLocal).insertOnConflictUpdate(
       drift_db.OdontogramLocalCompanion(
         patientId: Value('peri_$patientId'),
         dataJson: Value(jsonEncode(data)),
         lastUpdated: Value(DateTime.now()),
-        isSynced: Value(true),
+        isSynced: Value(isSynced),
       ),
     );
   }
 
-  Future<void> _saveLocalEndo(String patientId, Map<String, dynamic> data) async {
+  Future<void> _saveLocalEndo(
+    String patientId,
+    Map<String, dynamic> data, {
+    bool isSynced = true,
+  }) async {
     await _localDb.into(_localDb.odontogramLocal).insertOnConflictUpdate(
       drift_db.OdontogramLocalCompanion(
         patientId: Value('endo_$patientId'),
         dataJson: Value(jsonEncode(data)),
         lastUpdated: Value(DateTime.now()),
-        isSynced: Value(true),
+        isSynced: Value(isSynced),
       ),
     );
   }
 
-  @override Future<List<Evolution>> getEvolutionHistory(String id) async => getEvolutions(id);
-  @override Future<List<TreatmentPlan>> getTreatmentPlans(String id) async {
+  Future<List<Evolution>> getEvolutionHistory(String id) async => getEvolutions(id);
+
+  @override
+  Future<List<TreatmentPlan>> getTreatmentPlans(String id) async {
     try {
       final response = await _apiClient.instance.get('TreatmentPlans/active/$id');
-      return [TreatmentPlan.fromJson(response.data)];
-    } catch (_) { return []; }
+      if (response.data is Map) {
+        return [TreatmentPlan.fromJson(Map<String, dynamic>.from(response.data))];
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
   }
-  @override Future<TreatmentPlan?> getTreatmentPlan(String id) async {
+
+  Future<TreatmentPlan?> getTreatmentPlan(String id) async {
     final results = await getTreatmentPlans(id);
     return results.isNotEmpty ? results.first : null;
   }
-  @override Future<void> updateTreatmentItemStatus(String p, String i, String s) async {}
 }

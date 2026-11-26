@@ -50,6 +50,54 @@ class TreatmentPlanViewModel extends StateNotifier<AsyncValue<List<TreatmentPlan
       state = result;
     }
   }
+
+  Future<void> updateItemStatus(String planId, String itemId, TreatmentItemStatus status) async {
+    final currentState = state.value ?? [];
+    final apiStatus = switch (status) {
+      TreatmentItemStatus.pending => 'Pending',
+      TreatmentItemStatus.inProgress => 'InProgress',
+      TreatmentItemStatus.completed => 'Completed',
+      TreatmentItemStatus.canceled => 'Cancelled',
+    };
+    final result = await AsyncValue.guard(() async {
+      final repo = _ref.read(prontuarioRepositoryProvider);
+      await repo.updateTreatmentItemStatus(planId, itemId, apiStatus);
+      return repo.getTreatmentPlans(_patientId);
+    });
+    if (result is AsyncError) {
+      state = AsyncValue.data(currentState);
+      throw result.error!;
+    }
+    state = result;
+  }
+
+  Future<void> approvePlan(String planId) async {
+    final currentState = state.value ?? [];
+    final result = await AsyncValue.guard(() async {
+      final repo = _ref.read(prontuarioRepositoryProvider);
+      await repo.approveTreatmentPlan(planId);
+      return repo.getTreatmentPlans(_patientId);
+    });
+    if (result is AsyncError) {
+      state = AsyncValue.data(currentState);
+      throw result.error!;
+    }
+    state = result;
+  }
+
+  Future<void> removeItem(String planId, String itemId) async {
+    final currentState = state.value ?? [];
+    final result = await AsyncValue.guard(() async {
+      final repo = _ref.read(prontuarioRepositoryProvider);
+      await repo.removeTreatmentItem(planId, itemId);
+      return repo.getTreatmentPlans(_patientId);
+    });
+    if (result is AsyncError) {
+      state = AsyncValue.data(currentState);
+      throw result.error!;
+    }
+    state = result;
+  }
 }
 
 final treatmentPlanViewModelProvider = StateNotifierProvider.family<TreatmentPlanViewModel, AsyncValue<List<TreatmentPlan>>, String>((ref, patientId) {

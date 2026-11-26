@@ -28,9 +28,11 @@ public class ApplicationDbContext : DbContext
     public DbSet<LogAuditoria> LogsAuditoria => Set<LogAuditoria>();
     public DbSet<MedicalRecord> MedicalRecords => Set<MedicalRecord>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
+    public DbSet<TreatmentPlan> TreatmentPlans => Set<TreatmentPlan>();
     public DbSet<TreatmentItem> TreatmentItems => Set<TreatmentItem>();
     public DbSet<WaitListEntry> WaitListEntries => Set<WaitListEntry>();
     public DbSet<PatientChangeLog> PatientChangeLogs => Set<PatientChangeLog>();
+    public DbSet<ClinicalSheetRecord> ClinicalSheets => Set<ClinicalSheetRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -66,6 +68,21 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Anamnese>()
             .Property(a => a.RespostasJson)
             .HasColumnType("jsonb");
+
+        modelBuilder.Entity<ClinicalSheetRecord>(entity =>
+        {
+            entity.ToTable("prontuario_fichas");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.PatientId).HasColumnName("paciente_id");
+            entity.Property(e => e.SheetType).HasColumnName("tipo").HasMaxLength(64).IsRequired();
+            entity.Property(e => e.DataJson).HasColumnName("dados_json").HasColumnType("jsonb").IsRequired();
+            entity.Property(e => e.Version).HasColumnName("versao");
+            entity.Property(e => e.CreatedByUserId).HasColumnName("criado_por");
+            entity.Property(e => e.CreatedAt).HasColumnName("criado_em");
+            entity.Property(e => e.UpdatedAt).HasColumnName("atualizado_em");
+            entity.HasIndex(e => new { e.PatientId, e.SheetType, e.Version });
+        });
 
         base.OnModelCreating(modelBuilder);
     }

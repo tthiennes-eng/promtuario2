@@ -10,11 +10,18 @@ public sealed class TreatmentItem : Entity
     public string ProcedureName { get; private set; } = string.Empty;
     public decimal Value { get; private set; }
     public int? ToothNumber { get; private set; }
+    public string? Observation { get; private set; }
     public TreatmentItemStatus Status { get; private set; }
 
     private TreatmentItem() { }
 
-    public static TreatmentItem Create(Guid treatmentPlanId, Guid procedureId, string procedureName, decimal value, int? toothNumber)
+    public static TreatmentItem Create(
+        Guid treatmentPlanId,
+        Guid procedureId,
+        string procedureName,
+        decimal value,
+        int? toothNumber,
+        string? observation = null)
     {
         return new TreatmentItem
         {
@@ -23,8 +30,15 @@ public sealed class TreatmentItem : Entity
             ProcedureName = procedureName,
             Value = value,
             ToothNumber = toothNumber,
+            Observation = observation,
             Status = TreatmentItemStatus.Pending
         };
+    }
+
+    public void UpdateStatus(TreatmentItemStatus status)
+    {
+        Status = status;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void MarkAsCompleted()

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import '../viewmodels/prontuario_viewmodel.dart';
+import '../viewmodels/treatment_plan_viewmodel.dart';
 import '../../domain/entities/odontogram.dart';
+import '../../domain/entities/treatment_plan.dart';
 
 class OdontogramWidget extends ConsumerWidget {
   final String patientId;
@@ -193,9 +196,32 @@ class _ToothTile extends StatelessWidget {
         condition: existing,
         getSurfaceLabel: getSurfaceLabel,
         getConditionLabel: getConditionLabel,
-        onSave: (updated) {
-          ref.read(prontuarioViewModelProvider(patientId).notifier).updateToothCondition(updated);
-          Navigator.pop(context);
+        onSave: (updated, addToPlan) async {
+          await ref.read(prontuarioViewModelProvider(patientId).notifier).updateToothCondition(updated);
+          if (addToPlan && updated.condition != ConditionType.healthy) {
+            final procName = switch (updated.condition) {
+              ConditionType.decayed => 'Restauração de Resina',
+              ConditionType.endodontic => 'Tratamento Endodôntico (Canal)',
+              ConditionType.prosthesis => 'Prótese Parcial Removível (PPR)',
+              ConditionType.implant => 'Avaliação de Implante',
+              ConditionType.missing => 'Reabilitação Protética',
+              ConditionType.restored => 'Revisão de Restauração',
+              ConditionType.healthy => 'Avaliação Clínica',
+            };
+            final item = TreatmentItem(
+              id: const Uuid().v4(),
+              procedureId: const Uuid().v4(),
+              procedureName: procName,
+              toothNumber: updated.toothNumber,
+              observation:
+                  'Origem: Odontograma (${getConditionLabel(updated.condition)} - Face ${getSurfaceLabel(surface)})${updated.observation != null && updated.observation!.trim().isNotEmpty ? " • ${updated.observation!.trim()}" : ""}',
+              status: TreatmentItemStatus.pending,
+            );
+            try {
+              await ref.read(treatmentPlanViewModelProvider(patientId).notifier).addItem(item);
+            } catch (_) {}
+          }
+          if (context.mounted) Navigator.pop(context);
         },
       ),
     );
@@ -251,9 +277,16 @@ class _FaceActionSheet extends StatefulWidget {
   final ToothCondition condition;
   final String Function(ToothSurface) getSurfaceLabel;
   final String Function(ConditionType) getConditionLabel;
-  final Function(ToothCondition) onSave;
+  final Future<void> Function(ToothCondition, bool addToPlan) onSave;
 
-  _FaceActionSheet({required this.toothNumber, required this.surface, required this.condition, required this.onSave, required this.getSurfaceLabel, required this.getConditionLabel});
+  const _FaceActionSheet({
+    required this.toothNumber,
+    required this.surface,
+    required this.condition,
+    required this.onSave,
+    required this.getSurfaceLabel,
+    required this.getConditionLabel,
+  });
 
   @override
   State<_FaceActionSheet> createState() => _FaceActionSheetState();
@@ -262,6 +295,7 @@ class _FaceActionSheet extends StatefulWidget {
 class _FaceActionSheetState extends State<_FaceActionSheet> {
   late ConditionType _type;
   final _obs = TextEditingController();
+  bool _addToTreatmentPlan = false;
 
   @override
   void initState() {
@@ -273,7 +307,7 @@ class _FaceActionSheetState extends State<_FaceActionSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -282,17 +316,38 @@ class _FaceActionSheetState extends State<_FaceActionSheet> {
             decoration: BoxDecoration(color: Colors.blueGrey.shade50, borderRadius: BorderRadius.circular(10)),
             child: Text('Dente ${widget.toothNumber} - Face ${widget.getSurfaceLabel(widget.surface)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blueGrey)),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           DropdownButtonFormField<ConditionType>(
-            value: _type,
+            initialValue: _type,
             items: ConditionType.values.map((t) => DropdownMenuItem(value: t, child: Text(widget.getConditionLabel(t)))).toList(),
             onChanged: (v) => setState(() => _type = v!),
             decoration: const InputDecoration(labelText: 'Condição Clínica', border: OutlineInputBorder()),
           ),
+          const SizedBox(height: 12),
+          TextField(controller: _obs, maxLines: 2, decoration: const InputDecoration(labelText: 'Observação da Face', border: OutlineInputBorder(), hintText: 'Opcional')),
+          if (_type != ConditionType.healthy) ...[
+            const SizedBox(height: 8),
+            CheckboxListTile(
+              value: _addToTreatmentPlan,
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              title: const Text('Incluir automaticamente no Plano de Tratamento', style: TextStyle(fontSize: 13)),
+              onChanged: (v) => setState(() => _addToTreatmentPlan = v ?? false),
+            ),
+          ],
           const SizedBox(height: 16),
-          TextField(controller: _obs, maxLines: 1, textInputAction: TextInputAction.done, decoration: const InputDecoration(labelText: 'Observação da Face', border: OutlineInputBorder(), hintText: 'Opcional')),
-          const SizedBox(height: 32),
-          SizedBox(width: double.infinity, height: 50, child: FilledButton(style: FilledButton.styleFrom(backgroundColor: const Color(0xFF006494)), onPressed: () => widget.onSave(widget.condition.copyWith(condition: _type, observation: _obs.text)), child: const Text('SALVAR ALTERAÇÃO', style: TextStyle(fontWeight: FontWeight.bold)))),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: const Color(0xFF006494)),
+              onPressed: () => widget.onSave(
+                widget.condition.copyWith(condition: _type, observation: _obs.text),
+                _addToTreatmentPlan,
+              ),
+              child: const Text('SALVAR ALTERAÇÃO', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ),
         ],
       ),
     );

@@ -220,6 +220,107 @@ using (var scope = app.Services.CreateScope())
 
         context.Database.Migrate();
 
+        // Garante que todas as tabelas e colunas do Prontuário existam mesmo em bancos legados
+        context.Database.ExecuteSqlRaw(@"
+            CREATE TABLE IF NOT EXISTS public.prontuario_fichas (
+                id uuid PRIMARY KEY,
+                paciente_id uuid NOT NULL,
+                tipo character varying(64) NOT NULL,
+                dados_json jsonb NOT NULL DEFAULT '{}'::jsonb,
+                versao integer NOT NULL DEFAULT 1,
+                criado_por uuid NOT NULL,
+                criado_em timestamp with time zone NOT NULL DEFAULT now(),
+                atualizado_em timestamp with time zone NULL
+            );
+            CREATE INDEX IF NOT EXISTS ix_prontuario_fichas_paciente_tipo
+                ON public.prontuario_fichas (paciente_id, tipo, versao DESC);
+
+            CREATE TABLE IF NOT EXISTS public.odontogramas (
+                id uuid PRIMARY KEY,
+                paciente_id uuid NOT NULL,
+                dados_dentes_json jsonb NOT NULL DEFAULT '[]'::jsonb,
+                atualizado_por uuid NOT NULL,
+                criado_em timestamp with time zone NOT NULL DEFAULT now(),
+                atualizado_em timestamp with time zone NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS public.anamneses (
+                id uuid PRIMARY KEY,
+                paciente_id uuid NOT NULL,
+                criado_por_id uuid NOT NULL,
+                respostas_json jsonb NOT NULL DEFAULT '{}'::jsonb,
+                criado_em timestamp with time zone NOT NULL DEFAULT now(),
+                atualizado_em timestamp with time zone NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS public.receitas (
+                ""Id"" uuid PRIMARY KEY,
+                ""PatientId"" uuid NOT NULL,
+                ""DoctorId"" uuid NOT NULL,
+                ""Observations"" character varying(1000) NULL,
+                ""Items"" jsonb NOT NULL DEFAULT '[]'::jsonb,
+                ""ClinicId"" uuid NOT NULL,
+                ""CreatedAt"" timestamp with time zone NOT NULL DEFAULT now(),
+                ""UpdatedAt"" timestamp with time zone NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS public.atestados (
+                ""Id"" uuid PRIMARY KEY,
+                ""PatientId"" uuid NOT NULL,
+                ""DoctorId"" uuid NOT NULL,
+                ""Content"" text NOT NULL,
+                ""DaysOfRest"" integer NOT NULL DEFAULT 1,
+                ""CID"" character varying(10) NOT NULL DEFAULT '',
+                ""ClinicId"" uuid NOT NULL,
+                ""CreatedAt"" timestamp with time zone NOT NULL DEFAULT now(),
+                ""UpdatedAt"" timestamp with time zone NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS public.""TreatmentPlans"" (
+                ""Id"" uuid PRIMARY KEY,
+                ""PatientId"" uuid NOT NULL,
+                ""Description"" text NOT NULL DEFAULT '',
+                ""CreatedByUserId"" uuid NOT NULL,
+                ""Status"" integer NOT NULL DEFAULT 1,
+                ""CreatedAt"" timestamp with time zone NOT NULL DEFAULT now(),
+                ""UpdatedAt"" timestamp with time zone NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS public.""TreatmentItems"" (
+                ""Id"" uuid PRIMARY KEY,
+                ""TreatmentPlanId"" uuid NOT NULL,
+                ""ProcedureId"" uuid NOT NULL,
+                ""ProcedureName"" text NOT NULL DEFAULT '',
+                ""Value"" numeric NOT NULL DEFAULT 0,
+                ""ToothNumber"" integer NULL,
+                ""Observation"" text NULL,
+                ""Status"" integer NOT NULL DEFAULT 1,
+                ""CreatedAt"" timestamp with time zone NOT NULL DEFAULT now(),
+                ""UpdatedAt"" timestamp with time zone NULL
+            );
+            ALTER TABLE IF EXISTS public.""TreatmentItems""
+                ADD COLUMN IF NOT EXISTS ""Observation"" text NULL;
+
+            ALTER TABLE IF EXISTS public.evolucoes
+                ADD COLUMN IF NOT EXISTS assinado_em timestamp with time zone NULL;
+
+            -- Se a FK legada evolucoes_prontuario_id_fkey apontar para prontuarios em vez de pacientes, remove para permitir gravação direta por paciente
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1
+                    FROM pg_constraint con
+                    JOIN pg_class rel ON rel.oid = con.conrelid
+                    JOIN pg_class ref ON ref.oid = con.confrelid
+                    WHERE rel.relname = 'evolucoes'
+                      AND ref.relname = 'prontuarios'
+                      AND con.conname = 'evolucoes_prontuario_id_fkey'
+                ) THEN
+                    ALTER TABLE public.evolucoes DROP CONSTRAINT evolucoes_prontuario_id_fkey;
+                END IF;
+            END $$;
+        ");
+
         // Limpeza única de pacientes, agendamentos e dados vinculados (mantém usuários e clínicas).
         context.Database.ExecuteSqlRaw(@"
             CREATE TABLE IF NOT EXISTS public.system_maintenance_log (
