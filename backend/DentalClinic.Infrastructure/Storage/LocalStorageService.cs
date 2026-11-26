@@ -15,7 +15,7 @@ public class LocalStorageService : IStorageService
     public LocalStorageService(IConfiguration configuration)
     {
         _storagePath = configuration["Storage:LocalPath"] ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-        _baseUrl = configuration["Storage:BaseUrl"] ?? "https://localhost:5001/uploads";
+        _baseUrl = (configuration["Storage:BaseUrl"] ?? "/uploads").TrimEnd('/');
 
         if (!Directory.Exists(_storagePath))
         {

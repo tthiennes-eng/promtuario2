@@ -28,6 +28,45 @@ class Attachment {
   String get name => description ?? 'Anexo';
   DateTime get date => createdAt;
 
+  static const Set<String> imageExtensions = {
+    'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'heic',
+  };
+
+  static const Set<String> textExtensions = {
+    'txt', 'md', 'csv', 'json', 'xml', 'log', 'rtf',
+  };
+
+  static const Set<String> documentExtensions = {
+    'pdf', 'doc', 'docx',
+  };
+
+  String get fileExtension {
+    for (final candidate in [localPath, remoteUrl, description]) {
+      if (candidate == null || candidate.trim().isEmpty) continue;
+      final clean = candidate.split('?').first.trim();
+      final dot = clean.lastIndexOf('.');
+      if (dot != -1 && dot < clean.length - 1) {
+        final ext = clean.substring(dot + 1).toLowerCase();
+        if (ext.length <= 6 && RegExp(r'^[a-z0-9]+$').hasMatch(ext)) {
+          return ext;
+        }
+      }
+    }
+    return '';
+  }
+
+  bool get isTextFile => textExtensions.contains(fileExtension);
+
+  bool get isDocumentFile =>
+      documentExtensions.contains(fileExtension) ||
+      (type == AttachmentType.document && !isImageFile && !isTextFile);
+
+  bool get isImageFile {
+    final ext = fileExtension;
+    if (ext.isNotEmpty) return imageExtensions.contains(ext);
+    return type == AttachmentType.image || type == AttachmentType.xRay;
+  }
+
   Attachment copyWith({
     String? id,
     String? patientId,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:promt/features/prontuario/domain/entities/attachment.dart';
 import 'package:promt/features/prontuario/domain/entities/treatment_plan.dart';
 import 'package:promt/features/prontuario/presentation/viewmodels/endodontia_viewmodel.dart';
 import 'package:promt/features/prontuario/presentation/viewmodels/prontuario_summary_provider.dart';
@@ -114,5 +115,44 @@ void main() {
 
     expect(find.text('Evolução Clínica (Clinica I)'), findsNothing);
     expect(find.text('Receita Emitida'), findsOneWidget);
+  });
+
+  test('Attachment correctly classifies image, text, and document files', () {
+    final img = Attachment(
+      id: '1',
+      patientId: 'p1',
+      localPath: '/tmp/radiografia.png',
+      type: AttachmentType.xRay,
+      description: 'radiografia.png',
+      createdAt: DateTime(2026, 11, 26),
+    );
+    final txt = Attachment(
+      id: '2',
+      patientId: 'p1',
+      localPath: '/tmp/laudo_canal.txt',
+      type: AttachmentType.document,
+      description: 'laudo_canal.txt',
+      createdAt: DateTime(2026, 11, 26),
+    );
+    final pdf = Attachment(
+      id: '3',
+      patientId: 'p1',
+      remoteUrl: 'http://localhost:5000/uploads/exame.pdf',
+      type: AttachmentType.document,
+      description: 'exame.pdf',
+      createdAt: DateTime(2026, 11, 26),
+    );
+
+    expect(img.isImageFile, isTrue);
+    expect(img.isTextFile, isFalse);
+
+    expect(txt.isTextFile, isTrue);
+    expect(txt.isImageFile, isFalse);
+    expect(txt.fileExtension, 'txt');
+
+    expect(pdf.isDocumentFile, isTrue);
+    expect(pdf.isImageFile, isFalse);
+    expect(pdf.isTextFile, isFalse);
+    expect(pdf.fileExtension, 'pdf');
   });
 }
