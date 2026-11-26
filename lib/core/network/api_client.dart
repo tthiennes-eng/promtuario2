@@ -90,8 +90,13 @@ class ApiClient {
           final refreshToken = await _storage.getRefreshToken();
           if (refreshToken != null && refreshToken.isNotEmpty) {
             try {
-              final refreshResponse = await Dio(BaseOptions(baseUrl: _dio.options.baseUrl))
-                  .post('auth/refresh', data: {'refreshToken': refreshToken});
+              final refreshResponse = await Dio(
+                BaseOptions(
+                  baseUrl: _dio.options.baseUrl,
+                  connectTimeout: const Duration(seconds: 5),
+                  receiveTimeout: const Duration(seconds: 5),
+                ),
+              ).post('auth/refresh', data: {'refreshToken': refreshToken});
 
               if (refreshResponse.statusCode == 200) {
                 final newAccess = refreshResponse.data['accessToken'];

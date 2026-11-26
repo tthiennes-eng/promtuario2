@@ -1,9 +1,12 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:promt/core/network/api_client.dart';
 import 'package:promt/core/security/storage_service.dart';
 import 'package:promt/features/auth/data/repositories/auth_repository.dart';
+import 'package:promt/main.dart';
 
 class _InMemorySecureStorage extends FlutterSecureStorage {
   final Map<String, String> backing;
@@ -227,5 +230,35 @@ void main() {
     final restored = await repo2.getCurrentUser();
     expect(restored, isNull);
     expect(disk['access_token'], isNull);
+  });
+
+  testWidgets('OdontoClinicaApp opens directly on LoginScreen without overflow and pre-fills saved login', (tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final disk = <String, String>{
+      'remember_me': 'true',
+      'saved_email': 'admin@odontoclinica.edu.br',
+      'saved_password': 'admin123',
+    };
+    final storage = StorageService(_InMemorySecureStorage(disk));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          storageServiceProvider.overrideWithValue(storage),
+        ],
+        child: const OdontoClinicaApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bem-vindo de volta'), findsOneWidget);
+    expect(find.text('Entrar no Sistema'), findsOneWidget);
+    expect(find.text('Manter login salvo'), findsOneWidget);
+    expect(find.text('admin@odontoclinica.edu.br'), findsOneWidget);
+    expect(find.text('admin123'), findsOneWidget);
   });
 }

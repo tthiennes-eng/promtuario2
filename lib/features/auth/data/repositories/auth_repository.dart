@@ -43,9 +43,9 @@ class AuthRepository implements IAuthRepository {
         persist: rememberMe,
       );
       if (rememberMe) {
-        await _storage.saveSavedEmail(email);
+        await _storage.saveSavedCredentials(email: email, password: password);
       } else {
-        await _storage.clearSavedEmail();
+        await _storage.clearSavedCredentials();
       }
 
       return user;
@@ -81,7 +81,13 @@ class AuthRepository implements IAuthRepository {
     }
 
     try {
-      final response = await _apiClient.instance.get('auth/me');
+      final response = await _apiClient.instance.get(
+        'auth/me',
+        options: Options(
+          sendTimeout: const Duration(seconds: 4),
+          receiveTimeout: const Duration(seconds: 4),
+        ),
+      );
       final user = UserModel.fromJson(
         Map<String, dynamic>.from(response.data as Map),
       ).toEntity();
@@ -95,8 +101,15 @@ class AuthRepository implements IAuthRepository {
         return null;
       }
 
-      // Em caso de indisponibilidade de rede ou backend sem /auth/me atualizado,
-      // tenta renovar via refresh token ou restaurar o usuário salvo em cache.
+      // Se falhou por rede/timeout, evita esperar um segundo timeout e usa o cache local.
+      if (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        return _readSavedUser();
+      }
+
+      // Em caso de backend sem /auth/me atualizado (ex: 404), tenta renovar via refresh token.
       final refreshed = await _tryRefreshAndReadUser();
       if (refreshed != null) return refreshed;
       return _readSavedUser();

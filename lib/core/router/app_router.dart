@@ -56,16 +56,14 @@ final routerProvider = Provider<GoRouter>((ref) {
   final authNotifier = ref.watch(authViewModelProvider.notifier);
 
   return GoRouter(
-    initialLocation: '/splash',
+    initialLocation: '/login',
     refreshListenable: RouterRefreshStream(authNotifier.stream),
     redirect: (context, state) {
       final authState = ref.read(authViewModelProvider);
       final isSplash = state.matchedLocation == '/splash';
       final isLoggingIn = state.matchedLocation == '/login';
       final isLoggedIn = authState.user != null;
-      final isInitialized = authState.isInitialized;
 
-      if (!isInitialized) return null;
       if (isSplash) return isLoggedIn ? '/dashboard' : '/login';
       if (!isLoggedIn && !isLoggingIn) return '/login';
       if (isLoggedIn && isLoggingIn) return '/dashboard';

@@ -27,16 +27,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _loadSavedLoginPreferences() async {
-    final storage = ref.read(storageServiceProvider);
-    final remember = await storage.getRememberMe();
-    final savedEmail = await storage.getSavedEmail();
-    if (!mounted) return;
-    setState(() {
-      _rememberMe = remember;
-      if (remember && savedEmail != null && savedEmail.isNotEmpty) {
-        _emailController.text = savedEmail;
-      }
-    });
+    try {
+      final storage = ref.read(storageServiceProvider);
+      final remember = await storage.getRememberMe();
+      final savedEmail = await storage.getSavedEmail();
+      final savedPassword = await storage.getSavedPassword();
+      if (!mounted) return;
+      setState(() {
+        _rememberMe = remember;
+        if (remember) {
+          if (savedEmail != null && savedEmail.isNotEmpty) {
+            _emailController.text = savedEmail;
+          }
+          if (savedPassword != null && savedPassword.isNotEmpty) {
+            _passwordController.text = savedPassword;
+          }
+        }
+      });
+    } catch (e) {
+      debugPrint('Erro ao carregar credenciais salvas: $e');
+    }
   }
 
   @override
@@ -166,7 +176,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           validator: (v) => (v == null || v.length < 6) ? 'Senha obrigatória (mín. 6 caracteres)' : null,
                         ),
                         const SizedBox(height: 12),
-                        Row(
+                        Wrap(
+                          alignment: WrapAlignment.spaceBetween,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 8,
+                          runSpacing: 4,
                           children: [
                             InkWell(
                               borderRadius: BorderRadius.circular(4),
@@ -191,7 +205,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 ],
                               ),
                             ),
-                            const Spacer(),
                             TextButton(
                               onPressed: authState.isLoading ? null : () {},
                               child: const Text('Esqueceu a senha?'),

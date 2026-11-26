@@ -16,35 +16,74 @@ class StorageService {
   static const _serverIpKey = 'server_ip';
   static const _rememberMeKey = 'remember_me';
   static const _savedEmailKey = 'saved_email';
+  static const _savedPasswordKey = 'saved_password';
   static const _savedUserKey = 'saved_user';
 
   String? _memoryAccessToken;
   String? _memoryRefreshToken;
   String? _memoryUserJson;
 
+  Future<String?> _safeRead(String key) async {
+    try {
+      return await _storage.read(key: key);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _safeWrite(String key, String value) async {
+    try {
+      await _storage.write(key: key, value: value);
+    } catch (_) {}
+  }
+
+  Future<void> _safeDelete(String key) async {
+    try {
+      await _storage.delete(key: key);
+    } catch (_) {}
+  }
+
   /// Salva a preferência de manter o login salvo.
   Future<void> saveRememberMe(bool value) async {
-    await _storage.write(key: _rememberMeKey, value: value ? 'true' : 'false');
+    await _safeWrite(_rememberMeKey, value ? 'true' : 'false');
   }
 
   /// Recupera a preferência de manter o login salvo (padrão: true).
   Future<bool> getRememberMe() async {
-    final raw = await _storage.read(key: _rememberMeKey);
+    final raw = await _safeRead(_rememberMeKey);
     if (raw == null) return true;
     return raw == 'true';
   }
 
+  /// Salva e-mail e senha para preenchimento automático na tela de login.
+  Future<void> saveSavedCredentials({
+    required String email,
+    required String password,
+  }) async {
+    await _safeWrite(_savedEmailKey, email);
+    await _safeWrite(_savedPasswordKey, password);
+  }
+
   /// Salva o e-mail para preenchimento automático na tela de login.
   Future<void> saveSavedEmail(String email) async {
-    await _storage.write(key: _savedEmailKey, value: email);
+    await _safeWrite(_savedEmailKey, email);
   }
 
   /// Recupera o último e-mail salvo.
-  Future<String?> getSavedEmail() async => await _storage.read(key: _savedEmailKey);
+  Future<String?> getSavedEmail() async => await _safeRead(_savedEmailKey);
+
+  /// Recupera a última senha salva.
+  Future<String?> getSavedPassword() async => await _safeRead(_savedPasswordKey);
 
   /// Remove o e-mail salvo.
   Future<void> clearSavedEmail() async {
-    await _storage.delete(key: _savedEmailKey);
+    await _safeDelete(_savedEmailKey);
+  }
+
+  /// Remove e-mail e senha salvos.
+  Future<void> clearSavedCredentials() async {
+    await _safeDelete(_savedEmailKey);
+    await _safeDelete(_savedPasswordKey);
   }
 
   /// Salva os dados serializados do usuário autenticado.
@@ -52,9 +91,9 @@ class StorageService {
     _memoryUserJson = userJson;
     final shouldPersist = persist ?? await getRememberMe();
     if (shouldPersist) {
-      await _storage.write(key: _savedUserKey, value: userJson);
+      await _safeWrite(_savedUserKey, userJson);
     } else {
-      await _storage.delete(key: _savedUserKey);
+      await _safeDelete(_savedUserKey);
     }
   }
 
@@ -62,7 +101,7 @@ class StorageService {
   Future<String?> getUserJson() async {
     if (_memoryUserJson != null) return _memoryUserJson;
     if (!await getRememberMe()) return null;
-    _memoryUserJson = await _storage.read(key: _savedUserKey);
+    _memoryUserJson = await _safeRead(_savedUserKey);
     return _memoryUserJson;
   }
 
@@ -76,11 +115,11 @@ class StorageService {
     _memoryRefreshToken = refresh;
     final shouldPersist = persist ?? await getRememberMe();
     if (shouldPersist) {
-      await _storage.write(key: _accessTokenKey, value: access);
-      await _storage.write(key: _refreshTokenKey, value: refresh);
+      await _safeWrite(_accessTokenKey, access);
+      await _safeWrite(_refreshTokenKey, refresh);
     } else {
-      await _storage.delete(key: _accessTokenKey);
-      await _storage.delete(key: _refreshTokenKey);
+      await _safeDelete(_accessTokenKey);
+      await _safeDelete(_refreshTokenKey);
     }
   }
 
@@ -88,7 +127,7 @@ class StorageService {
   Future<String?> getAccessToken() async {
     if (_memoryAccessToken != null) return _memoryAccessToken;
     if (!await getRememberMe()) return null;
-    _memoryAccessToken = await _storage.read(key: _accessTokenKey);
+    _memoryAccessToken = await _safeRead(_accessTokenKey);
     return _memoryAccessToken;
   }
 
@@ -96,25 +135,25 @@ class StorageService {
   Future<String?> getRefreshToken() async {
     if (_memoryRefreshToken != null) return _memoryRefreshToken;
     if (!await getRememberMe()) return null;
-    _memoryRefreshToken = await _storage.read(key: _refreshTokenKey);
+    _memoryRefreshToken = await _safeRead(_refreshTokenKey);
     return _memoryRefreshToken;
   }
 
   /// Salva o IP do servidor.
   Future<void> saveServerIp(String ip) async {
-    await _storage.write(key: _serverIpKey, value: ip);
+    await _safeWrite(_serverIpKey, ip);
   }
 
   /// Recupera o IP do servidor.
-  Future<String?> getServerIp() async => await _storage.read(key: _serverIpKey);
+  Future<String?> getServerIp() async => await _safeRead(_serverIpKey);
 
   /// Remove todos os dados de sessão ativa.
   Future<void> clearSession() async {
     _memoryAccessToken = null;
     _memoryRefreshToken = null;
     _memoryUserJson = null;
-    await _storage.delete(key: _accessTokenKey);
-    await _storage.delete(key: _refreshTokenKey);
-    await _storage.delete(key: _savedUserKey);
+    await _safeDelete(_accessTokenKey);
+    await _safeDelete(_refreshTokenKey);
+    await _safeDelete(_savedUserKey);
   }
 }

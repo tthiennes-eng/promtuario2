@@ -178,10 +178,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.notifications_none),
+            tooltip: 'Notificações',
             onPressed: () => context.push('/dashboard/notifications'),
           ),
           const SizedBox(width: 8),
           _buildUserAvatar(context, user),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.redAccent),
+            tooltip: 'Sair / Trocar usuário',
+            onPressed: () => ref.read(authViewModelProvider.notifier).logout(),
+          ),
         ],
       ),
     );
