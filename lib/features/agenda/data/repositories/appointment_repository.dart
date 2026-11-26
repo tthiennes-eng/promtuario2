@@ -1,10 +1,7 @@
 import 'package:drift/drift.dart';
-import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
-import 'package:uuid/uuid.dart';
 import 'package:promt/core/network/api_client.dart';
 import 'package:promt/core/database/local_database.dart';
-import 'package:promt/core/utils/date_utils.dart';
 import 'package:promt/features/agenda/domain/entities/appointment.dart';
 import 'package:promt/features/agenda/domain/repositories/i_appointment_repository.dart';
 
@@ -134,20 +131,10 @@ class AppointmentRepository implements IAppointmentRepository {
   }
 
   Appointment _appointmentFromJson(Map<String, dynamic> json) {
-    return Appointment(
-      id: json['id']?.toString() ?? '',
-      patientId: json['patientId']?.toString() ?? '',
-      patientName: json['patientName']?.toString() ?? '',
-      doctorId: json['doctorId']?.toString() ?? '',
-      doctorName: json['doctorName']?.toString() ?? '',
-      startTime: SafeDateParser.parse(json['startTime']),
-      endTime: SafeDateParser.parse(json['endTime']),
-      status: AppointmentStatus.values.firstWhere((e) => e.name == json['status'], orElse: () => AppointmentStatus.scheduled),
-      clinicId: json['clinicId']?.toString() ?? '',
-    );
+    return Appointment.fromJson(json);
   }
 
-  Appointment _mapSchemaToEntity(dynamic row) {
+  Appointment _mapSchemaToEntity(AppointmentsLocalData row) {
     return Appointment(
       id: row.id,
       patientId: row.patientId,
@@ -170,8 +157,15 @@ class AppointmentRepository implements IAppointmentRepository {
   Map<String, dynamic> _mapEntityToApiJson(Appointment app) => {
     'id': app.id,
     'patientId': app.patientId,
+    'doctorId': app.doctorId,
     'clinicId': app.clinicId,
-    'startTime': app.startTime.toIso8601String(),
-    'endTime': app.endTime.toIso8601String(),
+    'startTime': app.startTime.toUtc().toIso8601String(),
+    'endTime': app.endTime.toUtc().toIso8601String(),
+    'procedureName': app.procedureName,
+    'notes': app.notes,
+    'studentId': app.studentId,
+    'studentName': app.studentName,
+    'professorId': app.professorId,
+    'professorName': app.professorName,
   };
 }

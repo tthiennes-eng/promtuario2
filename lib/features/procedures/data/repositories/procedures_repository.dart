@@ -33,10 +33,9 @@ class ProceduresRepository implements IProceduresRepository {
           .map((json) => Clinic.fromJson(Map<String, dynamic>.from(json)))
           .toList();
 
-      final dynamic db = _localDb;
       for (var clinic in clinics) {
-        await db
-            .into(db.clinicsLocal)
+        await _localDb
+            .into(_localDb.clinicsLocal)
             .insertOnConflictUpdate(
               drift_db.ClinicsLocalCompanion(
                 id: Value(clinic.id),
@@ -56,9 +55,8 @@ class ProceduresRepository implements IProceduresRepository {
       }
       return clinics;
     } catch (e) {
-      final dynamic db = _localDb;
-      final localClinics = await db.select(db.clinicsLocal).get();
-      return (localClinics as List)
+      final localClinics = await _localDb.select(_localDb.clinicsLocal).get();
+      return localClinics
           .map(
             (row) => Clinic(
               id: row.id,
@@ -67,6 +65,9 @@ class ProceduresRepository implements IProceduresRepository {
               location: row.location ?? '',
               capacity: row.capacity,
               isActive: row.isActive,
+              startHour: row.startHour,
+              endHour: row.endHour,
+              slotDurationMinutes: row.slotDurationMinutes,
             ),
           )
           .toList();

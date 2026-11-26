@@ -182,16 +182,40 @@ class TreatmentItemsLocal extends Table {
   TreatmentItemsLocal,
 ])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (migrator) => migrator.createAll(),
     onUpgrade: (migrator, from, to) async {
+      if (from < 5) {
+        // Limpa cache local antigo/incompatível de pacientes para recriar com o schema atual.
+        await migrator.deleteTable(patientsLocal.actualTableName);
+      }
       await migrator.createAll();
+    },
+    beforeOpen: (details) async {
+      final migrator = createMigrator();
+      for (final table in allTables) {
+        final rows = await customSelect(
+          'PRAGMA table_info("${table.actualTableName}")',
+        ).get();
+        if (rows.isEmpty) {
+          await migrator.createTable(table);
+          continue;
+        }
+        final existingColumns = rows
+            .map((row) => row.read<String>('name'))
+            .toSet();
+        final expectedColumns = table.$columns.map((c) => c.$name).toSet();
+        if (!existingColumns.containsAll(expectedColumns)) {
+          await migrator.deleteTable(table.actualTableName);
+          await migrator.createTable(table);
+        }
+      }
     },
   );
 }

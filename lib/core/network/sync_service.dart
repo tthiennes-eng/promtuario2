@@ -49,15 +49,14 @@ class SyncService {
   Future<void> _syncAttachments() async {
     try {
       final query = _db.select(_db.attachmentsLocal)
-        ..where((t) => (t as dynamic).isSynced.equals(false));
+        ..where((t) => t.isSynced.equals(false));
       final pending = await query.get();
       
       final repository = _ref.read(attachmentRepositoryProvider);
       for (final attachment in pending) {
-        final id = (attachment as dynamic).id;
-        final sent = await repository.syncPendingAttachment(id);
+        final sent = await repository.syncPendingAttachment(attachment.id);
         if (sent) {
-          await (_db.update(_db.attachmentsLocal)..where((t) => (t as dynamic).id.equals(id)))
+          await (_db.update(_db.attachmentsLocal)..where((t) => t.id.equals(attachment.id)))
               .write(const AttachmentsLocalCompanion(isSynced: Value(true)));
         }
       }
@@ -69,15 +68,14 @@ class SyncService {
   Future<void> _syncAuditLogs() async {
     try {
       final query = _db.select(_db.auditLocal)
-        ..where((t) => (t as dynamic).isSynced.equals(false));
+        ..where((t) => t.isSynced.equals(false));
       final pending = await query.get();
       
       final repository = _ref.read(auditRepositoryProvider);
       for (final log in pending) {
-        final id = (log as dynamic).id;
-        final sent = await repository.syncPendingAccess((log as dynamic).resourceId, (log as dynamic).action);
+        final sent = await repository.syncPendingAccess(log.resourceId, log.action);
         if (sent) {
-          await (_db.delete(_db.auditLocal)..where((t) => (t as dynamic).id.equals(id))).go();
+          await (_db.delete(_db.auditLocal)..where((t) => t.id.equals(log.id))).go();
         }
       }
     } catch (e) {

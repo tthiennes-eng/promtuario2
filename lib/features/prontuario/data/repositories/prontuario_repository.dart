@@ -31,14 +31,13 @@ class ProntuarioRepository implements IProntuarioRepository {
 
   @override
   Future<Odontogram> getOdontogram(String patientId) async {
-    final dynamic db = _localDb;
     try {
-      final local = await (db.select(db.odontogramLocal)
-            ..where((t) => (t as dynamic).patientId.equals(patientId)))
+      final local = await (_localDb.select(_localDb.odontogramLocal)
+            ..where((t) => t.patientId.equals(patientId)))
           .getSingleOrNull();
 
       if (local != null) {
-        return Odontogram.fromJson(jsonDecode((local as dynamic).dataJson));
+        return Odontogram.fromJson(jsonDecode(local.dataJson));
       }
     } catch (_) {}
 
@@ -69,12 +68,11 @@ class ProntuarioRepository implements IProntuarioRepository {
     await _saveLocalOdontogram(odontogram, false);
 
     try {
-      final dynamic db = _localDb;
-      final patient = await (db.select(db.patientsLocal)
-            ..where((t) => (t as dynamic).id.equals(odontogram.patientId)))
+      final patient = await (_localDb.select(_localDb.patientsLocal)
+            ..where((t) => t.id.equals(odontogram.patientId)))
           .getSingleOrNull();
 
-      if (patient != null && (patient as dynamic).isSynced) {
+      if (patient != null && patient.isSynced) {
         await _sendOdontogramToApi(odontogram);
         await _saveLocalOdontogram(odontogram, true);
       }
@@ -97,8 +95,7 @@ class ProntuarioRepository implements IProntuarioRepository {
   }
 
   Future<void> _saveLocalOdontogram(Odontogram odontogram, bool isSynced) async {
-    final dynamic db = _localDb;
-    await db.into(db.odontogramLocal).insertOnConflictUpdate(
+    await _localDb.into(_localDb.odontogramLocal).insertOnConflictUpdate(
       drift_db.OdontogramLocalCompanion(
         patientId: Value(odontogram.patientId),
         dataJson: Value(jsonEncode({
@@ -121,25 +118,24 @@ class ProntuarioRepository implements IProntuarioRepository {
 
   @override
   Future<void> syncPendingData() async {
-    final dynamic db = _localDb;
     try {
-      final pendingOdontograms = await (db.select(db.odontogramLocal)
-            ..where((t) => (t as dynamic).isSynced.equals(false)))
+      final pendingOdontograms = await (_localDb.select(_localDb.odontogramLocal)
+            ..where((t) => t.isSynced.equals(false)))
           .get();
 
-      for (final row in (pendingOdontograms as List)) {
+      for (final row in pendingOdontograms) {
         try {
-          final patient = await (db.select(db.patientsLocal)
-                ..where((t) => (t as dynamic).id.equals((row as dynamic).patientId)))
+          final patient = await (_localDb.select(_localDb.patientsLocal)
+                ..where((t) => t.id.equals(row.patientId)))
               .getSingleOrNull();
 
-          if (patient != null && (patient as dynamic).isSynced) {
-            final odontogram = Odontogram.fromJson(jsonDecode((row as dynamic).dataJson));
+          if (patient != null && patient.isSynced) {
+            final odontogram = Odontogram.fromJson(jsonDecode(row.dataJson));
             await _sendOdontogramToApi(odontogram);
             
-            await (db.update(db.odontogramLocal)
-                  ..where((t) => (t as dynamic).patientId.equals((row as dynamic).patientId)))
-                .write(drift_db.OdontogramLocalCompanion(isSynced: Value(true))); // Removido const
+            await (_localDb.update(_localDb.odontogramLocal)
+                  ..where((t) => t.patientId.equals(row.patientId)))
+                .write(const drift_db.OdontogramLocalCompanion(isSynced: Value(true)));
           }
         } catch (_) {}
       }
@@ -220,13 +216,12 @@ class ProntuarioRepository implements IProntuarioRepository {
       }
     } catch (_) {}
 
-    final dynamic db = _localDb;
-    final local = await (db.select(db.anamneseLocal)
-          ..where((t) => (t as dynamic).patientId.equals(patientId)))
+    final local = await (_localDb.select(_localDb.anamneseLocal)
+          ..where((t) => t.patientId.equals(patientId)))
         .getSingleOrNull();
     if (local == null) return [];
     try {
-      return [Anamnese.fromJson(jsonDecode((local as dynamic).responsesJson))];
+      return [Anamnese.fromJson(jsonDecode(local.responsesJson))];
     } catch (_) {
       return [];
     }
@@ -284,12 +279,11 @@ class ProntuarioRepository implements IProntuarioRepository {
 
   @override
   Future<Map<String, dynamic>?> getEndodontia(String patientId) async {
-    final dynamic db = _localDb;
     try {
-      final local = await (db.select(db.odontogramLocal)
-            ..where((t) => (t as dynamic).patientId.equals('endo_$patientId')))
+      final local = await (_localDb.select(_localDb.odontogramLocal)
+            ..where((t) => t.patientId.equals('endo_$patientId')))
           .getSingleOrNull();
-      if (local != null) return jsonDecode((local as dynamic).dataJson);
+      if (local != null) return jsonDecode(local.dataJson);
     } catch (_) {}
 
     try {
@@ -314,12 +308,11 @@ class ProntuarioRepository implements IProntuarioRepository {
 
   @override
   Future<Map<String, dynamic>?> getPeriograma(String patientId) async {
-    final dynamic db = _localDb;
     try {
-      final local = await (db.select(db.odontogramLocal)
-            ..where((t) => (t as dynamic).patientId.equals('peri_$patientId')))
+      final local = await (_localDb.select(_localDb.odontogramLocal)
+            ..where((t) => t.patientId.equals('peri_$patientId')))
           .getSingleOrNull();
-      if (local != null) return jsonDecode((local as dynamic).dataJson);
+      if (local != null) return jsonDecode(local.dataJson);
     } catch (_) {}
 
     try {
@@ -342,8 +335,7 @@ class ProntuarioRepository implements IProntuarioRepository {
   }
 
   Future<void> _saveLocalPeri(String patientId, Map<String, dynamic> data) async {
-    final dynamic db = _localDb;
-    await db.into(db.odontogramLocal).insertOnConflictUpdate(
+    await _localDb.into(_localDb.odontogramLocal).insertOnConflictUpdate(
       drift_db.OdontogramLocalCompanion(
         patientId: Value('peri_$patientId'),
         dataJson: Value(jsonEncode(data)),
@@ -354,8 +346,7 @@ class ProntuarioRepository implements IProntuarioRepository {
   }
 
   Future<void> _saveLocalEndo(String patientId, Map<String, dynamic> data) async {
-    final dynamic db = _localDb;
-    await db.into(db.odontogramLocal).insertOnConflictUpdate(
+    await _localDb.into(_localDb.odontogramLocal).insertOnConflictUpdate(
       drift_db.OdontogramLocalCompanion(
         patientId: Value('endo_$patientId'),
         dataJson: Value(jsonEncode(data)),

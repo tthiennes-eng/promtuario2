@@ -60,7 +60,6 @@ class WaitListScreen extends ConsumerWidget {
   }
 
   void _showAddEntryDialog(BuildContext context, WidgetRef ref) {
-    final patientsAsync = ref.read(patientViewModelProvider);
     String? selectedPatientId;
     String? selectedPatientName;
     String selectedPriority = 'Normal';
@@ -69,66 +68,84 @@ class WaitListScreen extends ConsumerWidget {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Adicionar à Lista de Espera'),
-        content: StatefulBuilder(
-          builder: (context, setState) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              patientsAsync.when(
-                data: (patients) => DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(labelText: 'Paciente'),
-                  items: patients.map((p) => DropdownMenuItem(value: p.id, child: Text(p.fullName))).toList(),
-                  onChanged: (val) {
-                    selectedPatientId = val;
-                    selectedPatientName = patients.firstWhere((p) => p.id == val).fullName;
-                  },
-                ),
-                loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text('Erro ao carregar pacientes'),
+      builder: (context) => Consumer(
+        builder: (context, dialogRef, _) {
+          final livePatientsAsync = dialogRef.watch(patientViewModelProvider);
+          return AlertDialog(
+            title: const Text('Adicionar à Lista de Espera'),
+            content: StatefulBuilder(
+              builder: (context, setState) => Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  livePatientsAsync.when(
+                    data: (patients) => DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(labelText: 'Paciente'),
+                      items: patients.map((p) => DropdownMenuItem(value: p.id, child: Text(p.fullName))).toList(),
+                      onChanged: (val) {
+                        selectedPatientId = val;
+                        selectedPatientName = patients.firstWhere((p) => p.id == val).fullName;
+                      },
+                    ),
+                    loading: () => const LinearProgressIndicator(),
+                    error: (err, _) => Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Erro ao carregar pacientes: $err',
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => dialogRef.read(patientViewModelProvider.notifier).refresh(),
+                          child: const Text('Tentar novamente'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: selectedPriority,
+                    decoration: const InputDecoration(labelText: 'Prioridade'),
+                    items: ['Normal', 'Prioritário', 'Urgente'].map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
+                    onChanged: (val) => setState(() => selectedPriority = val!),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    decoration: const InputDecoration(labelText: 'Especialidade Necessária'),
+                    onChanged: (val) => specialty = val,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: obsController,
+                    decoration: const InputDecoration(labelText: 'Observações'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: selectedPriority,
-                decoration: const InputDecoration(labelText: 'Prioridade'),
-                items: ['Normal', 'Prioritário', 'Urgente'].map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
-                onChanged: (val) => setState(() => selectedPriority = val!),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Especialidade Necessária'),
-                onChanged: (val) => specialty = val,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: obsController,
-                decoration: const InputDecoration(labelText: 'Observações'),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+              FilledButton(
+                onPressed: () {
+                  if (selectedPatientId != null) {
+                    final entry = WaitListEntry(
+                      id: const Uuid().v4(),
+                      patientId: selectedPatientId!,
+                      patientName: selectedPatientName!,
+                      clinicId: clinicId,
+                      specialty: specialty,
+                      priority: selectedPriority,
+                      observation: obsController.text,
+                      createdAt: DateTime.now(),
+                    );
+                    ref.read(waitListViewModelProvider(clinicId).notifier).addEntry(entry);
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text('Confirmar'),
               ),
             ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          FilledButton(
-            onPressed: () {
-              if (selectedPatientId != null) {
-                final entry = WaitListEntry(
-                  id: const Uuid().v4(),
-                  patientId: selectedPatientId!,
-                  patientName: selectedPatientName!,
-                  clinicId: clinicId,
-                  specialty: specialty,
-                  priority: selectedPriority,
-                  observation: obsController.text,
-                  createdAt: DateTime.now(),
-                );
-                ref.read(waitListViewModelProvider(clinicId).notifier).addEntry(entry);
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Confirmar'),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

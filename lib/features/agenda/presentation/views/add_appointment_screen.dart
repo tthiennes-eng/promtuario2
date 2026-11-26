@@ -91,6 +91,14 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
         _selectedClinicId = _deterministicUuid(widget.initialClinic!.name);
       }
     }
+
+    Future.microtask(() {
+      if (!mounted) return;
+      final current = ref.read(patientViewModelProvider);
+      if (current.hasError || (current.valueOrNull?.isEmpty ?? true)) {
+        ref.read(patientViewModelProvider.notifier).refresh();
+      }
+    });
   }
 
   String _deterministicUuid(String value) {
@@ -260,13 +268,33 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                             },
                       ),
                       loading: () => const LinearProgressIndicator(),
-                      error: (_, __) =>
-                          const Text('Erro ao carregar pacientes'),
+                      error: (err, _) => Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Erro ao carregar pacientes: $err',
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                          ),
+                          TextButton.icon(
+                            onPressed: () => ref
+                                .read(patientViewModelProvider.notifier)
+                                .refresh(),
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Tentar novamente'),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   IconButton.filled(
-                    onPressed: () => context.push('/dashboard/patients/add'),
+                    onPressed: () async {
+                      await context.push('/dashboard/patients/add');
+                      if (mounted) {
+                        ref.read(patientViewModelProvider.notifier).refresh();
+                      }
+                    },
                     icon: const Icon(Icons.person_add),
                     tooltip: 'Novo Paciente',
                   ),
