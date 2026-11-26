@@ -5,7 +5,6 @@ import 'package:promt/core/database/local_database.dart';
 import 'package:promt/core/providers/providers.dart';
 import 'package:drift/drift.dart';
 
-/// Coordena a sincronização de dados pendentes no banco local para o servidor.
 class SyncService {
   SyncService(this._db, this._ref);
 
@@ -25,7 +24,7 @@ class SyncService {
     if (_isSynchronizing) return;
     _isSynchronizing = true;
     try {
-      _logger.info('Iniciando sincronização...');
+      _logger.info('Iniciando sincronização completa...');
       await _syncClinics();
       await _syncPatients();
       await _syncAppointments();
@@ -33,6 +32,9 @@ class SyncService {
       await _syncProntuario();
       await _syncAttachments();
       await _syncAuditLogs();
+      _logger.info('Sincronização concluída.');
+    } catch (e) {
+      _logger.severe('Erro crítico durante a sincronização: $e');
     } finally {
       _isSynchronizing = false;
     }
@@ -46,14 +48,17 @@ class SyncService {
 
   Future<void> _syncAttachments() async {
     try {
-      final pending = await (_db.select(_db.attachmentsLocal)..where((t) => t.isSynced.equals(false))).get();
-      final repository = _ref.read(attachmentRepositoryProvider);
+      final query = _db.select(_db.attachmentsLocal)
+        ..where((t) => (t as dynamic).isSynced.equals(false));
+      final pending = await query.get();
       
+      final repository = _ref.read(attachmentRepositoryProvider);
       for (final attachment in pending) {
-        final sent = await repository.syncPendingAttachment(attachment.id);
+        final id = (attachment as dynamic).id;
+        final sent = await repository.syncPendingAttachment(id);
         if (sent) {
-          await (_db.update(_db.attachmentsLocal)..where((t) => t.id.equals(attachment.id)))
-              .write(AttachmentsLocalCompanion(isSynced: Value(true))); // CORRIGIDO: Removido const
+          await (_db.update(_db.attachmentsLocal)..where((t) => (t as dynamic).id.equals(id)))
+              .write(const AttachmentsLocalCompanion(isSynced: Value(true)));
         }
       }
     } catch (e) {
@@ -63,12 +68,16 @@ class SyncService {
 
   Future<void> _syncAuditLogs() async {
     try {
-      final pending = await (_db.select(_db.auditLocal)..where((t) => t.isSynced.equals(false))).get();
+      final query = _db.select(_db.auditLocal)
+        ..where((t) => (t as dynamic).isSynced.equals(false));
+      final pending = await query.get();
+      
       final repository = _ref.read(auditRepositoryProvider);
       for (final log in pending) {
-        final sent = await repository.syncPendingAccess(log.resourceId, log.action);
+        final id = (log as dynamic).id;
+        final sent = await repository.syncPendingAccess((log as dynamic).resourceId, (log as dynamic).action);
         if (sent) {
-          await (_db.delete(_db.auditLocal)..where((t) => t.id.equals(log.id))).go();
+          await (_db.delete(_db.auditLocal)..where((t) => (t as dynamic).id.equals(id))).go();
         }
       }
     } catch (e) {
@@ -77,10 +86,10 @@ class SyncService {
   }
 
   Future<void> _run(String scope, Future<void> Function() action) async {
-    try {
-      await action();
-    } catch (e) {
-      _logger.warning('Falha em $scope: $e');
+    try { 
+      await action(); 
+    } catch (e) { 
+      _logger.warning('Falha em $scope: $e'); 
     }
   }
 

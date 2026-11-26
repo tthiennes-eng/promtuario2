@@ -1,7 +1,5 @@
 import '../../domain/entities/user.dart';
 
-/// Modelo de usuário simplificado sem dependência de geração de código (Freezed/JSON)
-/// para destravar o ambiente de compilação no Windows.
 class UserModel {
   final String id;
   final String name;
