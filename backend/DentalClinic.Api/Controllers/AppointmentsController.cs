@@ -41,6 +41,21 @@ public class AppointmentsController : ControllerBase
         _hubContext = hubContext;
     }
 
+    private static readonly Dictionary<Guid, string> LegacyDeterministicClinicNames = new()
+    {
+        [Guid.Parse("d502762e-ea17-58c8-a6f1-c6411b2fc980")] = "Clinica I",
+        [Guid.Parse("60a9416e-1abd-57d5-9f47-fa96c248e9b8")] = "Clinica II",
+        [Guid.Parse("290d2cd7-1c89-573b-a963-22a7ab246a4d")] = "Clinica III",
+        [Guid.Parse("6b26aa0d-aa35-5ce6-af4b-425473ad9cae")] = "Clinica IV",
+        [Guid.Parse("d4d1d4be-420e-5e7e-aa97-3e0f3a10dbfd")] = "Clinica V",
+        [Guid.Parse("5b634cc2-2e86-5dd6-8087-65083457185a")] = "Clinica Integrada Infantil",
+        [Guid.Parse("4c63ead2-3450-5e19-abe9-d4bfd2cbc048")] = "Clinica de Emergência",
+        [Guid.Parse("5c2d2861-af19-5b42-960b-e733383c2005")] = "Clinica Integrada Adulto I",
+        [Guid.Parse("c51bd540-63b7-55ac-a5b3-3dff10456bc7")] = "Clinica Integrada Adulto II",
+        [Guid.Parse("a1c3ab4d-0cc3-57c4-8959-5104e5265ec1")] = "Clinica de DTM",
+        [Guid.Parse("c4a77fa1-57e0-5685-b28c-a0ef2193f222")] = "Clinica de Odontopediatria"
+    };
+
     private static string NormalizeName(string? name)
     {
         if (string.IsNullOrWhiteSpace(name)) return string.Empty;
@@ -94,13 +109,19 @@ public class AppointmentsController : ControllerBase
         var clinicName = string.IsNullOrWhiteSpace(request.ClinicName)
             ? null
             : request.ClinicName.Trim();
+        if (clinicName == null && LegacyDeterministicClinicNames.TryGetValue(request.ClinicId, out var mappedName))
+        {
+            clinicName = mappedName;
+        }
         var clinic = await _clinicRepository.GetByIdAsync(request.ClinicId);
 
-        if (clinic == null && clinicName != null)
+        if ((clinic == null || string.Equals(clinic.Name.Trim(), "Clínica selecionada", StringComparison.OrdinalIgnoreCase)) &&
+            clinicName != null)
         {
             var normalizedTarget = NormalizeName(clinicName);
-            clinic = (await _clinicRepository.GetAllAsync()).FirstOrDefault(c =>
+            var matched = (await _clinicRepository.GetAllAsync()).FirstOrDefault(c =>
                 NormalizeName(c.Name) == normalizedTarget);
+            if (matched != null) clinic = matched;
         }
 
         if (clinic == null)

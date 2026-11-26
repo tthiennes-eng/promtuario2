@@ -205,7 +205,17 @@ class AppointmentRepository implements IAppointmentRepository {
       }
     }
 
-    for (var app in appointments) {
+    // Remove eventuais cópias locais antigas (ex.: salvas com clinicId legado)
+    // do mesmo paciente e horário quando o registro oficial chega do servidor.
+    for (final app in appointments) {
+      await (_localDb.delete(_localDb.appointmentsLocal)
+            ..where(
+              (t) =>
+                  t.id.isNotValue(app.id) &
+                  t.patientId.equals(app.patientId) &
+                  t.startTime.equals(app.startTime),
+            ))
+          .go();
       await _saveLocal(app, true);
     }
   }

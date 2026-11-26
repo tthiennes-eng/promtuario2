@@ -520,6 +520,94 @@ using (var scope = app.Services.CreateScope())
         }
         await context.SaveChangesAsync();
 
+        // Migra agendamentos/registros vinculados a IDs legados (UUIDv5 determinístico do app)
+        // ou clínicas-fantasma ("Clínica selecionada") para o ID real da clínica correspondente.
+        try
+        {
+            var legacyDeterministicClinics = new Dictionary<Guid, string>
+            {
+                [Guid.Parse("d502762e-ea17-58c8-a6f1-c6411b2fc980")] = "Clinica I",
+                [Guid.Parse("60a9416e-1abd-57d5-9f47-fa96c248e9b8")] = "Clinica II",
+                [Guid.Parse("290d2cd7-1c89-573b-a963-22a7ab246a4d")] = "Clinica III",
+                [Guid.Parse("6b26aa0d-aa35-5ce6-af4b-425473ad9cae")] = "Clinica IV",
+                [Guid.Parse("d4d1d4be-420e-5e7e-aa97-3e0f3a10dbfd")] = "Clinica V",
+                [Guid.Parse("5b634cc2-2e86-5dd6-8087-65083457185a")] = "Clinica Integrada Infantil",
+                [Guid.Parse("4c63ead2-3450-5e19-abe9-d4bfd2cbc048")] = "Clinica de Emergência",
+                [Guid.Parse("5c2d2861-af19-5b42-960b-e733383c2005")] = "Clinica Integrada Adulto I",
+                [Guid.Parse("c51bd540-63b7-55ac-a5b3-3dff10456bc7")] = "Clinica Integrada Adulto II",
+                [Guid.Parse("a1c3ab4d-0cc3-57c4-8959-5104e5265ec1")] = "Clinica de DTM",
+                [Guid.Parse("c4a77fa1-57e0-5685-b28c-a0ef2193f222")] = "Clinica de Odontopediatria"
+            };
+
+            var canonicalClinics = await context.Clinics.AsNoTracking().ToListAsync();
+            var conn = context.Database.GetDbConnection();
+            if (conn.State != System.Data.ConnectionState.Open)
+            {
+                await conn.OpenAsync();
+            }
+
+            var refCols = new List<(string TableName, string ColumnName)>();
+            await using (var metaCmd = conn.CreateCommand())
+            {
+                metaCmd.CommandText = @"
+                    SELECT DISTINCT table_name, column_name
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public'
+                      AND table_name <> 'clinicas'
+                      AND data_type = 'uuid'
+                      AND lower(column_name) IN ('clinica_id', 'clinicaid', 'clinic_id', 'clinicid');";
+                await using var reader = await metaCmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    refCols.Add((reader.GetString(0), reader.GetString(1)));
+                }
+            }
+
+            foreach (var (legacyId, targetName) in legacyDeterministicClinics)
+            {
+                var targetKey = NormalizeClinicName(targetName);
+                var canonical = canonicalClinics.FirstOrDefault(c =>
+                    c.Id != legacyId && NormalizeClinicName(c.Name) == targetKey);
+                if (canonical == null) continue;
+
+                var movedRows = 0;
+                foreach (var (tbl, col) in refCols)
+                {
+                    await using var updCmd = conn.CreateCommand();
+                    var pCanonical = updCmd.CreateParameter();
+                    pCanonical.ParameterName = "@canonical";
+                    pCanonical.Value = canonical.Id;
+                    updCmd.Parameters.Add(pCanonical);
+                    var pLegacy = updCmd.CreateParameter();
+                    pLegacy.ParameterName = "@legacy";
+                    pLegacy.Value = legacyId;
+                    updCmd.Parameters.Add(pLegacy);
+
+                    var qTbl = "\"" + tbl.Replace("\"", "\"\"") + "\"";
+                    var qCol = "\"" + col.Replace("\"", "\"\"") + "\"";
+                    updCmd.CommandText = $"UPDATE \"public\".{qTbl} SET {qCol} = @canonical WHERE {qCol} = @legacy;";
+                    movedRows += await updCmd.ExecuteNonQueryAsync();
+                }
+
+                await using var delCmd = conn.CreateCommand();
+                var pDel = delCmd.CreateParameter();
+                pDel.ParameterName = "@legacy";
+                pDel.Value = legacyId;
+                delCmd.Parameters.Add(pDel);
+                delCmd.CommandText = "DELETE FROM \"public\".\"clinicas\" WHERE \"id\" = @legacy;";
+                var deletedClinics = await delCmd.ExecuteNonQueryAsync();
+
+                if (movedRows > 0 || deletedClinics > 0)
+                {
+                    Console.WriteLine($">>> Migrados {movedRows} registro(s) do ID legado {legacyId} para {canonical.Name} ({canonical.Id}).");
+                }
+            }
+        }
+        catch (Exception legacyClinicEx)
+        {
+            Console.WriteLine($">>> AVISO ao migrar clínicas legadas: {legacyClinicEx.Message}");
+        }
+
         var adminEmail = "admin@odontoclinica.edu.br";
         // Cria usuário sem usar Address para evitar erro de mapeamento
         var user = await context.Users.FirstOrDefaultAsync(u => u.EmailAddress.Value == adminEmail);
