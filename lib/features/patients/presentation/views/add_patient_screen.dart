@@ -139,8 +139,9 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
         }
       } catch (e) {
         if (mounted) {
+          final msg = e.toString().replaceFirst('Exception: ', '');
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.red),
+            SnackBar(content: Text('Erro: $msg'), backgroundColor: Colors.red),
           );
         }
       } finally {

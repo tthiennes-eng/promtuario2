@@ -84,6 +84,29 @@ public class ApplicationDbContext : DbContext
             }
         }
 
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            if (entry.State != EntityState.Added && entry.State != EntityState.Modified)
+            {
+                continue;
+            }
+
+            foreach (var property in entry.Properties)
+            {
+                if (property.CurrentValue is DateTime dt)
+                {
+                    if (dt.Kind == DateTimeKind.Unspecified)
+                    {
+                        property.CurrentValue = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
+                    }
+                    else if (dt.Kind == DateTimeKind.Local)
+                    {
+                        property.CurrentValue = dt.ToUniversalTime();
+                    }
+                }
+            }
+        }
+
         return base.SaveChangesAsync(cancellationToken);
     }
 }

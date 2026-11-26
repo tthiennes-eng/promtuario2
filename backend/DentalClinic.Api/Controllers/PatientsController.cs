@@ -67,14 +67,35 @@ public class PatientsController : ControllerBase
             // Notifica em tempo real todos os terminais conectados na rede
             // local para que a lista de pacientes seja atualizada sem
             // depender de o usuário reabrir a tela manualmente.
-            await _hubContext.Clients.All.SendAsync("PatientCreated", patient);
+            try
+            {
+                await _hubContext.Clients.All.SendAsync("PatientCreated", patient);
+            }
+            catch (Exception hubEx)
+            {
+                _logger.LogWarning(hubEx, "Paciente {PatientId} criado, mas falhou a notificação SignalR.", patient.Id);
+            }
 
             return CreatedAtAction(nameof(GetById), new { id = patient.Id }, patient);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao criar paciente.");
-            return BadRequest(new { message = ex.Message });
+            var root = ex;
+            while (root.InnerException != null)
+            {
+                root = root.InnerException;
+            }
+
+            _logger.LogError(ex, "Erro ao criar paciente: {RootMessage}", root.Message);
+
+            var rootMsg = root.Message;
+            if (rootMsg.Contains("23505", StringComparison.OrdinalIgnoreCase) &&
+                rootMsg.Contains("cpf", StringComparison.OrdinalIgnoreCase))
+            {
+                return Conflict(new { message = "Já existe um paciente cadastrado com este CPF." });
+            }
+
+            return BadRequest(new { message = rootMsg });
         }
     }
 

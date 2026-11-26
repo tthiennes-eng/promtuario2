@@ -109,6 +109,7 @@ class PatientRepository implements IPatientRepository {
         data: _mapEntityToJson(patientWithId),
       );
     } on DioException catch (e) {
+      await _deleteLocalPatientData(id);
       final data = e.response?.data;
       String? message;
       if (data is Map) {
@@ -214,6 +215,18 @@ class PatientRepository implements IPatientRepository {
   }
 
   Map<String, dynamic> _mapEntityToJson(entity.Patient patient) {
+    final birthDateUtc = DateTime.utc(
+      patient.birthDate.year,
+      patient.birthDate.month,
+      patient.birthDate.day,
+    );
+    final addr = patient.address;
+    final hasAddress = addr != null &&
+        (addr.street.isNotEmpty ||
+            addr.number.isNotEmpty ||
+            addr.neighborhood.isNotEmpty ||
+            addr.city.isNotEmpty ||
+            addr.zipCode.isNotEmpty);
     return {
       'Id': patient.id,
       'FullName': patient.fullName,
@@ -222,11 +235,21 @@ class PatientRepository implements IPatientRepository {
       'SusNumber': patient.susNumber,
       'Email': patient.email,
       'Phone': patient.phone,
-      'BirthDate': patient.birthDate.toIso8601String(),
+      'BirthDate': birthDateUtc.toIso8601String(),
       'Gender': patient.gender,
+      if (hasAddress)
+        'Address': {
+          'Street': addr.street,
+          'Number': addr.number,
+          'Complement': addr.complement,
+          'Neighborhood': addr.neighborhood,
+          'City': addr.city,
+          'State': addr.state,
+          'ZipCode': addr.zipCode,
+        },
       'LgpdConsent': patient.lgpdConsent,
       'IsActive': true,
-      'CreatedAt': patient.createdAt.toIso8601String(),
+      'CreatedAt': patient.createdAt.toUtc().toIso8601String(),
     };
   }
 

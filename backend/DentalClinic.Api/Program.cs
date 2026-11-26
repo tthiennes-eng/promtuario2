@@ -178,7 +178,17 @@ using (var scope = app.Services.CreateScope())
             -- paciente selecionado inexistente no servidor
             ALTER TABLE IF EXISTS pacientes
                 ALTER COLUMN email DROP NOT NULL,
-                ALTER COLUMN telefone DROP NOT NULL;
+                ALTER COLUMN telefone DROP NOT NULL,
+                ALTER COLUMN sexo DROP NOT NULL,
+                ALTER COLUMN nome_social DROP NOT NULL,
+                ALTER COLUMN numero_sus DROP NOT NULL,
+                ALTER COLUMN endereco_rua DROP NOT NULL,
+                ALTER COLUMN endereco_numero DROP NOT NULL,
+                ALTER COLUMN endereco_complemento DROP NOT NULL,
+                ALTER COLUMN endereco_bairro DROP NOT NULL,
+                ALTER COLUMN endereco_cidade DROP NOT NULL,
+                ALTER COLUMN endereco_estado DROP NOT NULL,
+                ALTER COLUMN endereco_cep DROP NOT NULL;
 
             INSERT INTO ""__EFMigrationsHistory"" (""MigrationId"", ""ProductVersion"")
             SELECT migration_id, '9.0.0'
