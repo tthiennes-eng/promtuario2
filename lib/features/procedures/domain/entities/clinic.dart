@@ -90,4 +90,59 @@ class Clinic {
     'slotDurationMinutes': slotDurationMinutes,
     'metadata': metadata,
   };
+
+  static const Map<String, int> _romanOrder = {
+    'i': 1,
+    'ii': 2,
+    'iii': 3,
+    'iv': 4,
+    'v': 5,
+    'vi': 6,
+    'vii': 7,
+    'viii': 8,
+    'ix': 9,
+    'x': 10,
+  };
+
+  static final RegExp _numberedClinicPattern = RegExp(
+    r'^clinica\s+(i|ii|iii|iv|v|vi|vii|viii|ix|x|\d+)$',
+  );
+
+  static String _normalizeName(String name) {
+    return name
+        .trim()
+        .toLowerCase()
+        .replaceAll('í', 'i')
+        .replaceAll('ì', 'i')
+        .replaceAll('î', 'i')
+        .replaceAll(RegExp(r'\s+'), ' ');
+  }
+
+  static int? _sequenceNumber(String name) {
+    final normalized = _normalizeName(name);
+    final match = _numberedClinicPattern.firstMatch(normalized);
+    if (match == null) return null;
+    final token = match.group(1)!;
+    return _romanOrder[token] ?? int.tryParse(token);
+  }
+
+  static int compareNames(String a, String b) {
+    final seqA = _sequenceNumber(a);
+    final seqB = _sequenceNumber(b);
+    if (seqA != null && seqB != null) {
+      final diff = seqA.compareTo(seqB);
+      if (diff != 0) return diff;
+    } else if (seqA != null) {
+      return -1;
+    } else if (seqB != null) {
+      return 1;
+    }
+    return _normalizeName(a).compareTo(_normalizeName(b));
+  }
+
+  static List<Clinic> sortBySequence(Iterable<Clinic> clinics) {
+    final list = List<Clinic>.from(clinics);
+    list.sort((a, b) => compareNames(a.name, b.name));
+    return list;
+  }
 }

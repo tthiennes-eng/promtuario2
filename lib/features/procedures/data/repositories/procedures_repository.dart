@@ -28,10 +28,11 @@ class ProceduresRepository implements IProceduresRepository {
                       ? rawData['items'] as List<dynamic>
                       : const <dynamic>[])
                 : const <dynamic>[]);
-      final clinics = data
-          .whereType<Map>()
-          .map((json) => Clinic.fromJson(Map<String, dynamic>.from(json)))
-          .toList();
+      final clinics = Clinic.sortBySequence(
+        data
+            .whereType<Map>()
+            .map((json) => Clinic.fromJson(Map<String, dynamic>.from(json))),
+      );
 
       for (var clinic in clinics) {
         await _localDb
@@ -56,21 +57,21 @@ class ProceduresRepository implements IProceduresRepository {
       return clinics;
     } catch (e) {
       final localClinics = await _localDb.select(_localDb.clinicsLocal).get();
-      return localClinics
-          .map(
-            (row) => Clinic(
-              id: row.id,
-              name: row.name,
-              description: row.description ?? '',
-              location: row.location ?? '',
-              capacity: row.capacity,
-              isActive: row.isActive,
-              startHour: row.startHour,
-              endHour: row.endHour,
-              slotDurationMinutes: row.slotDurationMinutes,
-            ),
-          )
-          .toList();
+      return Clinic.sortBySequence(
+        localClinics.map(
+          (row) => Clinic(
+            id: row.id,
+            name: row.name,
+            description: row.description ?? '',
+            location: row.location ?? '',
+            capacity: row.capacity,
+            isActive: row.isActive,
+            startHour: row.startHour,
+            endHour: row.endHour,
+            slotDurationMinutes: row.slotDurationMinutes,
+          ),
+        ),
+      );
     }
   }
 

@@ -177,7 +177,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                   prefixIcon: Icon(Icons.local_hospital),
                 ),
                 items:
-                    {
+                    ({
                           ..._clinicOptions,
                           ...clinicsAsync.maybeWhen(
                             data: (clinics) =>
@@ -185,7 +185,8 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                             orElse: () => const <String>[],
                           ),
                           if (_selectedClinicName != null) _selectedClinicName!,
-                        }
+                        }.toList()
+                          ..sort(Clinic.compareNames))
                         .map(
                           (name) =>
                               DropdownMenuItem(value: name, child: Text(name)),
