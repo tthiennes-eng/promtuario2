@@ -108,18 +108,21 @@ class Clinic {
     r'^clinica\s+(i|ii|iii|iv|v|vi|vii|viii|ix|x|\d+)$',
   );
 
-  static String _normalizeName(String name) {
+  static String normalizeName(String name) {
     return name
         .trim()
         .toLowerCase()
-        .replaceAll('í', 'i')
-        .replaceAll('ì', 'i')
-        .replaceAll('î', 'i')
+        .replaceAll(RegExp(r'[áàâãä]'), 'a')
+        .replaceAll(RegExp(r'[éèêë]'), 'e')
+        .replaceAll(RegExp(r'[íìîï]'), 'i')
+        .replaceAll(RegExp(r'[óòôõö]'), 'o')
+        .replaceAll(RegExp(r'[úùûü]'), 'u')
+        .replaceAll('ç', 'c')
         .replaceAll(RegExp(r'\s+'), ' ');
   }
 
   static int? _sequenceNumber(String name) {
-    final normalized = _normalizeName(name);
+    final normalized = normalizeName(name);
     final match = _numberedClinicPattern.firstMatch(normalized);
     if (match == null) return null;
     final token = match.group(1)!;
@@ -137,12 +140,20 @@ class Clinic {
     } else if (seqB != null) {
       return 1;
     }
-    return _normalizeName(a).compareTo(_normalizeName(b));
+    return normalizeName(a).compareTo(normalizeName(b));
   }
 
   static List<Clinic> sortBySequence(Iterable<Clinic> clinics) {
     final list = List<Clinic>.from(clinics);
     list.sort((a, b) => compareNames(a.name, b.name));
-    return list;
+    final seen = <String>{};
+    final unique = <Clinic>[];
+    for (final clinic in list) {
+      final key = normalizeName(clinic.name);
+      if (key.isEmpty || seen.add(key)) {
+        unique.add(clinic);
+      }
+    }
+    return unique;
   }
 }

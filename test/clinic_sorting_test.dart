@@ -35,4 +35,21 @@ void main() {
       ],
     );
   });
+
+  test('Clinic.sortBySequence deduplicates repeated Clinica I entries regardless of accents or casing', () {
+    final clinics = [
+      const Clinic(id: '1', name: 'Clinica I'),
+      const Clinic(id: '2', name: 'Clínica I'),
+      const Clinic(id: '3', name: 'clinica  i '),
+      const Clinic(id: '4', name: 'Clinica II'),
+    ];
+
+    final result = Clinic.sortBySequence(clinics);
+
+    expect(result.length, 2);
+    expect(result.map((c) => Clinic.normalizeName(c.name)).toList(), [
+      'clinica i',
+      'clinica ii',
+    ]);
+  });
 }

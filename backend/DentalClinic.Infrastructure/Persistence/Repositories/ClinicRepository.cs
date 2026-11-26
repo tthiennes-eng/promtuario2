@@ -47,6 +47,9 @@ public class ClinicRepository : IClinicRepository
             .OrderBy(c => GetSequenceNumber(c.Name).HasValue ? 0 : 1)
             .ThenBy(c => GetSequenceNumber(c.Name) ?? int.MaxValue)
             .ThenBy(c => NormalizeName(c.Name), StringComparer.Ordinal)
+            .ThenBy(c => c.CreatedAt)
+            .GroupBy(c => NormalizeName(c.Name), StringComparer.Ordinal)
+            .Select(g => g.First())
             .ToList();
     }
 

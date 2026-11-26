@@ -299,12 +299,113 @@ using (var scope = app.Services.CreateScope())
             "Clinica de Odontopediatria"
         };
 
+        static string NormalizeClinicName(string? name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return string.Empty;
+            var decomposed = name.Trim().Normalize(NormalizationForm.FormD);
+            var sb = new StringBuilder(decomposed.Length);
+            foreach (var ch in decomposed)
+            {
+                if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(ch) != System.Globalization.UnicodeCategory.NonSpacingMark)
+                {
+                    sb.Append(char.ToLowerInvariant(ch));
+                }
+            }
+            return System.Text.RegularExpressions.Regex.Replace(sb.ToString(), @"\s+", " ");
+        }
+
+        try
+        {
+            var allClinics = await context.Clinics.AsNoTracking().ToListAsync();
+            var defaultNameSet = new HashSet<string>(defaultClinicNames, StringComparer.Ordinal);
+            var duplicateGroups = allClinics
+                .GroupBy(c => NormalizeClinicName(c.Name), StringComparer.Ordinal)
+                .Where(g => !string.IsNullOrEmpty(g.Key) && g.Count() > 1)
+                .ToList();
+
+            if (duplicateGroups.Count > 0)
+            {
+                var conn = context.Database.GetDbConnection();
+                if (conn.State != System.Data.ConnectionState.Open)
+                {
+                    await conn.OpenAsync();
+                }
+
+                var clinicRefColumns = new List<(string TableName, string ColumnName)>();
+                await using (var metaCmd = conn.CreateCommand())
+                {
+                    metaCmd.CommandText = @"
+                        SELECT DISTINCT table_name, column_name
+                        FROM information_schema.columns
+                        WHERE table_schema = 'public'
+                          AND table_name <> 'clinicas'
+                          AND data_type = 'uuid'
+                          AND lower(column_name) IN ('clinica_id', 'clinicaid', 'clinic_id', 'clinicid');";
+                    await using var reader = await metaCmd.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                    {
+                        clinicRefColumns.Add((reader.GetString(0), reader.GetString(1)));
+                    }
+                }
+
+                foreach (var group in duplicateGroups)
+                {
+                    var keeper = group
+                        .OrderByDescending(c => c.IsActive)
+                        .ThenBy(c => defaultNameSet.Contains(c.Name) ? 0 : 1)
+                        .ThenBy(c => c.CreatedAt)
+                        .First();
+
+                    foreach (var dup in group.Where(c => c.Id != keeper.Id))
+                    {
+                        foreach (var (tbl, col) in clinicRefColumns)
+                        {
+                            await using var updCmd = conn.CreateCommand();
+                            var pKeeper = updCmd.CreateParameter();
+                            pKeeper.ParameterName = "@keeper";
+                            pKeeper.Value = keeper.Id;
+                            updCmd.Parameters.Add(pKeeper);
+                            var pDup = updCmd.CreateParameter();
+                            pDup.ParameterName = "@dup";
+                            pDup.Value = dup.Id;
+                            updCmd.Parameters.Add(pDup);
+
+                            var qTbl = "\"" + tbl.Replace("\"", "\"\"") + "\"";
+                            var qCol = "\"" + col.Replace("\"", "\"\"") + "\"";
+                            updCmd.CommandText = $"UPDATE \"public\".{qTbl} SET {qCol} = @keeper WHERE {qCol} = @dup;";
+                            await updCmd.ExecuteNonQueryAsync();
+                        }
+
+                        await using var delCmd = conn.CreateCommand();
+                        var pDel = delCmd.CreateParameter();
+                        pDel.ParameterName = "@dup";
+                        pDel.Value = dup.Id;
+                        delCmd.Parameters.Add(pDel);
+                        delCmd.CommandText = "DELETE FROM \"public\".\"clinicas\" WHERE \"id\" = @dup;";
+                        await delCmd.ExecuteNonQueryAsync();
+
+                        Console.WriteLine($">>> Clínica duplicada removida: {dup.Name} ({dup.Id}) -> mantida {keeper.Name} ({keeper.Id})");
+                    }
+                }
+            }
+        }
+        catch (Exception dedupEx)
+        {
+            Console.WriteLine($">>> AVISO ao deduplicar clínicas: {dedupEx.Message}");
+        }
+
+        var existingNormalizedClinics = new HashSet<string>(
+            (await context.Clinics.AsNoTracking().Select(c => c.Name).ToListAsync())
+                .Select(NormalizeClinicName),
+            StringComparer.Ordinal);
+
         foreach (var clinicName in defaultClinicNames)
         {
-            var exists = await context.Clinics.AnyAsync(c => c.Name == clinicName);
-            if (!exists)
+            var normalized = NormalizeClinicName(clinicName);
+            if (!existingNormalizedClinics.Contains(normalized))
             {
                 context.Clinics.Add(Clinic.CreateBasic(clinicName, "Clínica Escola", 1, 8, 18));
+                existingNormalizedClinics.Add(normalized);
             }
         }
         await context.SaveChangesAsync();

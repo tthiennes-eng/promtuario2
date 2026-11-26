@@ -167,54 +167,72 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
               ),
               const SizedBox(height: 16),
 
-              DropdownButtonFormField<String>(
-                value: _selectedClinicName,
-                isExpanded: true,
-                hint: const Text('Selecione a Clínica'),
-                decoration: const InputDecoration(
-                  labelText: 'Clínica de Atendimento',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.local_hospital),
-                ),
-                items:
-                    ({
-                          ..._clinicOptions,
-                          ...clinicsAsync.maybeWhen(
-                            data: (clinics) =>
-                                clinics.map((clinic) => clinic.name),
-                            orElse: () => const <String>[],
-                          ),
-                          if (_selectedClinicName != null) _selectedClinicName!,
-                        }.toList()
-                          ..sort(Clinic.compareNames))
+              Builder(
+                builder: (context) {
+                  final uniqueByKey = <String, String>{};
+                  for (final clinic in clinicsAsync.valueOrNull ?? const <Clinic>[]) {
+                    final key = Clinic.normalizeName(clinic.name);
+                    if (key.isNotEmpty) uniqueByKey.putIfAbsent(key, () => clinic.name);
+                  }
+                  for (final option in _clinicOptions) {
+                    final key = Clinic.normalizeName(option);
+                    if (key.isNotEmpty) uniqueByKey.putIfAbsent(key, () => option);
+                  }
+                  String? effectiveSelected = _selectedClinicName;
+                  if (effectiveSelected != null) {
+                    final key = Clinic.normalizeName(effectiveSelected);
+                    effectiveSelected = uniqueByKey.putIfAbsent(
+                      key,
+                      () => effectiveSelected!,
+                    );
+                  }
+                  final sortedNames = uniqueByKey.values.toList()
+                    ..sort(Clinic.compareNames);
+
+                  return DropdownButtonFormField<String>(
+                    value: effectiveSelected,
+                    isExpanded: true,
+                    hint: const Text('Selecione a Clínica'),
+                    decoration: const InputDecoration(
+                      labelText: 'Clínica de Atendimento',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.local_hospital),
+                    ),
+                    items: sortedNames
                         .map(
                           (name) =>
                               DropdownMenuItem(value: name, child: Text(name)),
                         )
                         .toList(),
-                onChanged: (name) {
-                  setState(() {
-                    _selectedClinicName = name;
-                    _selectedClinicId = name == null
-                        ? null
-                        : _deterministicUuid(name);
-                    clinicsAsync.whenData((list) {
-                      try {
-                        final clinic = list.firstWhere((c) => c.name == name);
-                        if (_isUuid(clinic.id)) {
-                          _selectedClinicId = clinic.id;
-                          return;
-                        }
-                      } catch (_) {}
-                      _selectedClinicId = _deterministicUuid(name!);
-                    });
-                  });
+                    onChanged: (name) {
+                      setState(() {
+                        _selectedClinicName = name;
+                        _selectedClinicId = name == null
+                            ? null
+                            : _deterministicUuid(name);
+                        clinicsAsync.whenData((list) {
+                          if (name == null) return;
+                          final targetKey = Clinic.normalizeName(name);
+                          try {
+                            final clinic = list.firstWhere(
+                              (c) => Clinic.normalizeName(c.name) == targetKey,
+                            );
+                            if (_isUuid(clinic.id)) {
+                              _selectedClinicId = clinic.id;
+                              return;
+                            }
+                          } catch (_) {}
+                          _selectedClinicId = _deterministicUuid(name);
+                        });
+                      });
+                    },
+                    validator: (v) => v == null
+                        ? 'Selecione uma clínica'
+                        : (!_isUuid(_selectedClinicId)
+                              ? 'A clínica selecionada não possui um ID válido no servidor'
+                              : null),
+                  );
                 },
-                validator: (v) => v == null
-                    ? 'Selecione uma clínica'
-                    : (!_isUuid(_selectedClinicId)
-                          ? 'A clínica selecionada não possui um ID válido no servidor'
-                          : null),
               ),
               const SizedBox(height: 16),
 

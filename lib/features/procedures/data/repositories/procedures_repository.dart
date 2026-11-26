@@ -34,6 +34,16 @@ class ProceduresRepository implements IProceduresRepository {
             .map((json) => Clinic.fromJson(Map<String, dynamic>.from(json))),
       );
 
+      final remoteIds = clinics.map((c) => c.id).toSet();
+      final existingLocal = await _localDb.select(_localDb.clinicsLocal).get();
+      for (final row in existingLocal) {
+        if (!remoteIds.contains(row.id)) {
+          await (_localDb.delete(_localDb.clinicsLocal)
+                ..where((t) => t.id.equals(row.id)))
+              .go();
+        }
+      }
+
       for (var clinic in clinics) {
         await _localDb
             .into(_localDb.clinicsLocal)
