@@ -37,7 +37,12 @@ class AppointmentRepository implements IAppointmentRepository {
       }
 
       final remoteAppointments = data.map((item) => _appointmentFromJson(Map<String, dynamic>.from(item))).toList();
-      await _updateLocalCache(remoteAppointments);
+      await _updateLocalCache(
+        remoteAppointments,
+        start: start,
+        end: end,
+        clinicId: clinicId,
+      );
     } catch (e) {
       _logger.warning('Erro na busca remota: $e');
     }
@@ -124,7 +129,32 @@ class AppointmentRepository implements IAppointmentRepository {
     );
   }
 
-  Future<void> _updateLocalCache(List<Appointment> appointments) async {
+  Future<void> _updateLocalCache(
+    List<Appointment> appointments, {
+    required DateTime start,
+    required DateTime end,
+    String? clinicId,
+  }) async {
+    final remoteIds = appointments.map((a) => a.id).toSet();
+    final existingSynced = await (_localDb.select(_localDb.appointmentsLocal)
+          ..where((t) {
+            var expr = t.isSynced.equals(true) &
+                t.startTime.isBetweenValues(start, end);
+            if (clinicId != null) {
+              expr = expr & t.clinicId.equals(clinicId);
+            }
+            return expr;
+          }))
+        .get();
+
+    for (final row in existingSynced) {
+      if (!remoteIds.contains(row.id)) {
+        await (_localDb.delete(_localDb.appointmentsLocal)
+              ..where((t) => t.id.equals(row.id)))
+            .go();
+      }
+    }
+
     for (var app in appointments) {
       await _saveLocal(app, true);
     }

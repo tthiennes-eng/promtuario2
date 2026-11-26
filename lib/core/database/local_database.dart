@@ -185,7 +185,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -208,15 +208,15 @@ class AppDatabase extends _$AppDatabase {
         }
       }
       await migrator.createAll();
-      if (from < 7) {
+      if (from < 8) {
         await customStatement(
-          "DELETE FROM appointments_local WHERE patient_id IN (SELECT id FROM patients_local WHERE LOWER(full_name) LIKE '%testecadastro%') OR LOWER(patient_name) LIKE '%testecadastro%'",
+          "DELETE FROM appointments_local WHERE patient_id IN (SELECT id FROM patients_local WHERE REPLACE(LOWER(full_name), ' ', '') LIKE '%testecadastro%') OR REPLACE(LOWER(patient_name), ' ', '') LIKE '%testecadastro%'",
         );
         await customStatement(
-          "DELETE FROM wait_list_local WHERE patient_id IN (SELECT id FROM patients_local WHERE LOWER(full_name) LIKE '%testecadastro%') OR LOWER(patient_name) LIKE '%testecadastro%'",
+          "DELETE FROM wait_list_local WHERE patient_id IN (SELECT id FROM patients_local WHERE REPLACE(LOWER(full_name), ' ', '') LIKE '%testecadastro%') OR REPLACE(LOWER(patient_name), ' ', '') LIKE '%testecadastro%'",
         );
         await customStatement(
-          "DELETE FROM patients_local WHERE LOWER(full_name) LIKE '%testecadastro%'",
+          "DELETE FROM patients_local WHERE REPLACE(LOWER(full_name), ' ', '') LIKE '%testecadastro%'",
         );
       }
     },

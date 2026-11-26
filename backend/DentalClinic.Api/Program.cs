@@ -252,7 +252,7 @@ using (var scope = app.Services.CreateScope())
         ");
 
         var testPatients = await context.Patients
-            .Where(p => p.FullName.ToLower().Contains("testecadastro"))
+            .Where(p => p.FullName.ToLower().Replace(" ", "").Contains("testecadastro"))
             .Select(p => p.Id)
             .ToListAsync();
 
