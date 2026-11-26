@@ -83,7 +83,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authViewModelProvider);
-    final isWide = MediaQuery.of(context).size.width > 900;
+    final size = MediaQuery.of(context).size;
+    final isWide = size.width > 900;
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.small(
@@ -94,102 +95,175 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Imagem de fundo em tela cheia (fachada Odontologia)
-          Image.asset(
-            'assets/images/login_background.png',
-            fit: BoxFit.cover,
-            alignment: Alignment.center,
-            errorBuilder: (_, __, ___) => Container(
-              color: const Color(0xFF006494),
+          // Camada de fundo:
+          // - Em telas largas (desktop), usa versão suavemente desfocada para preencher
+          //   as laterais sem esticar/distorcer a foto vertical (764x1024).
+          // - Em telas estreitas/verticais, usa a foto diretamente em proporção natural.
+          if (isWide)
+            ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+              child: Transform.scale(
+                scale: 1.08,
+                child: Image.asset(
+                  'assets/images/login_background.png',
+                  fit: BoxFit.cover,
+                  alignment: Alignment.center,
+                  errorBuilder: (_, __, ___) => Container(
+                    color: const Color(0xFF006494),
+                  ),
+                ),
+              ),
+            )
+          else
+            Image.asset(
+              'assets/images/login_background.png',
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+              errorBuilder: (_, __, ___) => Container(
+                color: const Color(0xFF006494),
+              ),
             ),
-          ),
 
-          // Sobreposição suave para melhorar o contraste mantendo a imagem visível
+          // Gradiente suave para contraste
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withOpacity(0.18),
-                  Colors.black.withOpacity(0.32),
-                  Colors.black.withOpacity(0.50),
+                  Colors.black.withOpacity(isWide ? 0.28 : 0.18),
+                  Colors.black.withOpacity(isWide ? 0.36 : 0.30),
+                  Colors.black.withOpacity(isWide ? 0.52 : 0.48),
                 ],
               ),
             ),
           ),
 
-          // Conteúdo principal sobre a imagem
+          // Conteúdo principal
           SafeArea(
-            child: Row(
-              children: [
-                if (isWide)
-                  Expanded(
-                    flex: 5,
-                    child: Padding(
-                      padding: const EdgeInsets.all(48.0),
-                      child: Align(
-                        alignment: Alignment.bottomLeft,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 18,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.45),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.22),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1180),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isWide ? 32 : 16,
+                    vertical: isWide ? 24 : 16,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Foto nítida na proporção original (sem esticar nem cortar a fachada)
+                      if (isWide) ...[
+                        Flexible(
+                          flex: 5,
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxHeight: size.height - 64,
+                            ),
+                            child: AspectRatio(
+                              aspectRatio: 764 / 1024,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.35),
+                                      blurRadius: 28,
+                                      offset: const Offset(0, 12),
+                                    ),
+                                  ],
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(24),
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      Image.asset(
+                                        'assets/images/login_background.png',
+                                        fit: BoxFit.cover,
+                                        alignment: Alignment.center,
+                                        filterQuality: FilterQuality.high,
+                                      ),
+                                      Positioned(
+                                        left: 16,
+                                        right: 16,
+                                        bottom: 16,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 18,
+                                            vertical: 14,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black.withOpacity(0.52),
+                                            borderRadius:
+                                                BorderRadius.circular(14),
+                                            border: Border.all(
+                                              color:
+                                                  Colors.white.withOpacity(0.22),
+                                            ),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              const Icon(
+                                                Icons.health_and_safety,
+                                                size: 36,
+                                                color: Colors.white,
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      'OdontoClinica',
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .titleLarge
+                                                          ?.copyWith(
+                                                            color: Colors.white,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                    ),
+                                                    const Text(
+                                                      'Gestão Clínica Universitária',
+                                                      style: TextStyle(
+                                                        color: Colors.white70,
+                                                        fontSize: 13,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.health_and_safety,
-                                size: 48,
-                                color: Colors.white,
-                              ),
-                              const SizedBox(width: 16),
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'OdontoClinica',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineMedium
-                                        ?.copyWith(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                  ),
-                                  const Text(
-                                    'Gestão Clínica Universitária',
-                                    style: TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 15,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
                         ),
-                      ),
-                    ),
-                  ),
-                Expanded(
-                  flex: isWide ? 5 : 1,
-                  child: Center(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 32,
-                      ),
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 430),
+                        const SizedBox(width: 36),
+                      ],
+
+                      // Card de Login com todas as opções
+                      Expanded(
+                        flex: isWide ? 5 : 1,
+                        child: Center(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 16,
+                            ),
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 430),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(20),
                           child: BackdropFilter(
@@ -400,6 +474,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ],
             ),
           ),
+        ),
+      ),
+    ),
         ],
       ),
     );
