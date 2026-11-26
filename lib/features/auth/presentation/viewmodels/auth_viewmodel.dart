@@ -22,12 +22,13 @@ class AuthState {
     User? user, 
     bool? isLoading, 
     String? errorMessage,
+    bool clearError = false,
     bool? isInitialized,
   }) {
     return AuthState(
       user: user ?? this.user,
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       isInitialized: isInitialized ?? this.isInitialized,
     );
   }
@@ -45,7 +46,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
     final user = await repository.getCurrentUser();
     
     if (user != null) {
-      state = state.copyWith(user: user, isInitialized: true);
+      state = state.copyWith(user: user, isInitialized: true, clearError: true);
       // Inicializa serviços de fundo sem bloquear a entrada do usuário
       ref.read(realtimeServiceProvider).init();
     } else {
@@ -54,15 +55,23 @@ class AuthViewModel extends StateNotifier<AuthState> {
   }
 
   /// Realiza o login e registra o evento na auditoria.
-  Future<void> login(String email, String password) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+  Future<void> login(
+    String email,
+    String password, {
+    bool rememberMe = true,
+  }) async {
+    state = state.copyWith(isLoading: true, clearError: true);
     
     try {
       final repository = ref.read(authRepositoryProvider);
-      final user = await repository.login(email, password);
+      final user = await repository.login(
+        email,
+        password,
+        rememberMe: rememberMe,
+      );
       
       // Define o usuário no estado IMEDIATAMENTE para liberar a tela
-      state = state.copyWith(user: user, isLoading: false);
+      state = state.copyWith(user: user, isLoading: false, clearError: true);
 
       // Dispara inicializações em segundo plano (Background)
       // Não usamos 'await' aqui para não travar o carregamento do login

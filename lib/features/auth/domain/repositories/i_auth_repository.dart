@@ -5,7 +5,7 @@ import '../entities/user.dart';
 abstract class IAuthRepository {
   /// Realiza o login utilizando e-mail e senha.
   /// Retorna o [User] em caso de sucesso ou lança uma exceção.
-  Future<User> login(String email, String password);
+  Future<User> login(String email, String password, {bool rememberMe = true});
 
   /// Realiza o logout, limpando tokens e encerrando a sessão.
   Future<void> logout();

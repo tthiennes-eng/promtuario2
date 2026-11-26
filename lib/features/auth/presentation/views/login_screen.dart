@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../viewmodels/auth_viewmodel.dart';
+import '../../../../core/security/storage_service.dart';
 import '../../../../core/widgets/server_ip_dialog.dart';
 
 /// Tela de Login profissional com Material 3.
@@ -20,6 +21,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _rememberMe = true; // Opção de manter login salvo
 
   @override
+  void initState() {
+    super.initState();
+    _loadSavedLoginPreferences();
+  }
+
+  Future<void> _loadSavedLoginPreferences() async {
+    final storage = ref.read(storageServiceProvider);
+    final remember = await storage.getRememberMe();
+    final savedEmail = await storage.getSavedEmail();
+    if (!mounted) return;
+    setState(() {
+      _rememberMe = remember;
+      if (remember && savedEmail != null && savedEmail.isNotEmpty) {
+        _emailController.text = savedEmail;
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
@@ -31,6 +51,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await ref.read(authViewModelProvider.notifier).login(
             _emailController.text.trim(),
             _passwordController.text,
+            rememberMe: _rememberMe,
           );
 
       if (!mounted) return;
@@ -129,6 +150,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           controller: _passwordController,
                           obscureText: _obscurePassword,
                           enabled: !authState.isLoading,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) {
+                            if (!authState.isLoading) _handleLogin();
+                          },
                           decoration: InputDecoration(
                             labelText: 'Senha',
                             prefixIcon: const Icon(Icons.lock_outline),
@@ -143,16 +168,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         const SizedBox(height: 12),
                         Row(
                           children: [
-                            SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: Checkbox(
-                                value: _rememberMe,
-                                onChanged: (val) => setState(() => _rememberMe = val!),
+                            InkWell(
+                              borderRadius: BorderRadius.circular(4),
+                              onTap: authState.isLoading
+                                  ? null
+                                  : () => setState(() => _rememberMe = !_rememberMe),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(
+                                    height: 24,
+                                    width: 24,
+                                    child: Checkbox(
+                                      value: _rememberMe,
+                                      onChanged: authState.isLoading
+                                          ? null
+                                          : (val) => setState(() => _rememberMe = val ?? true),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text('Manter login salvo', style: TextStyle(fontSize: 14)),
+                                ],
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            const Text('Manter login salvo', style: TextStyle(fontSize: 14)),
                             const Spacer(),
                             TextButton(
                               onPressed: authState.isLoading ? null : () {},

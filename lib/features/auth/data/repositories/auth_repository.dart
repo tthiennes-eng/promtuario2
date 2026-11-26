@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:promt/core/network/api_client.dart';
 import 'package:promt/core/security/storage_service.dart';
 import 'package:promt/features/auth/domain/entities/user.dart';
@@ -12,20 +14,41 @@ class AuthRepository implements IAuthRepository {
   AuthRepository(this._apiClient, this._storage);
 
   @override
-  Future<User> login(String email, String password) async {
+  Future<User> login(
+    String email,
+    String password, {
+    bool rememberMe = true,
+  }) async {
     try {
-      final response = await _apiClient.instance.post('/auth/login', data: {
+      final response = await _apiClient.instance.post('auth/login', data: {
         'email': email,
         'password': password,
       });
 
-      final accessToken = response.data['accessToken'];
-      final refreshToken = response.data['refreshToken'];
-      final userModel = UserModel.fromJson(response.data['user']);
+      final accessToken = response.data['accessToken'] as String;
+      final refreshToken = response.data['refreshToken'] as String;
+      final userModel = UserModel.fromJson(
+        Map<String, dynamic>.from(response.data['user'] as Map),
+      );
+      final user = userModel.toEntity();
 
-      await _storage.saveTokens(access: accessToken, refresh: refreshToken);
+      await _storage.saveRememberMe(rememberMe);
+      await _storage.saveTokens(
+        access: accessToken,
+        refresh: refreshToken,
+        persist: rememberMe,
+      );
+      await _storage.saveUserJson(
+        jsonEncode(user.toJson()),
+        persist: rememberMe,
+      );
+      if (rememberMe) {
+        await _storage.saveSavedEmail(email);
+      } else {
+        await _storage.clearSavedEmail();
+      }
 
-      return userModel.toEntity();
+      return user;
     } catch (e) {
       rethrow;
     }
@@ -34,7 +57,9 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<void> logout() async {
     try {
-      await _apiClient.instance.post('/auth/logout');
+      await _apiClient.instance.post('auth/logout');
+    } catch (_) {
+      // Mesmo offline ou com token expirado, garante limpeza da sessão local.
     } finally {
       await _storage.clearSession();
     }
@@ -42,15 +67,95 @@ class AuthRepository implements IAuthRepository {
 
   @override
   Future<User?> getCurrentUser() async {
+    final rememberMe = await _storage.getRememberMe();
+    if (!rememberMe) {
+      await _storage.clearSession();
+      return null;
+    }
+
     final token = await _storage.getAccessToken();
-    if (token == null) return null;
+    final savedRefresh = await _storage.getRefreshToken();
+    if ((token == null || token.isEmpty) &&
+        (savedRefresh == null || savedRefresh.isEmpty)) {
+      return null;
+    }
 
     try {
-      final response = await _apiClient.instance.get('/auth/me');
-      return UserModel.fromJson(response.data).toEntity();
+      final response = await _apiClient.instance.get('auth/me');
+      final user = UserModel.fromJson(
+        Map<String, dynamic>.from(response.data as Map),
+      ).toEntity();
+      await _storage.saveUserJson(jsonEncode(user.toJson()), persist: true);
+      return user;
+    } on DioException catch (e) {
+      // Se o servidor retornou 401 mesmo após tentativa de refresh pelo interceptor,
+      // a sessão foi invalidada e não deve ser restaurada.
+      if (e.response?.statusCode == 401) {
+        await _storage.clearSession();
+        return null;
+      }
+
+      // Em caso de indisponibilidade de rede ou backend sem /auth/me atualizado,
+      // tenta renovar via refresh token ou restaurar o usuário salvo em cache.
+      final refreshed = await _tryRefreshAndReadUser();
+      if (refreshed != null) return refreshed;
+      return _readSavedUser();
+    } catch (_) {
+      return _readSavedUser();
+    }
+  }
+
+  Future<User?> _tryRefreshAndReadUser() async {
+    final refresh = await _storage.getRefreshToken();
+    if (refresh == null || refresh.isEmpty) return null;
+
+    try {
+      final response = await _apiClient.instance.post('auth/refresh', data: {
+        'refreshToken': refresh,
+      });
+
+      final newAccess = response.data['accessToken'] as String?;
+      final newRefresh = response.data['refreshToken'] as String?;
+      if (newAccess != null && newRefresh != null) {
+        await _storage.saveTokens(
+          access: newAccess,
+          refresh: newRefresh,
+          persist: true,
+        );
+      }
+
+      if (response.data['user'] is Map) {
+        final user = UserModel.fromJson(
+          Map<String, dynamic>.from(response.data['user'] as Map),
+        ).toEntity();
+        await _storage.saveUserJson(jsonEncode(user.toJson()), persist: true);
+        return user;
+      }
+      return await _readSavedUser();
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 400 || e.response?.statusCode == 401) {
+        await _storage.clearSession();
+        return null;
+      }
+      return null;
     } catch (_) {
       return null;
     }
+  }
+
+  Future<User?> _readSavedUser() async {
+    final currentToken = await _storage.getAccessToken();
+    if (currentToken == null || currentToken.isEmpty) return null;
+
+    final rawUser = await _storage.getUserJson();
+    if (rawUser == null || rawUser.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(rawUser);
+      if (decoded is Map<String, dynamic>) {
+        return User.fromJson(decoded);
+      }
+    } catch (_) {}
+    return null;
   }
 
   @override
@@ -59,14 +164,20 @@ class AuthRepository implements IAuthRepository {
     if (refresh == null) return null;
 
     try {
-      final response = await _apiClient.instance.post('/auth/refresh', data: {
+      final response = await _apiClient.instance.post('auth/refresh', data: {
         'refreshToken': refresh,
       });
-      
+
       final newAccess = response.data['accessToken'];
       final newRefresh = response.data['refreshToken'];
-      
+
       await _storage.saveTokens(access: newAccess, refresh: newRefresh);
+      if (response.data['user'] is Map) {
+        final user = UserModel.fromJson(
+          Map<String, dynamic>.from(response.data['user'] as Map),
+        ).toEntity();
+        await _storage.saveUserJson(jsonEncode(user.toJson()));
+      }
       return newAccess;
     } catch (e) {
       await _storage.clearSession();
