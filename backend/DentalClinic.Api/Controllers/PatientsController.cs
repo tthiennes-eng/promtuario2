@@ -172,12 +172,32 @@ public class PatientsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var existing = await _patientRepository.GetByIdAsync(id);
-        if (existing == null) return NotFound();
+        try
+        {
+            var existing = await _patientRepository.GetByIdAsync(id);
+            if (existing == null) return NotFound();
 
-        await _patientRepository.DeleteAsync(id);
-        await _hubContext.Clients.All.SendAsync("PatientDeleted", id);
-        return NoContent();
+            await _patientRepository.DeleteAsync(id);
+
+            try
+            {
+                await _hubContext.Clients.All.SendAsync("PatientDeleted", id);
+            }
+            catch (Exception hubEx)
+            {
+                _logger.LogWarning(hubEx, "Paciente {PatientId} excluído, mas falhou a notificação SignalR.", id);
+            }
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao excluir paciente {PatientId}", id);
+            return StatusCode(500, new
+            {
+                message = $"Erro ao excluir paciente: {ex.InnerException?.Message ?? ex.Message}"
+            });
+        }
     }
 
     /// <summary>

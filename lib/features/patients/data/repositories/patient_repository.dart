@@ -275,11 +275,20 @@ class PatientRepository implements IPatientRepository {
       await _apiClient.instance.delete('patients/$id');
     } on DioException catch (e) {
       if (e.response?.statusCode != 404) {
-        rethrow;
+        final data = e.response?.data;
+        String? message;
+        if (data is Map) {
+          message = data['message']?.toString() ??
+              data['title']?.toString() ??
+              data['error']?.toString();
+        }
+        throw Exception(
+          message ??
+              'Falha ao excluir o paciente no servidor (HTTP ${e.response?.statusCode ?? "erro de rede"})',
+        );
       }
-    } finally {
-      await _deleteLocalPatientData(id);
     }
+    await _deleteLocalPatientData(id);
   }
 
   Future<void> _deleteLocalPatientData(String patientId) async {

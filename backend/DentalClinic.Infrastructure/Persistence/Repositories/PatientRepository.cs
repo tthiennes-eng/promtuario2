@@ -1,12 +1,21 @@
+using System.Data;
+using System.Data.Common;
 using DentalClinic.Core.Domain.Entities;
 using DentalClinic.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace DentalClinic.Infrastructure.Persistence.Repositories;
 
 public class PatientRepository : IPatientRepository
 {
     private readonly ApplicationDbContext _context;
+
+    private sealed record ForeignKeyEdge(
+        string ChildTable,
+        string ChildColumn,
+        string ParentTable,
+        string ParentColumn);
 
     public PatientRepository(ApplicationDbContext context)
     {
@@ -58,6 +67,56 @@ public class PatientRepository : IPatientRepository
 
     public async Task DeleteAsync(Guid id)
     {
+        if (!_context.Database.IsRelational())
+        {
+            await DeleteViaEfCoreAsync(id);
+            return;
+        }
+
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        var connection = _context.Database.GetDbConnection();
+        if (connection.State != ConnectionState.Open)
+        {
+            await connection.OpenAsync();
+        }
+        var dbTransaction = transaction.GetDbTransaction();
+
+        var edges = await LoadForeignKeyEdgesAsync(connection, dbTransaction);
+        var directPatientColumns = await LoadDirectPatientColumnsAsync(connection, dbTransaction);
+
+        foreach (var (tableName, columnName) in directPatientColumns)
+        {
+            var alreadyTracked = edges.Any(e =>
+                e.ChildTable == tableName &&
+                e.ChildColumn == columnName &&
+                e.ParentTable == "pacientes");
+
+            if (!alreadyTracked)
+            {
+                edges.Add(new ForeignKeyEdge(tableName, columnName, "pacientes", "id"));
+            }
+        }
+
+        var edgesByParent = edges
+            .GroupBy(e => e.ParentTable)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        await DeleteRowsMatchingColumnAsync(
+            connection,
+            dbTransaction,
+            tableName: "pacientes",
+            filterColumn: "id",
+            filterValues: new List<object> { id },
+            edgesByParent: edgesByParent,
+            activePath: new HashSet<string>(),
+            depth: 0);
+
+        await transaction.CommitAsync();
+        _context.ChangeTracker.Clear();
+    }
+
+    private async Task DeleteViaEfCoreAsync(Guid id)
+    {
         var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Id == id);
         if (patient == null) return;
 
@@ -97,6 +156,207 @@ public class PatientRepository : IPatientRepository
         _context.Patients.Remove(patient);
         await _context.SaveChangesAsync();
     }
+
+    private static async Task<List<ForeignKeyEdge>> LoadForeignKeyEdgesAsync(
+        DbConnection connection,
+        DbTransaction transaction)
+    {
+        var edges = new List<ForeignKeyEdge>();
+        await using var cmd = connection.CreateCommand();
+        cmd.Transaction = transaction;
+        cmd.CommandText = @"
+            SELECT
+                child_cls.relname AS child_table,
+                child_att.attname AS child_column,
+                parent_cls.relname AS parent_table,
+                parent_att.attname AS parent_column
+            FROM pg_constraint con
+            JOIN pg_class child_cls ON child_cls.oid = con.conrelid
+            JOIN pg_namespace child_ns ON child_ns.oid = child_cls.relnamespace
+            JOIN pg_class parent_cls ON parent_cls.oid = con.confrelid
+            JOIN pg_namespace parent_ns ON parent_ns.oid = parent_cls.relnamespace
+            JOIN pg_attribute child_att ON child_att.attrelid = con.conrelid AND child_att.attnum = con.conkey[1]
+            JOIN pg_attribute parent_att ON parent_att.attrelid = con.confrelid AND parent_att.attnum = con.confkey[1]
+            WHERE con.contype = 'f'
+              AND array_length(con.conkey, 1) = 1
+              AND child_ns.nspname = 'public'
+              AND parent_ns.nspname = 'public';";
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            edges.Add(new ForeignKeyEdge(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                reader.GetString(3)));
+        }
+
+        return edges;
+    }
+
+    private static async Task<List<(string TableName, string ColumnName)>> LoadDirectPatientColumnsAsync(
+        DbConnection connection,
+        DbTransaction transaction)
+    {
+        var result = new List<(string, string)>();
+        await using var cmd = connection.CreateCommand();
+        cmd.Transaction = transaction;
+        cmd.CommandText = @"
+            SELECT table_name, column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name <> 'pacientes'
+              AND data_type = 'uuid'
+              AND lower(column_name) IN ('paciente_id', 'pacienteid', 'patient_id', 'patientid');";
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            result.Add((reader.GetString(0), reader.GetString(1)));
+        }
+
+        return result;
+    }
+
+    private static async Task DeleteRowsMatchingColumnAsync(
+        DbConnection connection,
+        DbTransaction transaction,
+        string tableName,
+        string filterColumn,
+        List<object> filterValues,
+        Dictionary<string, List<ForeignKeyEdge>> edgesByParent,
+        HashSet<string> activePath,
+        int depth)
+    {
+        if (filterValues.Count == 0 || depth > 8)
+        {
+            return;
+        }
+
+        var pathKey = $"{tableName}.{filterColumn}";
+        if (!activePath.Add(pathKey))
+        {
+            return;
+        }
+
+        try
+        {
+            var distinctValues = filterValues.Distinct().ToList();
+
+            if (edgesByParent.TryGetValue(tableName, out var childEdges))
+            {
+                foreach (var parentColumnGroup in childEdges.GroupBy(e => e.ParentColumn))
+                {
+                    var parentValues = await SelectDistinctColumnValuesAsync(
+                        connection,
+                        transaction,
+                        tableName,
+                        parentColumnGroup.Key,
+                        filterColumn,
+                        distinctValues);
+
+                    if (parentValues.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    foreach (var edge in parentColumnGroup)
+                    {
+                        await DeleteRowsMatchingColumnAsync(
+                            connection,
+                            transaction,
+                            edge.ChildTable,
+                            edge.ChildColumn,
+                            parentValues,
+                            edgesByParent,
+                            activePath,
+                            depth + 1);
+                    }
+                }
+            }
+
+            const int chunkSize = 500;
+            for (var offset = 0; offset < distinctValues.Count; offset += chunkSize)
+            {
+                var chunk = distinctValues.Skip(offset).Take(chunkSize).ToList();
+                await using var deleteCmd = connection.CreateCommand();
+                deleteCmd.Transaction = transaction;
+
+                var paramNames = new List<string>(chunk.Count);
+                for (var i = 0; i < chunk.Count; i++)
+                {
+                    var paramName = $"@p{i}";
+                    paramNames.Add(paramName);
+                    var param = deleteCmd.CreateParameter();
+                    param.ParameterName = paramName;
+                    param.Value = chunk[i];
+                    deleteCmd.Parameters.Add(param);
+                }
+
+                deleteCmd.CommandText =
+                    $"DELETE FROM \"public\".{QuoteIdentifier(tableName)} " +
+                    $"WHERE {QuoteIdentifier(filterColumn)} IN ({string.Join(", ", paramNames)});";
+
+                await deleteCmd.ExecuteNonQueryAsync();
+            }
+        }
+        finally
+        {
+            activePath.Remove(pathKey);
+        }
+    }
+
+    private static async Task<List<object>> SelectDistinctColumnValuesAsync(
+        DbConnection connection,
+        DbTransaction transaction,
+        string tableName,
+        string selectColumn,
+        string filterColumn,
+        List<object> filterValues)
+    {
+        var results = new List<object>();
+        const int chunkSize = 500;
+
+        for (var offset = 0; offset < filterValues.Count; offset += chunkSize)
+        {
+            var chunk = filterValues.Skip(offset).Take(chunkSize).ToList();
+            await using var cmd = connection.CreateCommand();
+            cmd.Transaction = transaction;
+
+            var paramNames = new List<string>(chunk.Count);
+            for (var i = 0; i < chunk.Count; i++)
+            {
+                var paramName = $"@p{i}";
+                paramNames.Add(paramName);
+                var param = cmd.CreateParameter();
+                param.ParameterName = paramName;
+                param.Value = chunk[i];
+                cmd.Parameters.Add(param);
+            }
+
+            cmd.CommandText =
+                $"SELECT DISTINCT {QuoteIdentifier(selectColumn)} " +
+                $"FROM \"public\".{QuoteIdentifier(tableName)} " +
+                $"WHERE {QuoteIdentifier(filterColumn)} IN ({string.Join(", ", paramNames)}) " +
+                $"AND {QuoteIdentifier(selectColumn)} IS NOT NULL;";
+
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var value = reader.GetValue(0);
+                if (value != null && value != DBNull.Value)
+                {
+                    results.Add(value);
+                }
+            }
+        }
+
+        return results.Distinct().ToList();
+    }
+
+    private static string QuoteIdentifier(string identifier) =>
+        "\"" + identifier.Replace("\"", "\"\"") + "\"";
 
     public async Task<int> CountAsync(string? searchTerm)
     {

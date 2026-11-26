@@ -233,6 +233,7 @@ using (var scope = app.Services.CreateScope())
                         'public.anexos',
                         'public.""Attachments""',
                         'public.evolucoes',
+                        'public.prontuarios',
                         'public.atestados',
                         'public.""MedicalRecords""',
                         'public.odontogramas',
@@ -251,18 +252,26 @@ using (var scope = app.Services.CreateScope())
             END $$;
         ");
 
-        var testPatients = await context.Patients
-            .Where(p => p.FullName.ToLower().Replace(" ", "").Contains("testecadastro"))
-            .Select(p => p.Id)
-            .ToListAsync();
-
-        if (testPatients.Count > 0)
+        try
         {
-            var patientRepo = services.GetRequiredService<IPatientRepository>();
-            foreach (var testPatientId in testPatients)
+            var testPatients = await context.Patients
+                .Where(p => p.FullName.ToLower().Replace(" ", "").Contains("testecadastro"))
+                .Select(p => new { p.Id, p.FullName })
+                .ToListAsync();
+
+            if (testPatients.Count > 0)
             {
-                await patientRepo.DeleteAsync(testPatientId);
+                var patientRepo = services.GetRequiredService<IPatientRepository>();
+                foreach (var testPatient in testPatients)
+                {
+                    await patientRepo.DeleteAsync(testPatient.Id);
+                    Console.WriteLine($">>> Paciente de teste removido na inicialização: {testPatient.FullName} ({testPatient.Id})");
+                }
             }
+        }
+        catch (Exception cleanupEx)
+        {
+            Console.WriteLine($">>> AVISO ao remover paciente de teste: {cleanupEx.Message}");
         }
 
         var defaultClinicNames = new[]

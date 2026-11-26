@@ -97,6 +97,13 @@ class PatientListScreen extends ConsumerWidget {
 
   Widget _buildSummaryBar(PatientListState state) {
     final count = state.patients.value?.length ?? 0;
+    final now = DateTime.now();
+    final todayCount = (state.allHistory.value ?? []).where((a) {
+      return a.startTime.year == now.year &&
+          a.startTime.month == now.month &&
+          a.startTime.day == now.day &&
+          a.status != AppointmentStatus.cancelled;
+    }).length;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       color: Colors.white,
@@ -104,11 +111,11 @@ class PatientListScreen extends ConsumerWidget {
         children: [
           _StatChip(label: 'Total', value: '$count', color: Colors.blueGrey),
           const SizedBox(width: 8),
-          const _StatChip(
+          _StatChip(
             label: 'Atendimentos Hoje',
-            value: '4',
+            value: '$todayCount',
             color: Colors.green,
-          ), // Exemplo fixo
+          ),
         ],
       ),
     );
@@ -237,9 +244,10 @@ class PatientListScreen extends ConsumerWidget {
                           }
                         } catch (e) {
                           if (context.mounted) {
+                            final msg = e.toString().replaceFirst('Exception: ', '');
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Erro ao excluir paciente: $e'),
+                                content: Text('Erro ao excluir paciente: $msg'),
                                 backgroundColor: Colors.red.shade700,
                                 behavior: SnackBarBehavior.floating,
                               ),
