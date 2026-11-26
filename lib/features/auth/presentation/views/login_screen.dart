@@ -84,7 +84,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authViewModelProvider);
     final size = MediaQuery.of(context).size;
-    final isWide = size.width > size.height;
+    final isLandscape = size.width >= size.height;
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.small(
@@ -95,79 +95,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // 1. Camada ambiente desfocada preenchendo toda a tela (evita barras laterais)
-          ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-            child: Transform.scale(
-              scale: 1.08,
-              child: Image.asset(
-                'assets/images/login_background.png',
-                fit: BoxFit.cover,
-                alignment: Alignment.center,
-                errorBuilder: (_, __, ___) => Container(
-                  color: const Color(0xFF006494),
-                ),
-              ),
+          // 1. Imagem ao fundo na tela inteira (versão 16:9 no desktop e vertical no celular, sem esticar)
+          Image.asset(
+            isLandscape
+                ? 'assets/images/login_background_wide.jpg'
+                : 'assets/images/login_background.png',
+            fit: BoxFit.cover,
+            alignment: Alignment.center,
+            filterQuality: FilterQuality.high,
+            errorBuilder: (_, __, ___) => Container(
+              color: const Color(0xFF006494),
             ),
           ),
 
-          // 2. Imagem original ao fundo na proporção exata (764x1024, sem esticar nem distorcer)
-          if (isWide)
-            Positioned.fill(
-              child: FittedBox(
-                fit: BoxFit.contain,
-                alignment: Alignment.center,
-                child: SizedBox(
-                  width: 764,
-                  height: 1024,
-                  child: ShaderMask(
-                    shaderCallback: (rect) => const LinearGradient(
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                      colors: [
-                        Colors.transparent,
-                        Colors.white,
-                        Colors.white,
-                        Colors.transparent,
-                      ],
-                      stops: [0.0, 0.08, 0.92, 1.0],
-                    ).createShader(rect),
-                    blendMode: BlendMode.dstIn,
-                    child: Image.asset(
-                      'assets/images/login_background.png',
-                      fit: BoxFit.fill,
-                      filterQuality: FilterQuality.high,
-                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                    ),
-                  ),
-                ),
-              ),
-            )
-          else
-            Image.asset(
-              'assets/images/login_background.png',
-              fit: BoxFit.cover,
-              alignment: Alignment.center,
-              filterQuality: FilterQuality.high,
-              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-            ),
-
-          // 3. Gradiente suave para melhorar a leitura do formulário sobre a imagem
+          // 2. Sobreposição suave para manter contraste e legibilidade
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withOpacity(0.15),
+                  Colors.black.withOpacity(0.14),
                   Colors.black.withOpacity(0.24),
-                  Colors.black.withOpacity(0.42),
+                  Colors.black.withOpacity(0.40),
                 ],
               ),
             ),
           ),
 
-          // 4. Formulário de login centralizado sobre a imagem de fundo
+          // 3. Card de login centralizado sobre a imagem em tela inteira
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
