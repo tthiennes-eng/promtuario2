@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../viewmodels/auth_viewmodel.dart';
@@ -82,6 +83,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authViewModelProvider);
+    final isWide = MediaQuery.of(context).size.width > 900;
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.small(
@@ -89,153 +91,313 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         tooltip: 'Configurar Servidor',
         child: const Icon(Icons.dns_outlined),
       ),
-      body: Row(
+      body: Stack(
+        fit: StackFit.expand,
         children: [
-          // Lado Esquerdo: Branding/Imagem (Visível apenas em telas grandes)
-          if (MediaQuery.of(context).size.width > 800)
-            Expanded(
-              flex: 1,
-              child: Container(
-                color: const Color(0xFF006494),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.health_and_safety, size: 120, color: Colors.white),
-                      const SizedBox(height: 24),
-                      Text(
-                        'OdontoClinica',
-                        style: Theme.of(context).textTheme.displayMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
-                      ),
-                      const Text(
-                        'Gestão Clínica Universitária',
-                        style: TextStyle(color: Colors.white70, fontSize: 18),
-                      ),
-                    ],
-                  ),
-                ),
+          // Imagem de fundo em tela cheia (fachada Odontologia)
+          Image.asset(
+            'assets/images/login_background.png',
+            fit: BoxFit.cover,
+            alignment: Alignment.center,
+            errorBuilder: (_, __, ___) => Container(
+              color: const Color(0xFF006494),
+            ),
+          ),
+
+          // Sobreposição suave para melhorar o contraste mantendo a imagem visível
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withOpacity(0.18),
+                  Colors.black.withOpacity(0.32),
+                  Colors.black.withOpacity(0.50),
+                ],
               ),
             ),
-          // Lado Direito: Formulário de Login
-          Expanded(
-            flex: 1,
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(48.0),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 400),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const Icon(Icons.medical_services_outlined, size: 64, color: Color(0xFF006494)),
-                        const SizedBox(height: 24),
-                        Text(
-                          'Bem-vindo de volta',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Acesse sua conta para gerenciar atendimentos e prontuários.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                        const SizedBox(height: 48),
-                        TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          enabled: !authState.isLoading,
-                          decoration: const InputDecoration(
-                            labelText: 'E-mail Institucional',
-                            prefixIcon: Icon(Icons.email_outlined),
-                            border: OutlineInputBorder(),
+          ),
+
+          // Conteúdo principal sobre a imagem
+          SafeArea(
+            child: Row(
+              children: [
+                if (isWide)
+                  Expanded(
+                    flex: 5,
+                    child: Padding(
+                      padding: const EdgeInsets.all(48.0),
+                      child: Align(
+                        alignment: Alignment.bottomLeft,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 18,
                           ),
-                          validator: (v) => (v == null || !v.contains('@')) ? 'E-mail institucional inválido' : null,
-                        ),
-                        const SizedBox(height: 20),
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          enabled: !authState.isLoading,
-                          textInputAction: TextInputAction.done,
-                          onFieldSubmitted: (_) {
-                            if (!authState.isLoading) _handleLogin();
-                          },
-                          decoration: InputDecoration(
-                            labelText: 'Senha',
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            border: const OutlineInputBorder(),
-                            suffixIcon: IconButton(
-                              icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
-                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.45),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.22),
                             ),
                           ),
-                          validator: (v) => (v == null || v.length < 6) ? 'Senha obrigatória (mín. 6 caracteres)' : null,
-                        ),
-                        const SizedBox(height: 12),
-                        Wrap(
-                          alignment: WrapAlignment.spaceBetween,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 8,
-                          runSpacing: 4,
-                          children: [
-                            InkWell(
-                              borderRadius: BorderRadius.circular(4),
-                              onTap: authState.isLoading
-                                  ? null
-                                  : () => setState(() => _rememberMe = !_rememberMe),
-                              child: Row(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.health_and_safety,
+                                size: 48,
+                                color: Colors.white,
+                              ),
+                              const SizedBox(width: 16),
+                              Column(
                                 mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  SizedBox(
-                                    height: 24,
-                                    width: 24,
-                                    child: Checkbox(
-                                      value: _rememberMe,
-                                      onChanged: authState.isLoading
-                                          ? null
-                                          : (val) => setState(() => _rememberMe = val ?? true),
+                                  Text(
+                                    'OdontoClinica',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineMedium
+                                        ?.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                  const Text(
+                                    'Gestão Clínica Universitária',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 15,
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  const Text('Manter login salvo', style: TextStyle(fontSize: 14)),
                                 ],
                               ),
-                            ),
-                            TextButton(
-                              onPressed: authState.isLoading ? null : () {},
-                              child: const Text('Esqueceu a senha?'),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 32),
-                        FilledButton(
-                          onPressed: authState.isLoading ? null : _handleLogin,
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 20),
-                            backgroundColor: const Color(0xFF006494),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ],
                           ),
-                          child: authState.isLoading
-                              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                              : const Text('Entrar no Sistema', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         ),
-                        const SizedBox(height: 32),
-                        const Divider(),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Acesso restrito a alunos, professores e funcionários autorizados pela universidade.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 11, color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                Expanded(
+                  flex: isWide ? 5 : 1,
+                  child: Center(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 32,
+                      ),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 430),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                            child: Container(
+                              padding: const EdgeInsets.all(32.0),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.92),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.6),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.22),
+                                    blurRadius: 24,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                              child: Form(
+                                key: _formKey,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    const Icon(
+                                      Icons.medical_services_outlined,
+                                      size: 56,
+                                      color: Color(0xFF006494),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'Bem-vindo de volta',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: const Color(0xFF0F172A),
+                                          ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    const Text(
+                                      'Acesse sua conta para gerenciar atendimentos e prontuários.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(color: Colors.black54),
+                                    ),
+                                    const SizedBox(height: 32),
+                                    TextFormField(
+                                      controller: _emailController,
+                                      keyboardType: TextInputType.emailAddress,
+                                      enabled: !authState.isLoading,
+                                      decoration: const InputDecoration(
+                                        labelText: 'E-mail Institucional',
+                                        prefixIcon: Icon(Icons.email_outlined),
+                                        border: OutlineInputBorder(),
+                                        filled: true,
+                                        fillColor: Colors.white,
+                                      ),
+                                      validator: (v) =>
+                                          (v == null || !v.contains('@'))
+                                              ? 'E-mail institucional inválido'
+                                              : null,
+                                    ),
+                                    const SizedBox(height: 18),
+                                    TextFormField(
+                                      controller: _passwordController,
+                                      obscureText: _obscurePassword,
+                                      enabled: !authState.isLoading,
+                                      textInputAction: TextInputAction.done,
+                                      onFieldSubmitted: (_) {
+                                        if (!authState.isLoading) {
+                                          _handleLogin();
+                                        }
+                                      },
+                                      decoration: InputDecoration(
+                                        labelText: 'Senha',
+                                        prefixIcon:
+                                            const Icon(Icons.lock_outline),
+                                        border: const OutlineInputBorder(),
+                                        filled: true,
+                                        fillColor: Colors.white,
+                                        suffixIcon: IconButton(
+                                          icon: Icon(
+                                            _obscurePassword
+                                                ? Icons.visibility
+                                                : Icons.visibility_off,
+                                          ),
+                                          onPressed: () => setState(
+                                            () => _obscurePassword =
+                                                !_obscurePassword,
+                                          ),
+                                        ),
+                                      ),
+                                      validator: (v) =>
+                                          (v == null || v.length < 6)
+                                              ? 'Senha obrigatória (mín. 6 caracteres)'
+                                              : null,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Wrap(
+                                      alignment: WrapAlignment.spaceBetween,
+                                      crossAxisAlignment:
+                                          WrapCrossAlignment.center,
+                                      spacing: 8,
+                                      runSpacing: 4,
+                                      children: [
+                                        InkWell(
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                          onTap: authState.isLoading
+                                              ? null
+                                              : () => setState(
+                                                    () => _rememberMe =
+                                                        !_rememberMe,
+                                                  ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              SizedBox(
+                                                height: 24,
+                                                width: 24,
+                                                child: Checkbox(
+                                                  value: _rememberMe,
+                                                  onChanged: authState.isLoading
+                                                      ? null
+                                                      : (val) => setState(
+                                                            () => _rememberMe =
+                                                                val ?? true,
+                                                          ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              const Text(
+                                                'Manter login salvo',
+                                                style: TextStyle(fontSize: 14),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: authState.isLoading
+                                              ? null
+                                              : () {},
+                                          child:
+                                              const Text('Esqueceu a senha?'),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 24),
+                                    FilledButton(
+                                      onPressed: authState.isLoading
+                                          ? null
+                                          : _handleLogin,
+                                      style: FilledButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 18,
+                                        ),
+                                        backgroundColor:
+                                            const Color(0xFF006494),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                      child: authState.isLoading
+                                          ? const SizedBox(
+                                              height: 20,
+                                              width: 20,
+                                              child: CircularProgressIndicator(
+                                                color: Colors.white,
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                          : const Text(
+                                              'Entrar no Sistema',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                    ),
+                                    const SizedBox(height: 24),
+                                    const Divider(),
+                                    const SizedBox(height: 12),
+                                    const Text(
+                                      'Acesso restrito a alunos, professores e funcionários autorizados pela universidade.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ],
