@@ -196,6 +196,59 @@ class PatientListScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                    tooltip: 'Excluir paciente',
+                    onPressed: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          title: const Text('Excluir paciente'),
+                          content: Text(
+                            'Deseja realmente apagar "${patient.fullName}" e seus agendamentos vinculados?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(dialogContext, false),
+                              child: const Text('Cancelar'),
+                            ),
+                            FilledButton(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.red.shade700,
+                              ),
+                              onPressed: () => Navigator.pop(dialogContext, true),
+                              child: const Text('Excluir'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirmed == true) {
+                        try {
+                          await ref
+                              .read(patientViewModelProvider.notifier)
+                              .deletePatient(patient.id);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Paciente "${patient.fullName}" excluído.'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Erro ao excluir paciente: $e'),
+                                backgroundColor: Colors.red.shade700,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        }
+                      }
+                    },
+                  ),
                   const Icon(Icons.chevron_right, color: Colors.grey),
                 ],
               ),

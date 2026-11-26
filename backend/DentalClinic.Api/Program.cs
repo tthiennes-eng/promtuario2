@@ -251,6 +251,20 @@ using (var scope = app.Services.CreateScope())
             END $$;
         ");
 
+        var testPatients = await context.Patients
+            .Where(p => p.FullName.ToLower().Contains("testecadastro"))
+            .Select(p => p.Id)
+            .ToListAsync();
+
+        if (testPatients.Count > 0)
+        {
+            var patientRepo = services.GetRequiredService<IPatientRepository>();
+            foreach (var testPatientId in testPatients)
+            {
+                await patientRepo.DeleteAsync(testPatientId);
+            }
+        }
+
         var defaultClinicNames = new[]
         {
             "Clinica I",

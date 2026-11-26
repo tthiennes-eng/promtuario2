@@ -185,7 +185,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -208,6 +208,17 @@ class AppDatabase extends _$AppDatabase {
         }
       }
       await migrator.createAll();
+      if (from < 7) {
+        await customStatement(
+          "DELETE FROM appointments_local WHERE patient_id IN (SELECT id FROM patients_local WHERE LOWER(full_name) LIKE '%testecadastro%') OR LOWER(patient_name) LIKE '%testecadastro%'",
+        );
+        await customStatement(
+          "DELETE FROM wait_list_local WHERE patient_id IN (SELECT id FROM patients_local WHERE LOWER(full_name) LIKE '%testecadastro%') OR LOWER(patient_name) LIKE '%testecadastro%'",
+        );
+        await customStatement(
+          "DELETE FROM patients_local WHERE LOWER(full_name) LIKE '%testecadastro%'",
+        );
+      }
     },
     beforeOpen: (details) async {
       final migrator = createMigrator();

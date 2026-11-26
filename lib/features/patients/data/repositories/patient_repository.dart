@@ -55,7 +55,10 @@ class PatientRepository implements IPatientRepository {
             .whereType<Map>()
             .map((json) => _mapJsonToEntity(Map<String, dynamic>.from(json)))
             .toList();
-        await _updateLocalCache(apiPatients);
+        await _updateLocalCache(
+          apiPatients,
+          replaceSynced: page == 1 && (query == null || query.trim().isEmpty),
+        );
       }
     } catch (e) {
       debugPrint('Erro ao buscar pacientes na API: $e');
@@ -246,10 +249,70 @@ class PatientRepository implements IPatientRepository {
         );
   }
 
-  Future<void> _updateLocalCache(List<entity.Patient> patients) async {
+  Future<void> _updateLocalCache(
+    List<entity.Patient> patients, {
+    bool replaceSynced = false,
+  }) async {
+    if (replaceSynced) {
+      final remoteIds = patients.map((p) => p.id).toSet();
+      final existingSynced = await (_localDb.select(_localDb.patientsLocal)
+            ..where((t) => t.isSynced.equals(true)))
+          .get();
+      for (final row in existingSynced) {
+        if (!remoteIds.contains(row.id)) {
+          await _deleteLocalPatientData(row.id);
+        }
+      }
+    }
     for (var p in patients) {
       await _saveLocal(p, true);
     }
+  }
+
+  @override
+  Future<void> deletePatient(String id) async {
+    try {
+      await _apiClient.instance.delete('patients/$id');
+    } on DioException catch (e) {
+      if (e.response?.statusCode != 404) {
+        rethrow;
+      }
+    } finally {
+      await _deleteLocalPatientData(id);
+    }
+  }
+
+  Future<void> _deleteLocalPatientData(String patientId) async {
+    await (_localDb.delete(_localDb.appointmentsLocal)
+          ..where((t) => t.patientId.equals(patientId)))
+        .go();
+    await (_localDb.delete(_localDb.waitListLocal)
+          ..where((t) => t.patientId.equals(patientId)))
+        .go();
+    await (_localDb.delete(_localDb.odontogramLocal)
+          ..where(
+            (t) =>
+                t.patientId.equals(patientId) |
+                t.patientId.equals('endo_$patientId') |
+                t.patientId.equals('peri_$patientId') |
+                t.patientId.equals('endo_ppr_$patientId') |
+                t.patientId.equals('endo_anamnese_$patientId') |
+                t.patientId.equals('endo_extraoral_$patientId') |
+                t.patientId.equals('endo_intraoral_$patientId'),
+          ))
+        .go();
+    await (_localDb.delete(_localDb.anamneseLocal)
+          ..where((t) => t.patientId.equals(patientId)))
+        .go();
+    await (_localDb.delete(_localDb.evolutionsLocal)
+          ..where((t) => t.patientId.equals(patientId)))
+        .go();
+    await (_localDb.delete(_localDb.attachmentsLocal)
+          ..where((t) => t.patientId.equals(patientId)))
+        .go();
+    await (_localDb.delete(_localDb.patientsLocal)
+          ..where((t) => t.id.equals(patientId)))
+        .go();
   }
 
   @override

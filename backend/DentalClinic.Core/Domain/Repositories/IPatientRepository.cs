@@ -11,6 +11,7 @@ public interface IPatientRepository
     Task<IEnumerable<Patient>> GetAllAsync(int page, int pageSize, string? searchTerm);
     Task AddAsync(Patient patient);
     Task UpdateAsync(Patient patient);
+    Task DeleteAsync(Guid id);
     Task<int> CountAsync(string? searchTerm);
 
     /// <summary>

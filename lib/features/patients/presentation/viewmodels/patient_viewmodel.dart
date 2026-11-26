@@ -39,6 +39,7 @@ class PatientViewModel extends StateNotifier<AsyncValue<List<Patient>>> {
     final realtime = ref.read(realtimeServiceProvider);
     realtime.on('PatientCreated', (args) => refresh());
     realtime.on('PatientUpdated', (args) => refresh());
+    realtime.on('PatientDeleted', (args) => refresh());
   }
 
   Future<void> refresh() async {
@@ -61,6 +62,13 @@ class PatientViewModel extends StateNotifier<AsyncValue<List<Patient>>> {
   Future<void> editPatient(Patient patient) async {
     final repository = ref.read(patientRepositoryProvider);
     await repository.updatePatient(patient);
+    await refresh();
+  }
+
+  Future<void> deletePatient(String id) async {
+    final repository = ref.read(patientRepositoryProvider);
+    await repository.deletePatient(id);
+    ref.invalidate(allAppointmentsProvider);
     await refresh();
   }
 }

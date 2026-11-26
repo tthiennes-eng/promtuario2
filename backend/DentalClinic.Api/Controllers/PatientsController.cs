@@ -169,6 +169,17 @@ public class PatientsController : ControllerBase
         return NoContent();
     }
 
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var existing = await _patientRepository.GetByIdAsync(id);
+        if (existing == null) return NotFound();
+
+        await _patientRepository.DeleteAsync(id);
+        await _hubContext.Clients.All.SendAsync("PatientDeleted", id);
+        return NoContent();
+    }
+
     /// <summary>
     /// Retorna o histórico de alterações de um paciente específico.
     /// </summary>
