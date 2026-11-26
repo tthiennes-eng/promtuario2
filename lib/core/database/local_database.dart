@@ -185,15 +185,27 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (migrator) => migrator.createAll(),
     onUpgrade: (migrator, from, to) async {
-      if (from < 5) {
-        // Limpa cache local antigo/incompatível de pacientes para recriar com o schema atual.
-        await migrator.deleteTable(patientsLocal.actualTableName);
+      if (from < 6) {
+        // Limpeza única do cache local de pacientes, agendamentos e registros vinculados.
+        final tablesToClear = <TableInfo<Table, dynamic>>[
+          patientsLocal,
+          appointmentsLocal,
+          waitListLocal,
+          odontogramLocal,
+          anamneseLocal,
+          evolutionsLocal,
+          attachmentsLocal,
+          treatmentItemsLocal,
+        ];
+        for (final table in tablesToClear) {
+          await migrator.deleteTable(table.actualTableName);
+        }
       }
       await migrator.createAll();
     },

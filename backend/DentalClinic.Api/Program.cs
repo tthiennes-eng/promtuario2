@@ -210,6 +210,47 @@ using (var scope = app.Services.CreateScope())
 
         context.Database.Migrate();
 
+        // Limpeza única de pacientes, agendamentos e dados vinculados (mantém usuários e clínicas).
+        context.Database.ExecuteSqlRaw(@"
+            CREATE TABLE IF NOT EXISTS public.system_maintenance_log (
+                key text PRIMARY KEY,
+                executed_at timestamp with time zone NOT NULL DEFAULT now()
+            );
+
+            DO $$
+            DECLARE
+                tbl text;
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM public.system_maintenance_log
+                    WHERE key = 'clear_patients_and_appointments_20261126'
+                ) THEN
+                    FOREACH tbl IN ARRAY ARRAY[
+                        'public.agendamentos',
+                        'public.lista_espera',
+                        'public.patient_change_logs',
+                        'public.anamneses',
+                        'public.anexos',
+                        'public.""Attachments""',
+                        'public.evolucoes',
+                        'public.atestados',
+                        'public.""MedicalRecords""',
+                        'public.odontogramas',
+                        'public.receitas',
+                        'public.""TreatmentItems""',
+                        'public.pacientes'
+                    ] LOOP
+                        IF to_regclass(tbl) IS NOT NULL THEN
+                            EXECUTE 'TRUNCATE TABLE ' || tbl || ' RESTART IDENTITY CASCADE';
+                        END IF;
+                    END LOOP;
+
+                    INSERT INTO public.system_maintenance_log (key)
+                    VALUES ('clear_patients_and_appointments_20261126');
+                END IF;
+            END $$;
+        ");
+
         var defaultClinicNames = new[]
         {
             "Clinica I",
