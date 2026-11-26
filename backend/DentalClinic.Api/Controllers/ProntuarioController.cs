@@ -313,6 +313,7 @@ public class ProntuarioController : ControllerBase
                 "periograma" => "Periograma",
                 "endodontia" => "Endodontia",
                 "ppr" => "Ficha PPR",
+                "dtm" => "Ficha DTM",
                 "tcle" => "Termo de Consentimento (TCLE)",
                 _ => s.SheetType.ToUpperInvariant()
             };

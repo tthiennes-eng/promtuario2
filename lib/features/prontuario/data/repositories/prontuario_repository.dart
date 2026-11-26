@@ -31,6 +31,7 @@ class ProntuarioRepository implements IProntuarioRepository {
       'periograma_',
       'endodontia_',
       'ppr_',
+      'dtm_',
       'tcle_',
     ];
     for (final prefix in knownPrefixes) {

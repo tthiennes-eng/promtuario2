@@ -30,6 +30,7 @@ class ProntuarioScreen extends ConsumerWidget {
       case 'periograma': context.push('$base/periograma$query', extra: patient); break;
       case 'endodontia': context.push('$base/endodontia$query', extra: patient); break;
       case 'ppr': context.push('$base/ppr$query', extra: patient); break;
+      case 'dtm': context.push('$base/dtm$query', extra: patient); break;
       case 'plano': context.push('$base/treatment-plan$query', extra: patient); break;
       case 'tcle': context.push('$base/tcle$query', extra: patient); break;
       case 'timeline': context.push('$base/timeline$query', extra: patient); break;
@@ -235,6 +236,14 @@ class ProntuarioScreen extends ConsumerWidget {
                   '/dashboard/patients/prontuario/ppr',
                   badge: sheetBadge('ppr'),
                   isFilled: sheetFilled('ppr'),
+                ),
+                _buildMenuCard(
+                  context,
+                  'DTM',
+                  Icons.monitor_heart_outlined,
+                  '/dashboard/patients/prontuario/dtm',
+                  badge: sheetBadge('dtm'),
+                  isFilled: sheetFilled('dtm'),
                 ),
                 _buildMenuCard(
                   context,

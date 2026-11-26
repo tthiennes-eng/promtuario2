@@ -26,6 +26,7 @@ import '../../features/prontuario/presentation/views/endodontia_screen.dart';
 import '../../features/prontuario/presentation/views/odontogram_screen.dart';
 import '../../features/prontuario/presentation/views/periograma_screen.dart';
 import '../../features/prontuario/presentation/views/ppr_screen.dart';
+import '../../features/prontuario/presentation/views/dtm_screen.dart';
 import '../../features/prontuario/presentation/views/evolution_screen.dart';
 import '../../features/prontuario/presentation/views/exame_extraoral_screen.dart';
 import '../../features/prontuario/presentation/views/exame_intraoral_screen.dart';
@@ -99,6 +100,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(path: 'periograma', builder: (context, state) => PeriogramaScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
                   GoRoute(path: 'endodontia', builder: (context, state) => EndodontiaScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
                   GoRoute(path: 'ppr', builder: (context, state) => PprScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
+                  GoRoute(path: 'dtm', builder: (context, state) => DtmScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
                   GoRoute(path: 'treatment-plan', builder: (context, state) => TreatmentPlanScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
                   GoRoute(path: 'tcle', builder: (context, state) => TcleScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),
                   GoRoute(path: 'timeline', builder: (context, state) => ClinicalTimelineScreen(patientId: state.uri.queryParameters['patientId']!, patientName: state.uri.queryParameters['patientName']!)),

@@ -295,6 +295,69 @@ class ProntuarioPdfService {
     return _saveDocument(doc, 'ficha_ppr', patientName);
   }
 
+  static Future<File> generateDtmPdf({
+    required String patientName,
+    required Map<String, dynamic> dtmData,
+  }) async {
+    final doc = pw.Document();
+    String field(String key) => (dtmData[key] ?? '').toString().trim();
+    String sub(String parent, String key) {
+      final m = dtmData[parent];
+      if (m is Map) return (m[key] ?? '').toString().trim();
+      return '';
+    }
+
+    final rawRows = dtmData['tratamentos'];
+    final rows = <List<String>>[];
+    if (rawRows is List) {
+      for (final item in rawRows) {
+        if (item is Map) {
+          final d = (item['data'] ?? '').toString().trim();
+          final dente = (item['dente'] ?? '').toString().trim();
+          final trat = (item['tratamentoRealizado'] ?? '').toString().trim();
+          if (d.isNotEmpty || dente.isNotEmpty || trat.isNotEmpty) {
+            rows.add([d, dente, trat]);
+          }
+        }
+      }
+    }
+
+    final prof = field('profissional').isEmpty ? 'Dra. Andrea Alac' : field('profissional');
+    doc.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(24),
+        build: (context) => [
+          _header('Ficha Clínica - DTM', patientName, subtitle: '$prof  |  Data: ${field("data")}'),
+          pw.SizedBox(height: 10),
+          pw.Text('AVALIAÇÃO DE RISCO (avaliado pela sua dentista)', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 4),
+          pw.Text('Risco de Cárie: ${field("riscoCarie").isEmpty ? "-" : field("riscoCarie")}', style: const pw.TextStyle(fontSize: 9)),
+          pw.Text('Risco Oclusal: ${field("riscoOclusal").isEmpty ? "-" : field("riscoOclusal")}', style: const pw.TextStyle(fontSize: 9)),
+          pw.Text('Risco DTM: ${field("riscoDtm").isEmpty ? "-" : field("riscoDtm")}', style: const pw.TextStyle(fontSize: 9)),
+          pw.SizedBox(height: 12),
+          pw.Text('COR DOS DENTES', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 4),
+          pw.Text('Cor atual dos dentes — Anterior: ${sub("corAtual", "anterior")} | Canino: ${sub("corAtual", "canino")} | Posterior: ${sub("corAtual", "posterior")}', style: const pw.TextStyle(fontSize: 9)),
+          pw.Text('Após o clareamento — Anterior: ${sub("aposClareamento", "anterior")} | Canino: ${sub("aposClareamento", "canino")} | Posterior: ${sub("aposClareamento", "posterior")}', style: const pw.TextStyle(fontSize: 9)),
+          pw.Text('Cor da porcelana ou resina foto — Anterior: ${sub("corPorcelanaResina", "anterior")} | Canino: ${sub("corPorcelanaResina", "canino")} | Posterior: ${sub("corPorcelanaResina", "posterior")}', style: const pw.TextStyle(fontSize: 9)),
+          pw.SizedBox(height: 14),
+          pw.Text('TRATAMENTO REALIZADO', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 6),
+          pw.TableHelper.fromTextArray(
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: PdfColors.white),
+            headerDecoration: pw.BoxDecoration(color: PdfColor.fromHex('#006494')),
+            cellStyle: const pw.TextStyle(fontSize: 9),
+            headers: const ['Data', 'Dente', 'TRATAMENTO REALIZADO'],
+            data: rows.isEmpty ? const [['-', '-', 'Nenhum tratamento registrado']] : rows,
+          ),
+          _signatureFooter(prof),
+        ],
+      ),
+    );
+    return _saveDocument(doc, 'ficha_dtm', patientName);
+  }
+
   static Future<File> generateTclePdf({
     required String patientName,
     required Map<String, dynamic> tcleData,
