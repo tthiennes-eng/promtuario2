@@ -85,6 +85,7 @@ class AppointmentState {
     final duration = selectedClinic!.slotDurationMinutes > 0 ? selectedClinic!.slotDurationMinutes : 60;
 
     final dayAppointments = appointments.value ?? [];
+    final placedIds = <String>{};
 
     for (int hour = startHour; hour < endHour; hour++) {
       if (hour == 12 || hour == 13) continue; // Almoço
@@ -102,11 +103,21 @@ class AppointmentState {
           allSlots.add(TimeSlot(startTime: slotStart, endTime: slotEnd, isFree: true));
         } else {
           for (final app in appsInSlot) {
+            placedIds.add(app.id);
             allSlots.add(TimeSlot(startTime: slotStart, endTime: slotEnd, appointment: app));
           }
         }
       }
     }
+
+    for (final app in dayAppointments) {
+      if (!placedIds.contains(app.id)) {
+        final localStart = app.startTime.isUtc ? app.startTime.toLocal() : app.startTime;
+        final localEnd = app.endTime.isUtc ? app.endTime.toLocal() : app.endTime;
+        allSlots.add(TimeSlot(startTime: localStart, endTime: localEnd, appointment: app));
+      }
+    }
+    allSlots.sort((a, b) => a.startTime.compareTo(b.startTime));
     return allSlots;
   }
 
@@ -213,7 +224,45 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
   }
 
   Future<void> schedule(Appointment appointment) async {
-    await ref.read(appointmentRepositoryProvider).scheduleAppointment(appointment);
+    final saved = await ref.read(appointmentRepositoryProvider).scheduleAppointment(appointment);
+
+    var clinics = state.clinics;
+    if (clinics.isEmpty || !clinics.any((c) => c.id == saved.clinicId)) {
+      try {
+        clinics = await ref.read(proceduresRepositoryProvider).getClinics(onlyActive: true);
+      } catch (_) {}
+    }
+
+    Clinic? matchedClinic;
+    for (final c in clinics) {
+      if (c.id == saved.clinicId) {
+        matchedClinic = c;
+        break;
+      }
+    }
+    if (matchedClinic == null && saved.clinicName != null && saved.clinicName!.isNotEmpty) {
+      final targetKey = Clinic.normalizeName(saved.clinicName!);
+      for (final c in clinics) {
+        if (Clinic.normalizeName(c.name) == targetKey) {
+          matchedClinic = c;
+          break;
+        }
+      }
+    }
+
+    final localStart = saved.startTime.isUtc ? saved.startTime.toLocal() : saved.startTime;
+    final scheduledDate = DateTime(localStart.year, localStart.month, localStart.day);
+
+    final shouldSwitchClinic = state.selectedClinic != null &&
+        matchedClinic != null &&
+        state.selectedClinic!.id != matchedClinic.id;
+
+    state = state.copyWith(
+      clinics: clinics,
+      selectedDate: scheduledDate,
+      selectedClinic: shouldSwitchClinic ? matchedClinic : state.selectedClinic,
+    );
+
     _invalidateConsumers();
     await refresh();
     await fetchInstitutionalData();

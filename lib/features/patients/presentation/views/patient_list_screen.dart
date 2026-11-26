@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:promt/features/patients/presentation/viewmodels/patient_viewmodel.dart';
 import 'package:promt/features/patients/domain/entities/patient.dart';
 import 'package:promt/features/agenda/domain/entities/appointment.dart';
+import 'package:promt/features/procedures/domain/entities/clinic.dart';
 import 'package:promt/features/procedures/presentation/viewmodels/clinics_viewmodel.dart';
 
 class PatientListScreen extends ConsumerWidget {
@@ -145,13 +146,13 @@ class PatientListScreen extends ConsumerWidget {
   ) {
     final age = DateTime.now().year - patient.birthDate.year;
 
-    String getClinic(String id) {
+    String getClinic(Appointment app) {
       final clinics = ref.read(clinicsViewModelProvider).value ?? [];
-      try {
-        return clinics.firstWhere((c) => c.id == id).name;
-      } catch (_) {
-        return id;
-      }
+      return Clinic.resolveDisplayName(
+        clinicId: app.clinicId,
+        clinicName: app.clinicName,
+        clinics: clinics,
+      );
     }
 
     return Container(
@@ -294,7 +295,7 @@ class PatientListScreen extends ConsumerWidget {
     String label,
     Appointment? app,
     Color themeColor,
-    String Function(String) getClinic,
+    String Function(Appointment) getClinic,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,7 +331,7 @@ class PatientListScreen extends ConsumerWidget {
               ),
               _infoItem(
                 Icons.local_hospital,
-                getClinic(app.clinicId),
+                getClinic(app),
                 themeColor,
               ),
               _infoItem(

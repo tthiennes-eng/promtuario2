@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
 import 'package:logging/logging.dart';
 import 'package:promt/core/network/api_client.dart';
@@ -18,6 +19,7 @@ class AppointmentRepository implements IAppointmentRepository {
     required DateTime end,
     String? clinicId,
   }) async {
+    final remoteClinicNames = <String, String>{};
     try {
       final response = await _apiClient.instance.get(
         '/appointments',
@@ -37,6 +39,11 @@ class AppointmentRepository implements IAppointmentRepository {
       }
 
       final remoteAppointments = data.map((item) => _appointmentFromJson(Map<String, dynamic>.from(item))).toList();
+      for (final app in remoteAppointments) {
+        if (app.clinicName != null && app.clinicName!.isNotEmpty) {
+          remoteClinicNames[app.clinicId] = app.clinicName!;
+        }
+      }
       await _updateLocalCache(
         remoteAppointments,
         start: start,
@@ -47,6 +54,12 @@ class AppointmentRepository implements IAppointmentRepository {
       _logger.warning('Erro na busca remota: $e');
     }
 
+    final localClinics = await _localDb.select(_localDb.clinicsLocal).get();
+    final clinicNamesById = <String, String>{
+      for (final c in localClinics) c.id: c.name,
+      ...remoteClinicNames,
+    };
+
     final results = await (_localDb.select(_localDb.appointmentsLocal)
           ..where((t) {
             var expr = t.startTime.isBetweenValues(start, end);
@@ -55,7 +68,9 @@ class AppointmentRepository implements IAppointmentRepository {
           }))
         .get();
 
-    return results.map((row) => _mapSchemaToEntity(row)).toList();
+    return results
+        .map((row) => _mapSchemaToEntity(row, clinicName: clinicNamesById[row.clinicId]))
+        .toList();
   }
 
   @override
@@ -67,9 +82,44 @@ class AppointmentRepository implements IAppointmentRepository {
         data: _mapEntityToApiJson(appointment),
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
-        await _saveLocal(appointment, true);
+        Appointment saved = appointment;
+        if (response.data is Map) {
+          final parsed = _appointmentFromJson(Map<String, dynamic>.from(response.data as Map));
+          saved = parsed.copyWith(
+            patientName: parsed.patientName.isNotEmpty ? parsed.patientName : appointment.patientName,
+            clinicName: (parsed.clinicName != null && parsed.clinicName!.isNotEmpty)
+                ? parsed.clinicName
+                : appointment.clinicName,
+          );
+        }
+        if (saved.id != appointment.id) {
+          await (_localDb.delete(_localDb.appointmentsLocal)
+                ..where((t) => t.id.equals(appointment.id)))
+              .go();
+        }
+        await _saveLocal(saved, true);
+        return saved;
       }
-    } catch (_) {}
+    } on DioException catch (e) {
+      if (e.response != null) {
+        await (_localDb.delete(_localDb.appointmentsLocal)
+              ..where((t) => t.id.equals(appointment.id)))
+            .go();
+        final data = e.response?.data;
+        String? message;
+        if (data is String && data.trim().isNotEmpty) {
+          message = data.trim();
+        } else if (data is Map) {
+          message = data['message']?.toString() ??
+              data['title']?.toString() ??
+              data['error']?.toString();
+        }
+        throw Exception(message ?? 'Erro ao salvar agendamento no servidor (HTTP ${e.response?.statusCode})');
+      }
+      _logger.warning('Sem conexão ao salvar agendamento; mantido localmente: $e');
+    } catch (e) {
+      _logger.warning('Erro inesperado ao sincronizar agendamento: $e');
+    }
     return appointment;
   }
 
@@ -164,7 +214,7 @@ class AppointmentRepository implements IAppointmentRepository {
     return Appointment.fromJson(json);
   }
 
-  Appointment _mapSchemaToEntity(AppointmentsLocalData row) {
+  Appointment _mapSchemaToEntity(AppointmentsLocalData row, {String? clinicName}) {
     return Appointment(
       id: row.id,
       patientId: row.patientId,
@@ -181,6 +231,7 @@ class AppointmentRepository implements IAppointmentRepository {
       procedureName: row.procedureName,
       notes: row.notes,
       clinicId: row.clinicId,
+      clinicName: clinicName,
     );
   }
 
@@ -189,6 +240,7 @@ class AppointmentRepository implements IAppointmentRepository {
     'patientId': app.patientId,
     'doctorId': app.doctorId,
     'clinicId': app.clinicId,
+    'clinicName': app.clinicName,
     'startTime': app.startTime.toUtc().toIso8601String(),
     'endTime': app.endTime.toUtc().toIso8601String(),
     'procedureName': app.procedureName,

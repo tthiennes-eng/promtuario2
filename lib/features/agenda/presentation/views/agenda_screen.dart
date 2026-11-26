@@ -168,6 +168,15 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
   Widget _buildAppointmentCard(Appointment appt, {required bool showClinic}) {
     final now = DateTime.now();
     final bool isLate = appt.status == AppointmentStatus.scheduled && appt.startTime.isBefore(now);
+    final clinics = ref.read(appointmentViewModelProvider).clinics;
+    final clinicLabel = Clinic.resolveDisplayName(
+      clinicId: appt.clinicId,
+      clinicName: appt.clinicName,
+      clinics: clinics,
+    );
+    final displayPatient = appt.patientName.trim().isNotEmpty
+        ? appt.patientName.toUpperCase()
+        : 'PACIENTE NÃO INFORMADO';
     
     int? delayMinutes;
     if (appt.actualStartTime != null) {
@@ -193,7 +202,7 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
         ),
         title: Row(
           children: [
-            Expanded(child: Text(appt.patientName.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)))),
+            Expanded(child: Text(displayPatient, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)))),
             if (delayMinutes != null && delayMinutes > 0)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -207,7 +216,7 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
           children: [
             const SizedBox(height: 4),
             Text(appt.procedureName ?? 'Avaliação', style: const TextStyle(color: Colors.blueGrey, fontSize: 12)),
-            if (showClinic) Text('Local: ${appt.clinicId}', style: const TextStyle(fontSize: 11, color: Color(0xFF006494), fontWeight: FontWeight.bold)),
+            Text('Local: $clinicLabel', style: const TextStyle(fontSize: 11, color: Color(0xFF006494), fontWeight: FontWeight.bold)),
             Text('Responsável: ${appt.studentName ?? "Não inf."}', style: const TextStyle(fontSize: 11)),
             if (appt.arrivalTime != null) 
               Text('Chegada: ${DateFormat('HH:mm').format(appt.arrivalTime!)}', style: const TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)),
@@ -221,6 +230,15 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
 
   void _showAppointmentDetails(Appointment appt) {
     final notifier = ref.read(appointmentViewModelProvider.notifier);
+    final clinics = ref.read(appointmentViewModelProvider).clinics;
+    final clinicLabel = Clinic.resolveDisplayName(
+      clinicId: appt.clinicId,
+      clinicName: appt.clinicName,
+      clinics: clinics,
+    );
+    final displayPatient = appt.patientName.trim().isNotEmpty
+        ? appt.patientName.toUpperCase()
+        : 'PACIENTE NÃO INFORMADO';
     
     showModalBottomSheet(
       context: context,
@@ -235,11 +253,12 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(child: Text(appt.patientName.toUpperCase(), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF006494)))),
+                Expanded(child: Text(displayPatient, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF006494)))),
                 _buildStatusChip(appt.status),
               ],
             ),
             const SizedBox(height: 24),
+            _infoRow(Icons.local_hospital_outlined, 'Local (Clínica)', clinicLabel),
             _infoRow(Icons.access_time, 'Horário', '${DateFormat('HH:mm').format(appt.startTime)} às ${DateFormat('HH:mm').format(appt.endTime)}'),
             _infoRow(Icons.medical_services_outlined, 'Procedimento', appt.procedureName ?? 'Avaliação Geral'),
             _infoRow(Icons.school_outlined, 'Responsável (Aluno)', appt.studentName ?? 'Não atribuído'),

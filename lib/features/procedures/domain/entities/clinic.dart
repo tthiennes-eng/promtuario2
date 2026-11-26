@@ -1,3 +1,5 @@
+import 'package:uuid/uuid.dart';
+
 class Clinic {
   final String id;
   final String name;
@@ -155,5 +157,65 @@ class Clinic {
       }
     }
     return unique;
+  }
+
+  static const List<String> defaultNames = [
+    'Clinica I',
+    'Clinica II',
+    'Clinica III',
+    'Clinica IV',
+    'Clinica V',
+    'Clinica Integrada Infantil',
+    'Clinica de Emergência',
+    'Clinica Integrada Adulto I',
+    'Clinica Integrada Adulto II',
+    'Clinica de DTM',
+    'Clinica de Odontopediatria',
+  ];
+
+  static final RegExp _uuidPattern = RegExp(
+    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+  );
+
+  static String deterministicId(String name) {
+    return const Uuid().v5(Uuid.NAMESPACE_URL, 'promtuario-clinic:$name');
+  }
+
+  static String resolveDisplayName({
+    required String clinicId,
+    String? clinicName,
+    required Iterable<Clinic> clinics,
+  }) {
+    final trimmedName = clinicName?.trim() ?? '';
+    if (trimmedName.isNotEmpty && !_uuidPattern.hasMatch(trimmedName)) {
+      return trimmedName;
+    }
+
+    final trimmedId = clinicId.trim();
+    if (trimmedId.isEmpty) return 'Clínica não informada';
+
+    for (final clinic in clinics) {
+      if (clinic.id == trimmedId && clinic.name.trim().isNotEmpty) {
+        return clinic.name;
+      }
+    }
+
+    for (final clinic in clinics) {
+      if (deterministicId(clinic.name) == trimmedId) {
+        return clinic.name;
+      }
+    }
+
+    for (final name in defaultNames) {
+      if (deterministicId(name) == trimmedId) {
+        return name;
+      }
+    }
+
+    if (!_uuidPattern.hasMatch(trimmedId)) {
+      return trimmedId;
+    }
+
+    return 'Clínica não informada';
   }
 }

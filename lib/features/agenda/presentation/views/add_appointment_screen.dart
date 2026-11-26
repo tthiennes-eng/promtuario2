@@ -571,7 +571,21 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
       );
       final end = start.add(const Duration(hours: 1));
 
-      final finalClinicId = _selectedClinicId!;
+      String finalClinicId = _selectedClinicId!;
+      final selectedName = _selectedClinicName;
+      if (selectedName != null && selectedName.isNotEmpty) {
+        final targetKey = Clinic.normalizeName(selectedName);
+        final availableClinics = <Clinic>[
+          ...(ref.read(clinicsViewModelProvider).valueOrNull ?? const <Clinic>[]),
+          ...ref.read(appointmentViewModelProvider).clinics,
+        ];
+        for (final clinic in availableClinics) {
+          if (Clinic.normalizeName(clinic.name) == targetKey && _isUuid(clinic.id)) {
+            finalClinicId = clinic.id;
+            break;
+          }
+        }
+      }
       final finalDoctorId = _fallbackDoctorId();
 
       final appointment = Appointment(
@@ -590,6 +604,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
         procedureName: _selectedProcedureName,
         notes: _notesController.text,
         clinicId: finalClinicId,
+        clinicName: selectedName,
       );
 
       try {

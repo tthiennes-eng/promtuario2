@@ -1,7 +1,12 @@
+using System.Globalization;
+using System.Text;
+using System.Text.RegularExpressions;
+using DentalClinic.Api.Hubs;
 using DentalClinic.Core.Domain.Entities;
 using DentalClinic.Core.Domain.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace DentalClinic.Api.Controllers;
 
@@ -18,19 +23,37 @@ public class AppointmentsController : ControllerBase
     private readonly IPatientRepository _patientRepository;
     private readonly IClinicRepository _clinicRepository;
     private readonly ILogger<AppointmentsController> _logger;
+    private readonly IHubContext<ClinicHub> _hubContext;
 
     public AppointmentsController(
         IAppointmentRepository appointmentRepository,
         IUserRepository userRepository,
         IPatientRepository patientRepository,
         IClinicRepository clinicRepository,
-        ILogger<AppointmentsController> logger)
+        ILogger<AppointmentsController> logger,
+        IHubContext<ClinicHub> hubContext)
     {
         _appointmentRepository = appointmentRepository;
         _userRepository = userRepository;
         _patientRepository = patientRepository;
         _clinicRepository = clinicRepository;
         _logger = logger;
+        _hubContext = hubContext;
+    }
+
+    private static string NormalizeName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return string.Empty;
+        var decomposed = name.Trim().Normalize(NormalizationForm.FormD);
+        var sb = new StringBuilder(decomposed.Length);
+        foreach (var ch in decomposed)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark)
+            {
+                sb.Append(char.ToLowerInvariant(ch));
+            }
+        }
+        return Regex.Replace(sb.ToString(), @"\s+", " ");
     }
 
     /// <summary>
@@ -40,7 +63,12 @@ public class AppointmentsController : ControllerBase
     public async Task<IActionResult> GetByRange([FromQuery] DateTime start, [FromQuery] DateTime end, [FromQuery] Guid? clinicId = null)
     {
         var appointments = await _appointmentRepository.GetByRangeAsync(start, end, clinicId);
-        return Ok(appointments);
+        var clinics = await _clinicRepository.GetAllAsync();
+        var clinicNamesById = clinics.ToDictionary(c => c.Id, c => c.Name);
+
+        var responses = appointments.Select(a =>
+            new AppointmentResponse(a, clinicNamesById.TryGetValue(a.ClinicId, out var name) ? name : null));
+        return Ok(responses);
     }
 
     /// <summary>
@@ -70,8 +98,9 @@ public class AppointmentsController : ControllerBase
 
         if (clinic == null && clinicName != null)
         {
+            var normalizedTarget = NormalizeName(clinicName);
             clinic = (await _clinicRepository.GetAllAsync()).FirstOrDefault(c =>
-                string.Equals(c.Name.Trim(), clinicName, StringComparison.OrdinalIgnoreCase));
+                NormalizeName(c.Name) == normalizedTarget);
         }
 
         if (clinic == null)
@@ -113,9 +142,20 @@ public class AppointmentsController : ControllerBase
         await _appointmentRepository.AddAsync(appointment);
 
         var created = await _appointmentRepository.GetByIdAsync(appointment.Id);
-        return created == null
-            ? StatusCode(500, "Falha ao recuperar o agendamento criado.")
-            : StatusCode(201, new AppointmentResponse(created));
+        if (created == null)
+            return StatusCode(500, "Falha ao recuperar o agendamento criado.");
+
+        var response = new AppointmentResponse(created, clinic.Name);
+        try
+        {
+            await _hubContext.Clients.All.SendAsync("AppointmentCreated", response);
+        }
+        catch (Exception hubEx)
+        {
+            _logger.LogWarning(hubEx, "Agendamento {AppointmentId} criado, mas falhou a notificação SignalR.", created.Id);
+        }
+
+        return StatusCode(201, response);
     }
 
     /// <summary>
@@ -211,7 +251,7 @@ public record CreateAppointmentRequest(
 
 public record AppointmentResponse
 {
-    public AppointmentResponse(Appointment appointment)
+    public AppointmentResponse(Appointment appointment, string? clinicName = null)
     {
         Id = appointment.Id;
         PatientId = appointment.PatientId;
@@ -228,6 +268,7 @@ public record AppointmentResponse
         ProcedureName = appointment.ProcedureName;
         Notes = appointment.Notes;
         ClinicId = appointment.ClinicId;
+        ClinicName = clinicName;
         ArrivalTime = appointment.ArrivalTime;
         ActualStartTime = appointment.ActualStartTime;
         ActualEndTime = appointment.ActualEndTime;
@@ -248,6 +289,7 @@ public record AppointmentResponse
     public string? ProcedureName { get; init; }
     public string? Notes { get; init; }
     public Guid ClinicId { get; init; }
+    public string? ClinicName { get; init; }
     public DateTime? ArrivalTime { get; init; }
     public DateTime? ActualStartTime { get; init; }
     public DateTime? ActualEndTime { get; init; }

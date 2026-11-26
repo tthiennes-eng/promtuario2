@@ -52,4 +52,41 @@ void main() {
       'clinica ii',
     ]);
   });
+
+  test('Clinic.resolveDisplayName resolves clinic name from id, clinicName, or deterministic UUIDv5', () {
+    final clinics = [
+      const Clinic(id: '11111111-1111-1111-1111-111111111111', name: 'Clinica I'),
+      const Clinic(id: '22222222-2222-2222-2222-222222222222', name: 'Clinica II'),
+    ];
+
+    expect(
+      Clinic.resolveDisplayName(
+        clinicId: '11111111-1111-1111-1111-111111111111',
+        clinics: clinics,
+      ),
+      'Clinica I',
+    );
+    expect(
+      Clinic.resolveDisplayName(
+        clinicId: Clinic.deterministicId('Clinica II'),
+        clinics: clinics,
+      ),
+      'Clinica II',
+    );
+    expect(
+      Clinic.resolveDisplayName(
+        clinicId: '99999999-9999-9999-9999-999999999999',
+        clinicName: 'Clinica III',
+        clinics: clinics,
+      ),
+      'Clinica III',
+    );
+    expect(
+      Clinic.resolveDisplayName(
+        clinicId: '99999999-9999-9999-9999-999999999999',
+        clinics: clinics,
+      ),
+      'Clínica não informada',
+    );
+  });
 }

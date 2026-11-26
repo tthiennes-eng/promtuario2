@@ -33,6 +33,7 @@ class Appointment {
   final String? procedureName;
   final String? notes;
   final String clinicId;
+  final String? clinicName;
   final DateTime? arrivalTime;
   final DateTime? actualStartTime;
   final DateTime? actualEndTime;
@@ -53,6 +54,7 @@ class Appointment {
     this.procedureName,
     this.notes,
     required this.clinicId,
+    this.clinicName,
     this.arrivalTime,
     this.actualStartTime,
     this.actualEndTime,
@@ -74,6 +76,7 @@ class Appointment {
     String? procedureName,
     String? notes,
     String? clinicId,
+    String? clinicName,
     DateTime? arrivalTime,
     DateTime? actualStartTime,
     DateTime? actualEndTime,
@@ -94,6 +97,7 @@ class Appointment {
       procedureName: procedureName ?? this.procedureName,
       notes: notes ?? this.notes,
       clinicId: clinicId ?? this.clinicId,
+      clinicName: clinicName ?? this.clinicName,
       arrivalTime: arrivalTime ?? this.arrivalTime,
       actualStartTime: actualStartTime ?? this.actualStartTime,
       actualEndTime: actualEndTime ?? this.actualEndTime,
@@ -105,6 +109,17 @@ class Appointment {
       for (final k in keys) {
         final val = json[k];
         if (val != null && val.toString().isNotEmpty) return val.toString();
+      }
+      return '';
+    }
+
+    String nestedString(String parentKey, List<String> childKeys) {
+      final parent = json[parentKey];
+      if (parent is Map) {
+        for (final k in childKeys) {
+          final val = parent[k];
+          if (val != null && val.toString().isNotEmpty) return val.toString();
+        }
       }
       return '';
     }
@@ -121,12 +136,36 @@ class Appointment {
       );
     }
 
+    var parsedPatientName = getString(['patientName', 'PatientName', 'fullName', 'FullName', 'patient_name']);
+    if (parsedPatientName.isEmpty) {
+      parsedPatientName = nestedString('patient', ['fullName', 'FullName', 'name', 'Name']);
+      if (parsedPatientName.isEmpty) {
+        parsedPatientName = nestedString('Patient', ['fullName', 'FullName', 'name', 'Name']);
+      }
+    }
+
+    var parsedDoctorName = getString(['doctorName', 'DoctorName', 'doctor_name']);
+    if (parsedDoctorName.isEmpty) {
+      parsedDoctorName = nestedString('doctor', ['name', 'Name']);
+      if (parsedDoctorName.isEmpty) {
+        parsedDoctorName = nestedString('Doctor', ['name', 'Name']);
+      }
+    }
+
+    var parsedClinicName = getString(['clinicName', 'ClinicName', 'clinic_name']);
+    if (parsedClinicName.isEmpty) {
+      parsedClinicName = nestedString('clinic', ['name', 'Name']);
+      if (parsedClinicName.isEmpty) {
+        parsedClinicName = nestedString('Clinic', ['name', 'Name']);
+      }
+    }
+
     return Appointment(
       id: (json['id'] ?? json['Id'])?.toString() ?? '',
       patientId: getString(['patientId', 'PatientId', 'patient_id']),
-      patientName: getString(['patientName', 'PatientName', 'fullName', 'FullName', 'patient_name']),
+      patientName: parsedPatientName,
       doctorId: getString(['doctorId', 'DoctorId', 'doctor_id']),
-      doctorName: getString(['doctorName', 'DoctorName', 'doctor_name']),
+      doctorName: parsedDoctorName,
       studentId: (json['studentId'] ?? json['StudentId'])?.toString(),
       studentName: (json['studentName'] ?? json['StudentName'])?.toString(),
       professorId: (json['professorId'] ?? json['ProfessorId'])?.toString(),
@@ -137,6 +176,7 @@ class Appointment {
       procedureName: getString(['procedureName', 'ProcedureName']),
       notes: getString(['notes', 'Notes', 'observation']),
       clinicId: getString(['clinicId', 'ClinicId', 'clinic_id']),
+      clinicName: parsedClinicName.isEmpty ? null : parsedClinicName,
       arrivalTime: SafeDateParser.parseNullable(json['arrivalTime'] ?? json['ArrivalTime']),
       actualStartTime: SafeDateParser.parseNullable(json['actualStartTime'] ?? json['ActualStartTime']),
       actualEndTime: SafeDateParser.parseNullable(json['actualEndTime'] ?? json['ActualEndTime']),
@@ -159,6 +199,7 @@ class Appointment {
     'procedureName': procedureName,
     'notes': notes,
     'clinicId': clinicId,
+    'clinicName': clinicName,
     'arrivalTime': arrivalTime?.toIso8601String(),
     'actualStartTime': actualStartTime?.toIso8601String(),
     'actualEndTime': actualEndTime?.toIso8601String(),
