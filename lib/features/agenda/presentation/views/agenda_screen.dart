@@ -145,8 +145,6 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
           _StatTile(label: 'Atendidos', value: '${stats['completed']}', color: Colors.green, icon: Icons.task_alt),
           const SizedBox(width: 8),
           _StatTile(label: 'Faltas', value: '${stats['missed']}', color: Colors.red, icon: Icons.person_off_outlined),
-          const SizedBox(width: 8),
-          _StatTile(label: 'Ocupação', value: '${(stats['occupancy'] * 100).toInt()}%', color: Colors.orange, icon: Icons.speed),
         ],
       ),
     );
