@@ -20,6 +20,7 @@ class ProntuarioScreen extends ConsumerWidget {
       case 'intraoral': context.push('$base/intraoral$query', extra: patient); break;
       case 'periograma': context.push('$base/periograma$query', extra: patient); break;
       case 'endodontia': context.push('$base/endodontia$query', extra: patient); break;
+      case 'ppr': context.push('$base/ppr$query', extra: patient); break;
       case 'plano': context.push('$base/treatment-plan$query', extra: patient); break;
       case 'receita': context.push('$base/prescription$query', extra: patient); break;
       case 'atestado': context.push('$base/certificate$query', extra: patient); break;
@@ -81,6 +82,7 @@ class ProntuarioScreen extends ConsumerWidget {
                 _buildMenuCard(context, "Exame Intraoral", Icons.medical_information, '/dashboard/patients/prontuario/intraoral'),
                 _buildMenuCard(context, "Periograma", Icons.table_chart_outlined, '/dashboard/patients/prontuario/periograma'),
                 _buildMenuCard(context, "Endodontia", Icons.healing, '/dashboard/patients/prontuario/endodontia'),
+                _buildMenuCard(context, "PPR", Icons.architecture_outlined, '/dashboard/patients/prontuario/ppr'),
                 _buildMenuCard(context, "Plano de Tratamento", Icons.assignment_outlined, '/dashboard/patients/prontuario/treatment-plan'),
                 _buildMenuCard(context, "Histórico de Alterações", Icons.history_toggle_off, '/dashboard/patients/prontuario/history'),
               ],

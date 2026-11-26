@@ -25,6 +25,7 @@ class PatientMenuButton extends StatelessWidget {
       MenuAction(icon: Icons.medical_information, label: 'Exame Intraoral', actionId: 'intraoral'),
       MenuAction(icon: Icons.table_chart_outlined, label: 'Periograma', actionId: 'periograma'),
       MenuAction(icon: Icons.healing, label: 'Ficha de Endodontia', actionId: 'endodontia'),
+      MenuAction(icon: Icons.architecture_outlined, label: 'PPR', actionId: 'ppr'),
       MenuAction(icon: Icons.assignment_outlined, label: 'Plano de Tratamento', actionId: 'plano'),
     ];
 
