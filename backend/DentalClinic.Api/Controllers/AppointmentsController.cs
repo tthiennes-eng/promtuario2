@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using DentalClinic.Api.Hubs;
 using DentalClinic.Core.Domain.Entities;
@@ -179,17 +180,97 @@ public class AppointmentsController : ControllerBase
         return StatusCode(201, response);
     }
 
+    private static bool TryParseAppointmentStatus(JsonElement rawStatus, out AppointmentStatus parsed)
+    {
+        parsed = AppointmentStatus.Scheduled;
+        if (rawStatus.ValueKind == JsonValueKind.Number && rawStatus.TryGetInt32(out var intVal))
+        {
+            if (Enum.IsDefined(typeof(AppointmentStatus), intVal))
+            {
+                parsed = (AppointmentStatus)intVal;
+                return true;
+            }
+            return false;
+        }
+
+        if (rawStatus.ValueKind == JsonValueKind.String)
+        {
+            var str = rawStatus.GetString()?.Trim() ?? string.Empty;
+            if (int.TryParse(str, out var numStr) && Enum.IsDefined(typeof(AppointmentStatus), numStr))
+            {
+                parsed = (AppointmentStatus)numStr;
+                return true;
+            }
+
+            if (Enum.TryParse<AppointmentStatus>(str, ignoreCase: true, out var byName))
+            {
+                parsed = byName;
+                return true;
+            }
+
+            switch (str.ToLowerInvariant())
+            {
+                case "falta":
+                case "no_show":
+                    parsed = AppointmentStatus.NoShow;
+                    return true;
+                case "ausente":
+                    parsed = AppointmentStatus.Missed;
+                    return true;
+                case "cancelado":
+                case "canceled":
+                    parsed = AppointmentStatus.Cancelled;
+                    return true;
+                case "confirmado":
+                    parsed = AppointmentStatus.Confirmed;
+                    return true;
+                case "agendado":
+                    parsed = AppointmentStatus.Scheduled;
+                    return true;
+                case "chegou":
+                    parsed = AppointmentStatus.Arrived;
+                    return true;
+                case "emandamento":
+                case "in_progress":
+                    parsed = AppointmentStatus.InProgress;
+                    return true;
+                case "concluido":
+                case "concluído":
+                    parsed = AppointmentStatus.Completed;
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    private async Task NotifyAppointmentUpdatedAsync(Guid appointmentId)
+    {
+        try
+        {
+            await _hubContext.Clients.All.SendAsync("AppointmentUpdated", appointmentId);
+        }
+        catch (Exception hubEx)
+        {
+            _logger.LogWarning(hubEx, "Agendamento {AppointmentId} atualizado, mas falhou a notificação SignalR.", appointmentId);
+        }
+    }
+
     /// <summary>
     /// Atualiza o status de um agendamento.
     /// </summary>
     [HttpPatch("{id}/status")]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateStatusRequest request)
     {
+        if (!TryParseAppointmentStatus(request.Status, out var status))
+            return BadRequest(new { message = $"Status de agendamento inválido: {request.Status}" });
+
         var appointment = await _appointmentRepository.GetByIdAsync(id);
         if (appointment == null) return NotFound();
 
-        appointment.UpdateStatus(request.Status);
+        appointment.UpdateStatus(status);
         await _appointmentRepository.UpdateAsync(appointment);
+        await NotifyAppointmentUpdatedAsync(appointment.Id);
 
         return NoContent();
     }
@@ -201,6 +282,7 @@ public class AppointmentsController : ControllerBase
         if (appointment == null) return NotFound();
         appointment.RegisterArrival();
         await _appointmentRepository.UpdateAsync(appointment);
+        await NotifyAppointmentUpdatedAsync(appointment.Id);
         return NoContent();
     }
 
@@ -211,6 +293,7 @@ public class AppointmentsController : ControllerBase
         if (appointment == null) return NotFound();
         appointment.RegisterStart();
         await _appointmentRepository.UpdateAsync(appointment);
+        await NotifyAppointmentUpdatedAsync(appointment.Id);
         return NoContent();
     }
 
@@ -221,6 +304,7 @@ public class AppointmentsController : ControllerBase
         if (appointment == null) return NotFound();
         appointment.RegisterFinish();
         await _appointmentRepository.UpdateAsync(appointment);
+        await NotifyAppointmentUpdatedAsync(appointment.Id);
         return NoContent();
     }
 
@@ -249,12 +333,13 @@ public class AppointmentsController : ControllerBase
 
         appointment.Reschedule(startTime, endTime);
         await _appointmentRepository.UpdateAsync(appointment);
+        await NotifyAppointmentUpdatedAsync(appointment.Id);
 
         return NoContent();
     }
 }
 
-public record UpdateStatusRequest(AppointmentStatus Status);
+public record UpdateStatusRequest(JsonElement Status);
 public record RescheduleRequest(DateTime StartTime, DateTime EndTime);
 public record CreateAppointmentRequest(
     Guid PatientId,

@@ -24,7 +24,10 @@ public class ReportRepository : IReportRepository
         var firstDayOfMonth = new DateTime(today.Year, today.Month, 1);
 
         var appointmentsToday = await _context.Appointments
-            .CountAsync(a => a.StartTime.Date == today && a.Status != AppointmentStatus.Cancelled);
+            .CountAsync(a => a.StartTime.Date == today
+                && a.Status != AppointmentStatus.Cancelled
+                && a.Status != AppointmentStatus.NoShow
+                && a.Status != AppointmentStatus.Missed);
 
         var proceduresThisMonth = await _context.Set<TreatmentItem>()
             .CountAsync(i => i.Status == TreatmentItemStatus.Completed && i.UpdatedAt >= firstDayOfMonth);

@@ -269,27 +269,45 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
   }
 
   Future<void> updateStatus(String id, AppointmentStatus status) async {
-    await ref.read(appointmentRepositoryProvider).updateAppointmentStatus(id, status);
-    _invalidateConsumers();
-    await refresh();
+    final previous = state.appointments;
+    final currentList = previous.valueOrNull;
+    if (currentList != null) {
+      state = state.copyWith(
+        appointments: AsyncValue.data(
+          currentList.map((a) => a.id == id ? a.copyWith(status: status) : a).toList(),
+        ),
+      );
+    }
+    try {
+      await ref.read(appointmentRepositoryProvider).updateAppointmentStatus(id, status);
+      _invalidateConsumers();
+      await refresh();
+      await fetchInstitutionalData();
+    } catch (e) {
+      state = state.copyWith(appointments: previous);
+      rethrow;
+    }
   }
 
   Future<void> registerArrival(String id) async {
     await ref.read(appointmentRepositoryProvider).registerArrival(id);
     _invalidateConsumers();
     await refresh();
+    await fetchInstitutionalData();
   }
 
   Future<void> registerStart(String id) async {
     await ref.read(appointmentRepositoryProvider).registerStart(id);
     _invalidateConsumers();
     await refresh();
+    await fetchInstitutionalData();
   }
 
   Future<void> registerFinish(String id) async {
     await ref.read(appointmentRepositoryProvider).registerFinish(id);
     _invalidateConsumers();
     await refresh();
+    await fetchInstitutionalData();
   }
 
   Map<String, dynamic> getDayStats() {

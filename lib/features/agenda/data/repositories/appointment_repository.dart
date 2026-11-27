@@ -137,14 +137,48 @@ class AppointmentRepository implements IAppointmentRepository {
   Future<void> updateAppointmentStatus(String id, AppointmentStatus status) async {
     await _updateLocalStatus(id, status, false);
     try {
-      await _apiClient.instance.patch('/appointments/$id/status', data: {'status': status.name});
+      await _apiClient.instance.patch(
+        '/appointments/$id/status',
+        data: {'status': status.apiValue},
+      );
       await _updateLocalStatus(id, status, true);
-    } catch (_) {}
+    } on DioException catch (e) {
+      if (e.response != null) {
+        final data = e.response?.data;
+        String? message;
+        if (data is String && data.trim().isNotEmpty) {
+          message = data.trim();
+        } else if (data is Map) {
+          message = data['message']?.toString() ??
+              data['title']?.toString() ??
+              data['error']?.toString();
+        }
+        throw Exception(
+          message ?? 'Erro ao atualizar status no servidor (HTTP ${e.response?.statusCode})',
+        );
+      }
+      _logger.warning('Sem conexão ao atualizar status; mantido localmente: $e');
+    }
   }
 
-  @override Future<void> registerArrival(String id) async => await _apiClient.instance.patch('/appointments/$id/arrival');
-  @override Future<void> registerStart(String id) async => await _apiClient.instance.patch('/appointments/$id/start');
-  @override Future<void> registerFinish(String id) async => await _apiClient.instance.patch('/appointments/$id/finish');
+  @override
+  Future<void> registerArrival(String id) async {
+    await _apiClient.instance.patch('/appointments/$id/arrival');
+    await _updateLocalStatus(id, AppointmentStatus.arrived, true);
+  }
+
+  @override
+  Future<void> registerStart(String id) async {
+    await _apiClient.instance.patch('/appointments/$id/start');
+    await _updateLocalStatus(id, AppointmentStatus.inProgress, true);
+  }
+
+  @override
+  Future<void> registerFinish(String id) async {
+    await _apiClient.instance.patch('/appointments/$id/finish');
+    await _updateLocalStatus(id, AppointmentStatus.completed, true);
+  }
+
   @override Future<void> rescheduleAppointment(String id, DateTime ns, DateTime ne) async {}
 
   Future<void> _updateLocalStatus(String id, AppointmentStatus status, bool isSynced) async {
@@ -186,10 +220,9 @@ class AppointmentRepository implements IAppointmentRepository {
     String? clinicId,
   }) async {
     final remoteIds = appointments.map((a) => a.id).toSet();
-    final existingSynced = await (_localDb.select(_localDb.appointmentsLocal)
+    final existingRows = await (_localDb.select(_localDb.appointmentsLocal)
           ..where((t) {
-            var expr = t.isSynced.equals(true) &
-                t.startTime.isBetweenValues(start, end);
+            var expr = t.startTime.isBetweenValues(start, end);
             if (clinicId != null) {
               expr = expr & t.clinicId.equals(clinicId);
             }
@@ -197,8 +230,10 @@ class AppointmentRepository implements IAppointmentRepository {
           }))
         .get();
 
-    for (final row in existingSynced) {
-      if (!remoteIds.contains(row.id)) {
+    final unsyncedIds = existingRows.where((r) => !r.isSynced).map((r) => r.id).toSet();
+
+    for (final row in existingRows) {
+      if (row.isSynced && !remoteIds.contains(row.id)) {
         await (_localDb.delete(_localDb.appointmentsLocal)
               ..where((t) => t.id.equals(row.id)))
             .go();
@@ -208,6 +243,7 @@ class AppointmentRepository implements IAppointmentRepository {
     // Remove eventuais cópias locais antigas (ex.: salvas com clinicId legado)
     // do mesmo paciente e horário quando o registro oficial chega do servidor.
     for (final app in appointments) {
+      if (unsyncedIds.contains(app.id)) continue;
       await (_localDb.delete(_localDb.appointmentsLocal)
             ..where(
               (t) =>

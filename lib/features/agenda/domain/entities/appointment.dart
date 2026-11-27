@@ -3,6 +3,9 @@ import 'package:promt/core/utils/date_utils.dart';
 enum AppointmentStatus {
   scheduled, confirmed, arrived, inProgress, completed, cancelled, noShow, missed;
 
+  /// Valor inteiro correspondente ao enum `AppointmentStatus` no backend C# (1..8).
+  int get apiValue => index + 1;
+
   String get displayName {
     switch (this) {
       case AppointmentStatus.scheduled: return 'Agendado';
@@ -125,11 +128,18 @@ class Appointment {
     }
 
     AppointmentStatus parseStatus(dynamic v) {
-      if (v is int) {
-        final idx = v >= 1 ? v - 1 : v;
+      if (v is num) {
+        final idx = v.toInt() >= 1 ? v.toInt() - 1 : v.toInt();
         if (idx >= 0 && idx < AppointmentStatus.values.length) return AppointmentStatus.values[idx];
       }
-      final str = v?.toString().toLowerCase() ?? '';
+      final str = v?.toString().trim().toLowerCase() ?? '';
+      final parsedInt = int.tryParse(str);
+      if (parsedInt != null) {
+        final idx = parsedInt >= 1 ? parsedInt - 1 : parsedInt;
+        if (idx >= 0 && idx < AppointmentStatus.values.length) return AppointmentStatus.values[idx];
+      }
+      if (str == 'falta' || str == 'no_show') return AppointmentStatus.noShow;
+      if (str == 'ausente') return AppointmentStatus.missed;
       return AppointmentStatus.values.firstWhere(
         (e) => e.name.toLowerCase() == str,
         orElse: () => AppointmentStatus.scheduled,

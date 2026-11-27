@@ -153,12 +153,17 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
   Widget _buildFreeSlotCard(TimeSlot slot, Clinic? selectedClinic) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.green.withOpacity(0.1))),
-      child: ListTile(
-        leading: Container(width: 50, alignment: Alignment.center, decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Text(DateFormat('HH:mm').format(slot.startTime), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green))),
-        title: const Text('Horário Disponível', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13)),
-        trailing: const Icon(Icons.add_circle_outline, color: Colors.green, size: 20),
-        onTap: () => context.push('/dashboard/agenda/add', extra: selectedClinic),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.green.withValues(alpha: 0.15))),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          leading: Container(width: 50, alignment: Alignment.center, decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)), child: Text(DateFormat('HH:mm').format(slot.startTime), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green))),
+          title: const Text('Horário Disponível', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13)),
+          trailing: const Icon(Icons.add_circle_outline, color: Colors.green, size: 20),
+          onTap: () => context.push('/dashboard/agenda/add', extra: selectedClinic),
+        ),
       ),
     );
   }
@@ -190,38 +195,53 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
         borderRadius: BorderRadius.circular(12), 
         border: Border.all(color: isLate ? Colors.red.shade200 : Colors.grey.shade200, width: isLate ? 2 : 1)
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(12),
-        leading: Container(
-          width: 50,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(color: (isLate ? Colors.red : const Color(0xFF006494)).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [Text(DateFormat('HH:mm').format(appt.startTime), style: TextStyle(fontWeight: FontWeight.bold, color: isLate ? Colors.red : const Color(0xFF006494), fontSize: 15)), Text(DateFormat('HH:mm').format(appt.endTime), style: const TextStyle(fontSize: 10, color: Colors.grey))]),
-        ),
-        title: Row(
-          children: [
-            Expanded(child: Text(displayPatient, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)))),
-            if (delayMinutes != null && delayMinutes > 0)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(4)),
-                child: Text('+$delayMinutes min', style: TextStyle(color: Colors.red.shade900, fontSize: 10, fontWeight: FontWeight.bold)),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          contentPadding: const EdgeInsets.all(12),
+          leading: Container(
+            width: 52,
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(color: (isLate ? Colors.red : const Color(0xFF006494)).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(DateFormat('HH:mm').format(appt.startTime), style: TextStyle(fontWeight: FontWeight.bold, color: isLate ? Colors.red : const Color(0xFF006494), fontSize: 14)),
+                  Text(DateFormat('HH:mm').format(appt.endTime), style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                ],
               ),
-          ],
+            ),
+          ),
+          title: Row(
+            children: [
+              Expanded(child: Text(displayPatient, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)))),
+              if (delayMinutes != null && delayMinutes > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(4)),
+                  child: Text('+$delayMinutes min', style: TextStyle(color: Colors.red.shade900, fontSize: 10, fontWeight: FontWeight.bold)),
+                ),
+            ],
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 4),
+              Text(appt.procedureName ?? 'Avaliação', style: const TextStyle(color: Colors.blueGrey, fontSize: 12)),
+              Text('Local: $clinicLabel', style: const TextStyle(fontSize: 11, color: Color(0xFF006494), fontWeight: FontWeight.bold)),
+              Text('Responsável: ${appt.studentName ?? "Não inf."}', style: const TextStyle(fontSize: 11)),
+              if (appt.arrivalTime != null) 
+                Text('Chegada: ${DateFormat('HH:mm').format(appt.arrivalTime!)}', style: const TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          trailing: _buildStatusChip(appt.status),
+          onTap: () => _showAppointmentDetails(appt),
         ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(appt.procedureName ?? 'Avaliação', style: const TextStyle(color: Colors.blueGrey, fontSize: 12)),
-            Text('Local: $clinicLabel', style: const TextStyle(fontSize: 11, color: Color(0xFF006494), fontWeight: FontWeight.bold)),
-            Text('Responsável: ${appt.studentName ?? "Não inf."}', style: const TextStyle(fontSize: 11)),
-            if (appt.arrivalTime != null) 
-              Text('Chegada: ${DateFormat('HH:mm').format(appt.arrivalTime!)}', style: const TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        trailing: _buildStatusChip(appt.status),
-        onTap: () => _showAppointmentDetails(appt),
       ),
     );
   }
@@ -269,20 +289,86 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                if (appt.arrivalTime == null && appt.status != AppointmentStatus.completed && appt.status != AppointmentStatus.cancelled)
-                  _ActionBtn(icon: Icons.hail, label: 'Registrar Chegada', color: Colors.indigo, onPressed: () { notifier.registerArrival(appt.id); Navigator.pop(context); }),
-                
-                if (appt.status == AppointmentStatus.scheduled || appt.status == AppointmentStatus.confirmed) 
-                  _ActionBtn(icon: Icons.play_arrow, label: 'Iniciar Atendimento', color: Colors.orange, onPressed: () { notifier.registerStart(appt.id); Navigator.pop(context); }),
-                
-                if (appt.status == AppointmentStatus.inProgress) 
-                  _ActionBtn(icon: Icons.done_all, label: 'Finalizar Atendimento', color: Colors.green, onPressed: () { notifier.registerFinish(appt.id); Navigator.pop(context); }),
-                
-                if (appt.status == AppointmentStatus.scheduled) 
-                  _ActionBtn(icon: Icons.check_circle, label: 'Confirmar', color: Colors.teal, onPressed: () { notifier.updateStatus(appt.id, AppointmentStatus.confirmed); Navigator.pop(context); }),
-                
-                _ActionBtn(icon: Icons.person_off, label: 'Falta', color: Colors.red, onPressed: () { notifier.updateStatus(appt.id, AppointmentStatus.missed); Navigator.pop(context); }),
-                _ActionBtn(icon: Icons.cancel, label: 'Cancelar', color: Colors.grey, onPressed: () { notifier.updateStatus(appt.id, AppointmentStatus.cancelled); Navigator.pop(context); }),
+                if (appt.arrivalTime == null &&
+                    appt.status != AppointmentStatus.completed &&
+                    appt.status != AppointmentStatus.cancelled &&
+                    appt.status != AppointmentStatus.noShow &&
+                    appt.status != AppointmentStatus.missed)
+                  _ActionBtn(
+                    icon: Icons.hail,
+                    label: 'Registrar Chegada',
+                    color: Colors.indigo,
+                    onPressed: () => _runAppointmentAction(
+                      sheetContext: context,
+                      action: () => notifier.registerArrival(appt.id),
+                      successMessage: 'Chegada registrada com sucesso.',
+                    ),
+                  ),
+
+                if (appt.status == AppointmentStatus.scheduled ||
+                    appt.status == AppointmentStatus.confirmed ||
+                    appt.status == AppointmentStatus.arrived)
+                  _ActionBtn(
+                    icon: Icons.play_arrow,
+                    label: 'Iniciar Atendimento',
+                    color: Colors.orange,
+                    onPressed: () => _runAppointmentAction(
+                      sheetContext: context,
+                      action: () => notifier.registerStart(appt.id),
+                      successMessage: 'Atendimento iniciado.',
+                    ),
+                  ),
+
+                if (appt.status == AppointmentStatus.inProgress)
+                  _ActionBtn(
+                    icon: Icons.done_all,
+                    label: 'Finalizar Atendimento',
+                    color: Colors.green,
+                    onPressed: () => _runAppointmentAction(
+                      sheetContext: context,
+                      action: () => notifier.registerFinish(appt.id),
+                      successMessage: 'Atendimento finalizado.',
+                    ),
+                  ),
+
+                if (appt.status == AppointmentStatus.scheduled)
+                  _ActionBtn(
+                    icon: Icons.check_circle,
+                    label: 'Confirmar',
+                    color: Colors.teal,
+                    onPressed: () => _runAppointmentAction(
+                      sheetContext: context,
+                      action: () => notifier.updateStatus(appt.id, AppointmentStatus.confirmed),
+                      successMessage: 'Agendamento confirmado.',
+                    ),
+                  ),
+
+                if (appt.status != AppointmentStatus.noShow &&
+                    appt.status != AppointmentStatus.missed &&
+                    appt.status != AppointmentStatus.completed)
+                  _ActionBtn(
+                    icon: Icons.person_off,
+                    label: 'Falta',
+                    color: Colors.red,
+                    onPressed: () => _runAppointmentAction(
+                      sheetContext: context,
+                      action: () => notifier.updateStatus(appt.id, AppointmentStatus.noShow),
+                      successMessage: 'Falta registrada com sucesso.',
+                    ),
+                  ),
+
+                if (appt.status != AppointmentStatus.cancelled &&
+                    appt.status != AppointmentStatus.completed)
+                  _ActionBtn(
+                    icon: Icons.cancel,
+                    label: 'Cancelar',
+                    color: Colors.grey,
+                    onPressed: () => _runAppointmentAction(
+                      sheetContext: context,
+                      action: () => notifier.updateStatus(appt.id, AppointmentStatus.cancelled),
+                      successMessage: 'Agendamento cancelado.',
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: 16),
@@ -290,6 +376,31 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _runAppointmentAction({
+    required BuildContext sheetContext,
+    required Future<void> Function() action,
+    required String successMessage,
+  }) async {
+    Navigator.pop(sheetContext);
+    try {
+      await action();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(successMessage), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Widget _infoRow(IconData icon, String label, String value) {
@@ -307,7 +418,31 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
   }
 
   Widget _buildStatusChip(AppointmentStatus status) {
-    final color = status == AppointmentStatus.scheduled ? Colors.blue : status == AppointmentStatus.completed ? Colors.green : Colors.red;
+    final Color color;
+    switch (status) {
+      case AppointmentStatus.scheduled:
+        color = Colors.blue;
+        break;
+      case AppointmentStatus.confirmed:
+        color = Colors.teal;
+        break;
+      case AppointmentStatus.arrived:
+        color = Colors.indigo;
+        break;
+      case AppointmentStatus.inProgress:
+        color = Colors.orange;
+        break;
+      case AppointmentStatus.completed:
+        color = Colors.green;
+        break;
+      case AppointmentStatus.cancelled:
+        color = Colors.grey;
+        break;
+      case AppointmentStatus.noShow:
+      case AppointmentStatus.missed:
+        color = Colors.red;
+        break;
+    }
     return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)), child: Text(status.displayName, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold)));
   }
 
