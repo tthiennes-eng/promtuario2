@@ -110,4 +110,31 @@ public class AuthController : ControllerBase
         }
         return NoContent();
     }
+
+    /// <summary>
+    /// Registra uma solicitação de recuperação de senha sem expor se o e-mail existe na base.
+    /// </summary>
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains('@'))
+        {
+            return BadRequest(new { message = "Informe um e-mail institucional válido." });
+        }
+
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        var user = await _userRepository.GetByEmailAsync(normalizedEmail);
+        _logger.LogInformation(
+            "Solicitação de recuperação de senha registrada para {Email} (usuário encontrado: {Found}).",
+            normalizedEmail,
+            user != null);
+
+        return Ok(new
+        {
+            message = "Se o e-mail estiver cadastrado, a solicitação de redefinição de senha foi registrada para atendimento pela coordenação/administrador."
+        });
+    }
 }
+
+public record ForgotPasswordRequest(string Email);

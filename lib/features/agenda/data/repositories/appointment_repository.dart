@@ -179,7 +179,44 @@ class AppointmentRepository implements IAppointmentRepository {
     await _updateLocalStatus(id, AppointmentStatus.completed, true);
   }
 
-  @override Future<void> rescheduleAppointment(String id, DateTime ns, DateTime ne) async {}
+  @override
+  Future<void> rescheduleAppointment(String id, DateTime newStart, DateTime newEnd) async {
+    try {
+      await _apiClient.instance.put(
+        '/appointments/$id/reschedule',
+        data: {
+          'startTime': newStart.toUtc().toIso8601String(),
+          'endTime': newEnd.toUtc().toIso8601String(),
+        },
+      );
+      await (_localDb.update(_localDb.appointmentsLocal)..where((t) => t.id.equals(id))).write(
+        AppointmentsLocalCompanion(
+          startTime: Value(newStart),
+          endTime: Value(newEnd),
+          isSynced: const Value(true),
+        ),
+      );
+    } on DioException catch (e) {
+      if (e.response != null) {
+        final data = e.response?.data;
+        String? message;
+        if (data is String && data.trim().isNotEmpty) {
+          message = data.trim();
+        } else if (data is Map) {
+          message = data['message']?.toString() ?? data['title']?.toString();
+        }
+        throw Exception(message ?? 'Erro ao reagendar consulta (HTTP ${e.response?.statusCode})');
+      }
+      await (_localDb.update(_localDb.appointmentsLocal)..where((t) => t.id.equals(id))).write(
+        AppointmentsLocalCompanion(
+          startTime: Value(newStart),
+          endTime: Value(newEnd),
+          isSynced: const Value(false),
+        ),
+      );
+      _logger.warning('Sem conexão ao reagendar; salvo localmente: $e');
+    }
+  }
 
   Future<void> _updateLocalStatus(String id, AppointmentStatus status, bool isSynced) async {
     await (_localDb.update(_localDb.appointmentsLocal)..where((t) => t.id.equals(id))).write(

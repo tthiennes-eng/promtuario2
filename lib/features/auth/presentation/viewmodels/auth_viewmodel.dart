@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:promt/features/auth/domain/entities/user.dart';
 import 'package:promt/core/providers/providers.dart';
+import 'package:promt/core/network/api_client.dart';
 import 'package:promt/core/network/realtime_service.dart';
 
 /// Estado da autenticação.
@@ -114,9 +115,35 @@ class AuthViewModel extends StateNotifier<AuthState> {
 
     state = AuthState(isInitialized: true);
   }
+
+  /// Solicita redefinição de senha via backend.
+  Future<String> requestPasswordReset(String email) async {
+    final api = ref.read(apiClientProvider);
+    final response = await api.instance.post('auth/forgot-password', data: {'email': email.trim()});
+    if (response.data is Map && response.data['message'] != null) {
+      return response.data['message'].toString();
+    }
+    return 'Solicitação registrada com sucesso.';
+  }
+
+  /// Encerra o estado autenticado quando o refresh token expira.
+  void handleSessionExpired() {
+    if (state.user != null) {
+      state = AuthState(
+        isInitialized: true,
+        errorMessage: 'Sua sessão expirou. Faça login novamente.',
+      );
+    }
+  }
 }
 
 /// Provider para criar a instância do AuthViewModel.
 final authViewModelProvider = StateNotifierProvider<AuthViewModel, AuthState>((ref) {
-  return AuthViewModel(ref);
+  final vm = AuthViewModel(ref);
+  ref.listen<int>(sessionExpiredSignalProvider, (prev, next) {
+    if (prev != null && next > prev) {
+      vm.handleSessionExpired();
+    }
+  });
+  return vm;
 });

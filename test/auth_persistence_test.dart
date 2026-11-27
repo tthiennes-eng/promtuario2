@@ -259,6 +259,7 @@ void main() {
     expect(find.text('Entrar no Sistema'), findsOneWidget);
     expect(find.text('Manter login salvo'), findsOneWidget);
     expect(find.text('admin@odontoclinica.edu.br'), findsOneWidget);
-    expect(find.text('admin123'), findsOneWidget);
+    expect(find.text('admin123'), findsNothing);
+    expect(disk['saved_password'], isNull);
   });
 }

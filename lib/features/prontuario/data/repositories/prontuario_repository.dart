@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
+import 'package:logging/logging.dart';
 import 'package:promt/core/network/api_client.dart';
 import 'package:promt/core/database/local_database.dart' as drift_db;
 import 'package:promt/features/prontuario/domain/entities/odontogram.dart';
@@ -16,13 +17,14 @@ class ProntuarioRepository implements IProntuarioRepository {
   final ApiClient _apiClient;
   final drift_db.AppDatabase _localDb;
   final User? _currentUser;
+  final _logger = Logger('ProntuarioRepository');
 
   ProntuarioRepository(this._apiClient, this._localDb, [this._currentUser]);
 
   static const _emptyGuid = '00000000-0000-0000-0000-000000000000';
 
   /// Extrai (sheetType, realPatientId) a partir de chaves prefixadas usadas
-  /// nas fichas clínicas (ex.: "anamnese_<uuid>", "ppr_<uuid>", "tcle_<uuid>").
+  /// nas fichas clínicas (ex.: `anamnese_<uuid>`, `ppr_<uuid>`, `tcle_<uuid>`).
   (String sheetType, String realPatientId) _parseSheetKey(String key) {
     const knownPrefixes = [
       'anamnese_',
@@ -55,7 +57,9 @@ class ProntuarioRepository implements IProntuarioRepository {
       if (response.data is List && (response.data as List).isNotEmpty) {
         return response.data[0]['id'].toString();
       }
-    } catch (_) {}
+    } catch (e) {
+      _logger.warning('Falha de sincronização/leitura no prontuário: $e');
+    }
     return _emptyGuid;
   }
 
@@ -71,7 +75,9 @@ class ProntuarioRepository implements IProntuarioRepository {
           return odontogram;
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      _logger.warning('Falha de sincronização/leitura no prontuário: $e');
+    }
 
     try {
       final local = await (_localDb.select(_localDb.odontogramLocal)
@@ -81,7 +87,9 @@ class ProntuarioRepository implements IProntuarioRepository {
       if (local != null) {
         return Odontogram.fromJson(jsonDecode(local.dataJson));
       }
-    } catch (_) {}
+    } catch (e) {
+      _logger.warning('Falha de sincronização/leitura no prontuário: $e');
+    }
 
     return _initialOdontogram(patientId);
   }
@@ -171,9 +179,13 @@ class ProntuarioRepository implements IProntuarioRepository {
           await (_localDb.update(_localDb.odontogramLocal)
                 ..where((t) => t.patientId.equals(row.patientId)))
               .write(const drift_db.OdontogramLocalCompanion(isSynced: Value(true)));
-        } catch (_) {}
+        } catch (e) {
+      _logger.warning('Falha de sincronização/leitura no prontuário: $e');
+    }
       }
-    } catch (_) {}
+    } catch (e) {
+      _logger.warning('Falha de sincronização/leitura no prontuário: $e');
+    }
   }
 
   @override
@@ -295,7 +307,9 @@ class ProntuarioRepository implements IProntuarioRepository {
         );
         return [Anamnese.fromJson(Map<String, dynamic>.from(response.data))];
       }
-    } catch (_) {}
+    } catch (e) {
+      _logger.warning('Falha de sincronização/leitura no prontuário: $e');
+    }
 
     final local = await (_localDb.select(_localDb.anamneseLocal)
           ..where((t) => t.patientId.equals(patientId)))
@@ -353,7 +367,9 @@ class ProntuarioRepository implements IProntuarioRepository {
     try {
       await _apiClient.instance.post('Prontuario/$id/anamnese', data: r);
       await _saveLocalAnamnese(id, r, true);
-    } catch (_) {}
+    } catch (e) {
+      _logger.warning('Falha de sincronização/leitura no prontuário: $e');
+    }
   }
 
   Future<void> _saveLocalAnamnese(
@@ -389,7 +405,9 @@ class ProntuarioRepository implements IProntuarioRepository {
           return map;
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      _logger.warning('Falha de sincronização/leitura no prontuário: $e');
+    }
 
     try {
       final local = await (_localDb.select(_localDb.odontogramLocal)
@@ -399,7 +417,9 @@ class ProntuarioRepository implements IProntuarioRepository {
         final decoded = jsonDecode(local.dataJson);
         if (decoded is Map) return Map<String, dynamic>.from(decoded);
       }
-    } catch (_) {}
+    } catch (e) {
+      _logger.warning('Falha de sincronização/leitura no prontuário: $e');
+    }
 
     return null;
   }
@@ -435,7 +455,9 @@ class ProntuarioRepository implements IProntuarioRepository {
           return map;
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      _logger.warning('Falha de sincronização/leitura no prontuário: $e');
+    }
 
     try {
       final local = await (_localDb.select(_localDb.odontogramLocal)
@@ -445,7 +467,9 @@ class ProntuarioRepository implements IProntuarioRepository {
         final decoded = jsonDecode(local.dataJson);
         if (decoded is Map) return Map<String, dynamic>.from(decoded);
       }
-    } catch (_) {}
+    } catch (e) {
+      _logger.warning('Falha de sincronização/leitura no prontuário: $e');
+    }
 
     return null;
   }
@@ -479,7 +503,9 @@ class ProntuarioRepository implements IProntuarioRepository {
             .map((e) => Map<String, dynamic>.from(e))
             .toList();
       }
-    } catch (_) {}
+    } catch (e) {
+      _logger.warning('Falha de sincronização/leitura no prontuário: $e');
+    }
     return [];
   }
 
@@ -490,7 +516,9 @@ class ProntuarioRepository implements IProntuarioRepository {
       if (response.data is Map) {
         return Map<String, dynamic>.from(response.data);
       }
-    } catch (_) {}
+    } catch (e) {
+      _logger.warning('Falha de sincronização/leitura no prontuário: $e');
+    }
 
     // Fallback offline usando o cache SQLite local
     final sheets = <String, dynamic>{};
@@ -519,7 +547,9 @@ class ProntuarioRepository implements IProntuarioRepository {
             .map((e) => Map<String, dynamic>.from(e))
             .toList();
       }
-    } catch (_) {}
+    } catch (e) {
+      _logger.warning('Falha de sincronização/leitura no prontuário: $e');
+    }
     return [];
   }
 

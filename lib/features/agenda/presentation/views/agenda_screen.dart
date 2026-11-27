@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:promt/features/agenda/presentation/viewmodels/appointment_viewmodel.dart';
 import 'package:promt/features/agenda/domain/entities/appointment.dart';
+import 'package:promt/features/patients/domain/entities/patient.dart';
+import 'package:promt/features/patients/presentation/viewmodels/patient_viewmodel.dart';
 import 'package:promt/features/procedures/domain/entities/clinic.dart';
 import 'package:intl/intl.dart';
 
@@ -45,7 +47,7 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]),
+            decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)]),
             child: Column(
               children: [
                 _buildClinicSelector(state, notifier),
@@ -307,6 +309,28 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
+                _ActionBtn(
+                  icon: Icons.folder_shared_outlined,
+                  label: 'Abrir Prontuário',
+                  color: const Color(0xFF006494),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _openPatientProntuario(appt);
+                  },
+                ),
+
+                if (appt.status != AppointmentStatus.completed &&
+                    appt.status != AppointmentStatus.cancelled)
+                  _ActionBtn(
+                    icon: Icons.edit_calendar_outlined,
+                    label: 'Reagendar',
+                    color: Colors.purple,
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _showRescheduleDialog(appt, notifier);
+                    },
+                  ),
+
                 if (appt.arrivalTime == null &&
                     appt.status != AppointmentStatus.completed &&
                     appt.status != AppointmentStatus.cancelled &&
@@ -396,6 +420,71 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
     );
   }
 
+  void _openPatientProntuario(Appointment appt) {
+    final patients = ref.read(patientViewModelProvider).valueOrNull ?? const <Patient>[];
+    final matched = patients.where((p) => p.id == appt.patientId).firstOrNull;
+    final patient = matched ??
+        Patient(
+          id: appt.patientId,
+          fullName: appt.patientName,
+          cpf: '',
+          birthDate: DateTime(2000, 1, 1),
+          createdAt: DateTime.now(),
+        );
+    context.push('/dashboard/patients/prontuario', extra: patient);
+  }
+
+  Future<void> _showRescheduleDialog(Appointment appt, AppointmentViewModel notifier) async {
+    final localStart = appt.startTime.isUtc ? appt.startTime.toLocal() : appt.startTime;
+    final duration = appt.endTime.difference(appt.startTime);
+    final safeDuration = duration.inMinutes > 0 ? duration : const Duration(hours: 1);
+
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: localStart,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      locale: const Locale('pt', 'BR'),
+    );
+    if (pickedDate == null || !mounted) return;
+
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(localStart),
+    );
+    if (pickedTime == null || !mounted) return;
+
+    final newStart = DateTime(
+      pickedDate.year,
+      pickedDate.month,
+      pickedDate.day,
+      pickedTime.hour,
+      pickedTime.minute,
+    );
+    final newEnd = newStart.add(safeDuration);
+
+    try {
+      await notifier.reschedule(appt.id, newStart, newEnd);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Consulta reagendada para ${DateFormat('dd/MM/yyyy HH:mm').format(newStart)}.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _runAppointmentAction({
     required BuildContext sheetContext,
     required Future<void> Function() action,
@@ -461,7 +550,7 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
         color = Colors.red;
         break;
     }
-    return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)), child: Text(status.displayName, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold)));
+    return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)), child: Text(status.displayName, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold)));
   }
 
   Widget _buildEmptyState() {
@@ -486,7 +575,7 @@ class _StatTile extends StatelessWidget {
   const _StatTile({required this.label, required this.value, required this.color, required this.icon});
   @override
   Widget build(BuildContext context) {
-    return Expanded(child: Container(padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withOpacity(0.1))), child: Column(children: [Icon(icon, size: 14, color: color), const SizedBox(height: 4), Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 16)), Text(label, style: const TextStyle(color: Colors.blueGrey, fontSize: 8, fontWeight: FontWeight.bold))])));
+    return Expanded(child: Container(padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withValues(alpha: 0.1))), child: Column(children: [Icon(icon, size: 14, color: color), const SizedBox(height: 4), Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 16)), Text(label, style: const TextStyle(color: Colors.blueGrey, fontSize: 8, fontWeight: FontWeight.bold))])));
   }
 }
 

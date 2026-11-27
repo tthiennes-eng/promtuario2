@@ -1,30 +1,11 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:promt/main.dart';
+import 'package:promt/core/network/api_client.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const OdontoClinicaApp());
-
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  test('ApiClient.resolveOrigin supports localhost, LAN IP, custom port, and HTTPS URLs', () {
+    expect(ApiClient.resolveOrigin('https://clinica.ufma.br/'), 'https://clinica.ufma.br');
+    expect(ApiClient.resolveOrigin('http://192.168.1.10:8080'), 'http://192.168.1.10:8080');
+    expect(ApiClient.resolveOrigin('192.168.1.10'), 'http://192.168.1.10:5000');
+    expect(ApiClient.resolveOrigin('192.168.1.10:7000'), 'http://192.168.1.10:7000');
   });
 }

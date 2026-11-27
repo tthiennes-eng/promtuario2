@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:convert';
 import 'package:intl/intl.dart';
 import '../viewmodels/endodontia_viewmodel.dart';
+import '../widgets/sheet_history_dialog.dart';
 
 // ==========================================
 // 1. MODELS (MODELAGEM DOS DADOS)
@@ -265,6 +265,17 @@ class _EndodontiaScreenState extends ConsumerState<EndodontiaScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Histórico de Versões',
+            onPressed: () => showSheetHistoryDialog(
+              context: context,
+              ref: ref,
+              patientId: widget.patientId,
+              sheetType: 'endodontia',
+              sheetTitle: 'Endodontia',
+            ),
+          ),
           if (endoAsync.isLoading)
             const Center(child: Padding(padding: EdgeInsets.all(16), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))),
         ],

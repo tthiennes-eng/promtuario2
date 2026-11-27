@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../../domain/entities/periograma.dart';
 import '../widgets/dente_sondagem_widget.dart';
 import '../viewmodels/periograma_viewmodel.dart';
+import '../widgets/sheet_history_dialog.dart';
 
 class PeriogramaScreen extends ConsumerStatefulWidget {
   final String patientId;
@@ -45,6 +46,19 @@ class _PeriogramaScreenState extends ConsumerState<PeriogramaScreen> {
             Text(widget.patientName, style: const TextStyle(fontSize: 12)),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Histórico de Versões',
+            onPressed: () => showSheetHistoryDialog(
+              context: context,
+              ref: ref,
+              patientId: widget.patientId,
+              sheetType: 'periograma',
+              sheetTitle: 'Periograma',
+            ),
+          ),
+        ],
       ),
       body: periAsync.when(
         data: (data) {

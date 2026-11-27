@@ -18,6 +18,7 @@ class StorageService {
   static const _savedEmailKey = 'saved_email';
   static const _savedPasswordKey = 'saved_password';
   static const _savedUserKey = 'saved_user';
+  static const _pushNotificationsKey = 'push_notifications_enabled';
 
   String? _memoryAccessToken;
   String? _memoryRefreshToken;
@@ -55,13 +56,26 @@ class StorageService {
     return raw == 'true';
   }
 
-  /// Salva e-mail e senha para preenchimento automático na tela de login.
+  /// Salva a preferência de notificações push.
+  Future<void> savePushNotificationsEnabled(bool enabled) async {
+    await _safeWrite(_pushNotificationsKey, enabled ? 'true' : 'false');
+  }
+
+  /// Recupera a preferência de notificações push (padrão: true).
+  Future<bool> getPushNotificationsEnabled() async {
+    final raw = await _safeRead(_pushNotificationsKey);
+    if (raw == null) return true;
+    return raw == 'true';
+  }
+
+  /// Salva apenas o e-mail para preenchimento automático (nunca persiste senha em texto puro).
+  /// Remove eventual senha legada armazenada em versões anteriores.
   Future<void> saveSavedCredentials({
     required String email,
     required String password,
   }) async {
     await _safeWrite(_savedEmailKey, email);
-    await _safeWrite(_savedPasswordKey, password);
+    await _safeDelete(_savedPasswordKey);
   }
 
   /// Salva o e-mail para preenchimento automático na tela de login.
@@ -72,15 +86,18 @@ class StorageService {
   /// Recupera o último e-mail salvo.
   Future<String?> getSavedEmail() async => await _safeRead(_savedEmailKey);
 
-  /// Recupera a última senha salva.
-  Future<String?> getSavedPassword() async => await _safeRead(_savedPasswordKey);
+  /// Por segurança, senhas não são mais persistidas em disco; retorna null.
+  Future<String?> getSavedPassword() async {
+    await _safeDelete(_savedPasswordKey);
+    return null;
+  }
 
   /// Remove o e-mail salvo.
   Future<void> clearSavedEmail() async {
     await _safeDelete(_savedEmailKey);
   }
 
-  /// Remove e-mail e senha salvos.
+  /// Remove e-mail e eventual senha legada salvos.
   Future<void> clearSavedCredentials() async {
     await _safeDelete(_savedEmailKey);
     await _safeDelete(_savedPasswordKey);

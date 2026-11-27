@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/services/prontuario_pdf_service.dart';
 import '../viewmodels/endodontia_viewmodel.dart';
+import '../widgets/sheet_history_dialog.dart';
 
 // ==========================================
 // 1. MODELAGEM DOS DADOS DA FICHA PPR
@@ -351,6 +352,17 @@ class _PprScreenState extends ConsumerState<PprScreen> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Histórico de Versões',
+            onPressed: () => showSheetHistoryDialog(
+              context: context,
+              ref: ref,
+              patientId: widget.patientId,
+              sheetType: 'ppr',
+              sheetTitle: 'PPR',
+            ),
+          ),
+          IconButton(
             icon: const Icon(Icons.picture_as_pdf_outlined),
             tooltip: 'Exportar Ficha PPR em PDF',
             onPressed: () async {
@@ -430,7 +442,7 @@ class _PprScreenState extends ConsumerState<PprScreen> {
                   border: Border.all(color: Colors.grey.shade300),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),

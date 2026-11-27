@@ -5,7 +5,6 @@ import 'package:promt/core/providers/providers.dart';
 import 'package:promt/core/network/realtime_service.dart';
 import 'package:promt/features/patients/presentation/viewmodels/patient_viewmodel.dart';
 import 'package:promt/features/dashboard/presentation/viewmodels/dashboard_viewmodel.dart';
-import 'package:uuid/uuid.dart';
 
 enum AgendaDayPeriod { all, morning, afternoon, night }
 
@@ -305,6 +304,13 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
 
   Future<void> registerFinish(String id) async {
     await ref.read(appointmentRepositoryProvider).registerFinish(id);
+    _invalidateConsumers();
+    await refresh();
+    await fetchInstitutionalData();
+  }
+
+  Future<void> reschedule(String id, DateTime newStart, DateTime newEnd) async {
+    await ref.read(appointmentRepositoryProvider).rescheduleAppointment(id, newStart, newEnd);
     _invalidateConsumers();
     await refresh();
     await fetchInstitutionalData();

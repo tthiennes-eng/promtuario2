@@ -2,6 +2,7 @@ using System.Text.Json;
 using DentalClinic.Core.Domain.Repositories;
 using DentalClinic.Core.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace DentalClinic.Infrastructure.Persistence.Repositories;
 
@@ -11,10 +12,12 @@ namespace DentalClinic.Infrastructure.Persistence.Repositories;
 public class ReportRepository : IReportRepository
 {
     private readonly ApplicationDbContext _context;
+    private readonly IMemoryCache? _cache;
 
-    public ReportRepository(ApplicationDbContext context)
+    public ReportRepository(ApplicationDbContext context, IMemoryCache? cache = null)
     {
         _context = context;
+        _cache = cache;
     }
 
     public async Task<DashboardStats> GetDashboardStatsAsync()
@@ -83,73 +86,102 @@ public class ReportRepository : IReportRepository
         DateTime? startUtc = start.HasValue ? NormalizeUtc(start.Value) : null;
         DateTime? endUtc = end.HasValue ? NormalizeUtc(end.Value) : null;
 
-        var patients = await SafeLoadAsync(() => _context.Patients.AsNoTracking().ToListAsync());
+        var cacheKey = $"stats:{startUtc?.ToString("yyyyMMddHH") ?? "all"}:{endUtc?.ToString("yyyyMMddHH") ?? "all"}:{clinicId?.ToString() ?? "all"}";
+        if (_cache != null && _cache.TryGetValue(cacheKey, out Dictionary<string, object>? cached) && cached != null)
+        {
+            return cached;
+        }
+
         var clinics = await SafeLoadAsync(() => _context.Clinics.AsNoTracking().ToListAsync());
-        var appointments = await SafeLoadAsync(() =>
-            _context.Appointments.AsNoTracking()
-                .Include(a => a.Patient)
-                .Include(a => a.Doctor)
-                .ToListAsync());
-        var evolutions = await SafeLoadAsync(() =>
-            _context.Evolutions.AsNoTracking()
+
+        // Aplica filtros de data e clínica diretamente no SQL antes de materializar
+        var filteredAppointments = await SafeLoadAsync(() =>
+        {
+            var q = _context.Appointments.AsNoTracking().AsQueryable();
+            if (startUtc.HasValue) q = q.Where(a => a.StartTime >= startUtc.Value);
+            if (endUtc.HasValue) q = q.Where(a => a.StartTime <= endUtc.Value);
+            if (clinicId.HasValue) q = q.Where(a => a.ClinicId == clinicId.Value);
+            return q.ToListAsync();
+        });
+
+        var filteredEvolutions = await SafeLoadAsync(() =>
+        {
+            var q = _context.Evolutions.AsNoTracking()
                 .Include(e => e.Student)
                 .Include(e => e.Professor)
                 .Include(e => e.Clinic)
+                .AsQueryable();
+            if (startUtc.HasValue) q = q.Where(e => e.CreatedAt >= startUtc.Value);
+            if (endUtc.HasValue) q = q.Where(e => e.CreatedAt <= endUtc.Value);
+            if (clinicId.HasValue) q = q.Where(e => e.ClinicId == clinicId.Value);
+            return q.ToListAsync();
+        });
+
+        var filteredPlans = await SafeLoadAsync(() =>
+        {
+            var q = _context.TreatmentPlans.AsNoTracking().Include(p => p.Items).AsQueryable();
+            if (startUtc.HasValue) q = q.Where(p => p.CreatedAt >= startUtc.Value);
+            if (endUtc.HasValue) q = q.Where(p => p.CreatedAt <= endUtc.Value);
+            return q.ToListAsync();
+        });
+
+        var filteredPrescriptions = await SafeLoadAsync(() =>
+        {
+            var q = _context.Prescriptions.AsNoTracking().AsQueryable();
+            if (startUtc.HasValue) q = q.Where(p => p.CreatedAt >= startUtc.Value);
+            if (endUtc.HasValue) q = q.Where(p => p.CreatedAt <= endUtc.Value);
+            if (clinicId.HasValue) q = q.Where(p => p.ClinicId == clinicId.Value);
+            return q.ToListAsync();
+        });
+
+        var filteredCertificates = await SafeLoadAsync(() =>
+        {
+            var q = _context.Certificates.AsNoTracking().AsQueryable();
+            if (startUtc.HasValue) q = q.Where(c => c.CreatedAt >= startUtc.Value);
+            if (endUtc.HasValue) q = q.Where(c => c.CreatedAt <= endUtc.Value);
+            if (clinicId.HasValue) q = q.Where(c => c.ClinicId == clinicId.Value);
+            return q.ToListAsync();
+        });
+
+        var filteredWaitList = await SafeLoadAsync(() =>
+        {
+            var q = _context.WaitListEntries.AsNoTracking().AsQueryable();
+            if (startUtc.HasValue) q = q.Where(w => w.CreatedAt >= startUtc.Value);
+            if (endUtc.HasValue) q = q.Where(w => w.CreatedAt <= endUtc.Value);
+            if (clinicId.HasValue) q = q.Where(w => w.ClinicId == clinicId.Value);
+            return q.ToListAsync();
+        });
+
+        var patients = await SafeLoadAsync(() =>
+        {
+            if (clinicId.HasValue)
+            {
+                var ids = filteredAppointments.Select(a => a.PatientId)
+                    .Concat(filteredEvolutions.Select(e => e.PatientId))
+                    .Distinct()
+                    .ToList();
+                return _context.Patients.AsNoTracking().Where(p => ids.Contains(p.Id)).ToListAsync();
+            }
+            return _context.Patients.AsNoTracking().ToListAsync();
+        });
+
+        var scopedPatientIds = patients.Select(p => p.Id).ToHashSet();
+        var scopedPatients = patients;
+
+        var odontograms = await SafeLoadAsync(() =>
+            _context.Odontograms.AsNoTracking()
+                .Where(o => scopedPatientIds.Contains(o.PatientId))
                 .ToListAsync());
-        var odontograms = await SafeLoadAsync(() => _context.Odontograms.AsNoTracking().ToListAsync());
         var clinicalSheets = await SafeLoadAsync(() =>
             _context.ClinicalSheets.AsNoTracking()
+                .Where(s => scopedPatientIds.Contains(s.PatientId))
                 .OrderBy(s => s.Version)
                 .ThenBy(s => s.CreatedAt)
                 .ToListAsync());
-        var legacyAnamneses = await SafeLoadAsync(() => _context.Anamneses.AsNoTracking().ToListAsync());
-        var treatmentPlans = await SafeLoadAsync(() =>
-            _context.TreatmentPlans.AsNoTracking()
-                .Include(p => p.Items)
+        var legacyAnamneses = await SafeLoadAsync(() =>
+            _context.Anamneses.AsNoTracking()
+                .Where(a => scopedPatientIds.Contains(a.PatientId))
                 .ToListAsync());
-        var prescriptions = await SafeLoadAsync(() => _context.Prescriptions.AsNoTracking().ToListAsync());
-        var certificates = await SafeLoadAsync(() => _context.Certificates.AsNoTracking().ToListAsync());
-        var waitList = await SafeLoadAsync(() => _context.WaitListEntries.AsNoTracking().ToListAsync());
-
-        // Filtros opcionais por período e clínica
-        var filteredAppointments = appointments.Where(a =>
-            (!startUtc.HasValue || a.StartTime >= startUtc.Value) &&
-            (!endUtc.HasValue || a.StartTime <= endUtc.Value) &&
-            (!clinicId.HasValue || a.ClinicId == clinicId.Value)).ToList();
-
-        var filteredEvolutions = evolutions.Where(e =>
-            (!startUtc.HasValue || e.CreatedAt >= startUtc.Value) &&
-            (!endUtc.HasValue || e.CreatedAt <= endUtc.Value) &&
-            (!clinicId.HasValue || e.ClinicId == clinicId.Value)).ToList();
-
-        var filteredPlans = treatmentPlans.Where(p =>
-            (!startUtc.HasValue || p.CreatedAt >= startUtc.Value) &&
-            (!endUtc.HasValue || p.CreatedAt <= endUtc.Value)).ToList();
-
-        var filteredPrescriptions = prescriptions.Where(p =>
-            (!startUtc.HasValue || p.CreatedAt >= startUtc.Value) &&
-            (!endUtc.HasValue || p.CreatedAt <= endUtc.Value) &&
-            (!clinicId.HasValue || p.ClinicId == clinicId.Value)).ToList();
-
-        var filteredCertificates = certificates.Where(c =>
-            (!startUtc.HasValue || c.CreatedAt >= startUtc.Value) &&
-            (!endUtc.HasValue || c.CreatedAt <= endUtc.Value) &&
-            (!clinicId.HasValue || c.ClinicId == clinicId.Value)).ToList();
-
-        var filteredWaitList = waitList.Where(w =>
-            (!startUtc.HasValue || w.CreatedAt >= startUtc.Value) &&
-            (!endUtc.HasValue || w.CreatedAt <= endUtc.Value) &&
-            (!clinicId.HasValue || w.ClinicId == clinicId.Value)).ToList();
-
-        var scopedPatientIds = clinicId.HasValue
-            ? filteredAppointments.Select(a => a.PatientId)
-                .Concat(filteredEvolutions.Select(e => e.PatientId))
-                .ToHashSet()
-            : patients.Select(p => p.Id).ToHashSet();
-
-        var scopedPatients = clinicId.HasValue
-            ? patients.Where(p => scopedPatientIds.Contains(p.Id)).ToList()
-            : patients;
 
         var clinicNames = clinics.ToDictionary(c => c.Id, c => c.Name);
 
@@ -643,7 +675,7 @@ public class ReportRepository : IReportRepository
             ["odontopediatria"] = new Dictionary<string, object> { ["count"] = sheetPatientCounts["odontopediatria"], ["percent"] = Pct(sheetPatientCounts["odontopediatria"], scopedCount) },
         };
 
-        return new Dictionary<string, object>
+        var payload = new Dictionary<string, object>
         {
             ["generatedAt"] = DateTime.UtcNow,
             ["source"] = "postgresql",
@@ -772,6 +804,9 @@ public class ReportRepository : IReportRepository
             },
             ["patientDataset"] = patientDataset,
         };
+
+        _cache?.Set(cacheKey, payload, TimeSpan.FromSeconds(30));
+        return payload;
     }
 
     private static DateTime NormalizeUtc(DateTime dt) =>

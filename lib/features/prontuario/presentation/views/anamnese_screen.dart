@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import '../viewmodels/endodontia_viewmodel.dart'; // Reutilizando container genérico de salvamento
+import '../widgets/sheet_history_dialog.dart';
 
 class AnamneseScreen extends ConsumerStatefulWidget {
   final String patientId;
@@ -75,7 +75,22 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
-      appBar: AppBar(title: const Text("Ficha de Anamnese")),
+      appBar: AppBar(
+        title: const Text("Ficha de Anamnese"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Histórico de Versões',
+            onPressed: () => showSheetHistoryDialog(
+              context: context,
+              ref: ref,
+              patientId: widget.patientId,
+              sheetType: 'anamnese',
+              sheetTitle: 'Anamnese',
+            ),
+          ),
+        ],
+      ),
       body: endoAsync.when(
         data: (savedData) {
           if (!_initialized) {

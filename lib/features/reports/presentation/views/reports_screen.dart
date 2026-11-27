@@ -57,7 +57,7 @@ class ReportsScreen extends ConsumerWidget {
   Widget _buildFilters(BuildContext context, ReportsState state, ReportsViewModel notifier) {
     return Container(
       padding: const EdgeInsets.all(16),
-      color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
       child: Column(
         children: [
           Row(
@@ -65,7 +65,7 @@ class ReportsScreen extends ConsumerWidget {
               Expanded(
                 flex: 2,
                 child: DropdownButtonFormField<Clinic>(
-                  value: state.selectedClinic,
+                  initialValue: state.selectedClinic,
                   decoration: const InputDecoration(
                     labelText: 'Clínica',
                     border: OutlineInputBorder(),

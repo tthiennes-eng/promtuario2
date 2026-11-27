@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
-import 'package:flutter/foundation.dart';
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:promt/core/network/api_client.dart';
 import 'package:promt/core/database/local_database.dart';
@@ -12,8 +12,17 @@ import 'package:uuid/uuid.dart';
 class AttachmentRepository implements IAttachmentRepository {
   final ApiClient _apiClient;
   final AppDatabase _localDb;
+  final _logger = Logger('AttachmentRepository');
 
   AttachmentRepository(this._apiClient, this._localDb);
+
+  String _resolveAuthenticatedFileUrl(String id, String? rawUrl) {
+    final base = _apiClient.instance.options.baseUrl.replaceAll(RegExp(r'/+$'), '');
+    if (id.isNotEmpty) {
+      return '$base/Anexos/$id/file';
+    }
+    return _resolveRemoteUrl(rawUrl);
+  }
 
   String _resolveRemoteUrl(String? rawUrl) {
     if (rawUrl == null || rawUrl.trim().isEmpty) return '';
@@ -61,11 +70,13 @@ class AttachmentRepository implements IAttachmentRepository {
         for (final item in response.data as List) {
           if (item is Map) {
             final map = Map<String, dynamic>.from(item);
-            final remoteUrl = _resolveRemoteUrl(
+            final id = (map['id'] ?? map['Id'] ?? '').toString();
+            final remoteUrl = _resolveAuthenticatedFileUrl(
+              id,
               (map['url'] ?? map['Url'] ?? map['remoteUrl'])?.toString(),
             );
             final att = Attachment(
-              id: (map['id'] ?? map['Id'] ?? '').toString(),
+              id: id,
               patientId: patientId,
               remoteUrl: remoteUrl.isEmpty ? null : remoteUrl,
               type: _parseApiType(map['tipo'] ?? map['Tipo'] ?? map['type']),
@@ -79,7 +90,7 @@ class AttachmentRepository implements IAttachmentRepository {
         }
       }
     } catch (e) {
-      debugPrint('Erro ao buscar anexos remotos: $e');
+      _logger.warning('Erro ao buscar anexos remotos: $e');
     }
 
     final localAttachments = <Attachment>[];
@@ -93,7 +104,9 @@ class AttachmentRepository implements IAttachmentRepository {
           localAttachments.add(mapped);
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      _logger.warning('Erro ao ler anexos locais: $e');
+    }
 
     final merged = [...remoteAttachments, ...localAttachments];
     merged.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -122,9 +135,10 @@ class AttachmentRepository implements IAttachmentRepository {
       );
       if (response.data is Map) {
         final map = Map<String, dynamic>.from(response.data as Map);
-        final remoteUrl = _resolveRemoteUrl((map['url'] ?? map['Url'])?.toString());
+        final id = (map['id'] ?? map['Id'] ?? const Uuid().v4()).toString();
+        final remoteUrl = _resolveAuthenticatedFileUrl(id, (map['url'] ?? map['Url'])?.toString());
         final uploaded = Attachment(
-          id: (map['id'] ?? map['Id'] ?? const Uuid().v4()).toString(),
+          id: id,
           patientId: patientId,
           localPath: file.path,
           remoteUrl: remoteUrl.isEmpty ? null : remoteUrl,
@@ -137,7 +151,7 @@ class AttachmentRepository implements IAttachmentRepository {
         return uploaded;
       }
     } catch (e) {
-      debugPrint('Upload remoto de anexo falhou, salvando localmente: $e');
+      _logger.warning('Upload remoto de anexo falhou, salvando localmente: $e');
     }
 
     final attachment = Attachment(
@@ -158,11 +172,13 @@ class AttachmentRepository implements IAttachmentRepository {
     try {
       await _apiClient.instance.delete('Anexos/$id');
     } catch (e) {
-      debugPrint('Erro ao excluir anexo no servidor: $e');
+      _logger.warning('Erro ao excluir anexo no servidor ($id): $e');
     }
     try {
       await (_localDb.delete(_localDb.attachmentsLocal)..where((t) => t.id.equals(id))).go();
-    } catch (_) {}
+    } catch (e) {
+      _logger.warning('Erro ao excluir anexo local ($id): $e');
+    }
   }
 
   @override
@@ -189,7 +205,8 @@ class AttachmentRepository implements IAttachmentRepository {
         await (_localDb.delete(_localDb.attachmentsLocal)..where((t) => t.id.equals(id))).go();
       }
       return uploaded.isSynced;
-    } catch (_) {
+    } catch (e) {
+      _logger.warning('Erro ao sincronizar anexo pendente ($id): $e');
       return false;
     }
   }
@@ -207,7 +224,9 @@ class AttachmentRepository implements IAttachmentRepository {
           isSynced: Value(attachment.isSynced),
         ),
       );
-    } catch (_) {}
+    } catch (e) {
+      _logger.warning('Erro ao salvar anexo no cache local (${attachment.id}): $e');
+    }
   }
 
   Attachment _mapSchemaToEntity(dynamic row) {

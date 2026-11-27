@@ -528,9 +528,22 @@ class ProntuarioPdfService {
     List<Prescription> prescriptions = const [],
     List<MedicalCertificate> certificates = const [],
     Map<String, dynamic>? tcle,
+    Map<String, dynamic>? dtm,
+    Map<String, dynamic>? ppr,
+    Map<String, dynamic>? endodontia,
+    Map<String, dynamic>? periograma,
+    Map<String, dynamic>? odontopediatria,
   }) async {
     final doc = pw.Document();
     final age = DateTime.now().year - patient.birthDate.year;
+
+    final specialtyEntries = <(String, Map<String, dynamic>?)>[
+      ('DTM', dtm),
+      ('PPR', ppr),
+      ('Endodontia', endodontia),
+      ('Periograma', periograma),
+      ('Odontopediatria', odontopediatria),
+    ];
 
     doc.addPage(
       pw.MultiPage(
@@ -600,7 +613,21 @@ class ProntuarioPdfService {
               )),
           pw.SizedBox(height: 12),
 
-          pw.Text('5. TCLE / CONSENTIMENTO LGPD', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+          pw.Text('5. FICHAS DE ESPECIALIDADES', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 4),
+          ...specialtyEntries.map((entry) {
+            final map = entry.$2;
+            final filledCount = map == null ? 0 : map.values.where((v) => v != null && v.toString().trim().isNotEmpty).length;
+            return pw.Text(
+              filledCount > 0
+                  ? '• ${entry.$1}: Preenchida ($filledCount campo(s)/seção(ões) registradas)'
+                  : '• ${entry.$1}: Sem registro',
+              style: const pw.TextStyle(fontSize: 9),
+            );
+          }),
+          pw.SizedBox(height: 12),
+
+          pw.Text('6. TCLE / CONSENTIMENTO LGPD', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
           pw.Text(
             tcle != null && tcle['accepted'] == true
                 ? 'Termo assinado/aceito em ${tcle["acceptedAt"] ?? "data registrada"}.'

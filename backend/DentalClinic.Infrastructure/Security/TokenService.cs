@@ -21,10 +21,24 @@ public class TokenService : ITokenService
         _configuration = configuration;
     }
 
+    private byte[] ResolveJwtKeyBytes()
+    {
+        var secret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+        if (string.IsNullOrWhiteSpace(secret))
+        {
+            secret = _configuration["Jwt:Key"];
+        }
+        if (string.IsNullOrWhiteSpace(secret))
+        {
+            throw new InvalidOperationException("JWT Key not configured");
+        }
+        return Encoding.UTF8.GetBytes(secret);
+    }
+
     public string GenerateAccessToken(User user)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured"));
+        var key = ResolveJwtKeyBytes();
 
         var claims = new List<Claim>
         {
@@ -66,7 +80,7 @@ public class TokenService : ITokenService
             ValidateAudience = false,
             ValidateIssuer = false,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!)),
+            IssuerSigningKey = new SymmetricSecurityKey(ResolveJwtKeyBytes()),
             ValidateLifetime = false
         };
 

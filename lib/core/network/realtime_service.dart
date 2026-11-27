@@ -34,15 +34,7 @@ class RealtimeService {
     // CORREÇÃO: Lógica de URL dinâmica replicando a segurança do ApiClient.
     // Garante que terminais Windows e dispositivos Android (emulador ou físico) 
     // apontem corretamente para o servidor central na rede.
-    String url;
-    if (defaultTargetPlatform == TargetPlatform.android && 
-       (_serverIp == 'localhost' || _serverIp == '127.0.0.1')) {
-      // Alias padrão para o host da máquina a partir do emulador Android
-      url = 'http://10.0.2.2:5000/hubs/clinic';
-    } else {
-      // Usa o IP configurado no aplicativo (ex: 192.168.0.3)
-      url = 'http://$_serverIp:5000/hubs/clinic';
-    }
+    final url = '${ApiClient.resolveOrigin(_serverIp)}/hubs/clinic';
 
     _logger.info('Iniciando conexão SignalR em: $url');
 

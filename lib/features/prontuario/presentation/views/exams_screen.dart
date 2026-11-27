@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:promt/core/network/api_client.dart';
 import '../viewmodels/attachment_viewmodel.dart';
 import '../viewmodels/prontuario_summary_provider.dart';
 import '../../domain/entities/attachment.dart';
@@ -44,6 +46,27 @@ class _ExamsScreenState extends ConsumerState<ExamsScreen> {
     };
   }
 
+  Widget _buildAuthenticatedRemoteImage(String remoteUrl, {required BoxFit fit, double errorIconSize = 32}) {
+    final dio = ref.read(apiClientProvider).instance;
+    return FutureBuilder<Response<List<int>>>(
+      future: dio.get<List<int>>(remoteUrl, options: Options(responseType: ResponseType.bytes)),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)));
+        }
+        final bytes = snapshot.data?.data;
+        if (snapshot.hasError || bytes == null || bytes.isEmpty) {
+          return Center(child: Icon(Icons.broken_image, color: Colors.grey, size: errorIconSize));
+        }
+        return Image.memory(
+          Uint8List.fromList(bytes),
+          fit: fit,
+          errorBuilder: (_, __, ___) => Center(child: Icon(Icons.broken_image, color: Colors.grey, size: errorIconSize)),
+        );
+      },
+    );
+  }
+
   Widget _buildCardPreview(Attachment attachment) {
     if (attachment.isImageFile) {
       final localPath = attachment.localPath;
@@ -56,11 +79,7 @@ class _ExamsScreenState extends ConsumerState<ExamsScreen> {
       }
       final remoteUrl = attachment.remoteUrl;
       if (remoteUrl != null && remoteUrl.isNotEmpty) {
-        return Image.network(
-          remoteUrl,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
-        );
+        return _buildAuthenticatedRemoteImage(remoteUrl, fit: BoxFit.cover);
       }
     }
 
@@ -106,11 +125,7 @@ class _ExamsScreenState extends ConsumerState<ExamsScreen> {
     }
     final remoteUrl = attachment.remoteUrl;
     if (remoteUrl != null && remoteUrl.isNotEmpty) {
-      return Image.network(
-        remoteUrl,
-        fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image, size: 64)),
-      );
+      return _buildAuthenticatedRemoteImage(remoteUrl, fit: BoxFit.contain, errorIconSize: 64);
     }
     return const Center(child: Icon(Icons.broken_image, size: 64));
   }
@@ -125,7 +140,7 @@ class _ExamsScreenState extends ConsumerState<ExamsScreen> {
     }
     final remoteUrl = attachment.remoteUrl;
     if (remoteUrl != null && remoteUrl.isNotEmpty) {
-      final response = await Dio().get<String>(
+      final response = await ref.read(apiClientProvider).instance.get<String>(
         remoteUrl,
         options: Options(responseType: ResponseType.plain),
       );

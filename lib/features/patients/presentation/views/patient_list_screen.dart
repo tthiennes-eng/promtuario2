@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,11 +9,35 @@ import 'package:promt/features/agenda/domain/entities/appointment.dart';
 import 'package:promt/features/procedures/domain/entities/clinic.dart';
 import 'package:promt/features/procedures/presentation/viewmodels/clinics_viewmodel.dart';
 
-class PatientListScreen extends ConsumerWidget {
+class PatientListScreen extends ConsumerStatefulWidget {
   const PatientListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PatientListScreen> createState() => _PatientListScreenState();
+}
+
+class _PatientListScreenState extends ConsumerState<PatientListScreen> {
+  static const int _pageSize = 25;
+  int _visibleCount = _pageSize;
+  Timer? _searchDebounce;
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String val) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (!mounted) return;
+      setState(() => _visibleCount = _pageSize);
+      ref.read(patientViewModelProvider.notifier).searchPatients(val);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(patientListWithHistoryProvider);
 
     return Scaffold(
@@ -23,6 +48,7 @@ class PatientListScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
+              setState(() => _visibleCount = _pageSize);
               ref.read(patientViewModelProvider.notifier).refresh();
               ref.invalidate(allAppointmentsProvider);
             },
@@ -32,52 +58,64 @@ class PatientListScreen extends ConsumerWidget {
       body: Column(
         children: [
           _buildSummaryBar(state),
-          _buildSearchBar(ref),
+          _buildSearchBar(),
           Expanded(
             child: state.patients.when(
-              data: (patients) => patients.isEmpty
-                  ? _buildEmptyState(context, ref)
-                  : ListView.builder(
-                      itemCount: patients.length,
-                      padding: const EdgeInsets.all(16),
-                      itemBuilder: (context, index) {
-                        final patient = patients[index];
-                        final history = (state.allHistory.value ?? [])
-                            .where((a) => a.patientId == patient.id)
-                            .toList();
+              data: (patients) {
+                if (patients.isEmpty) return _buildEmptyState(context, ref);
+                final showingCount = patients.length < _visibleCount ? patients.length : _visibleCount;
+                final hasMore = patients.length > showingCount;
 
-                        // Histórico (Passado)
-                        final past = history
-                            .where((a) => a.startTime.isBefore(DateTime.now()))
-                            .toList();
-                        past.sort((a, b) => b.startTime.compareTo(a.startTime));
-                        final lastApp = past.isNotEmpty ? past.first : null;
+                return ListView.builder(
+                  itemCount: showingCount + (hasMore ? 1 : 0),
+                  padding: const EdgeInsets.all(16),
+                  itemBuilder: (context, index) {
+                    if (index == showingCount) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Center(
+                          child: OutlinedButton.icon(
+                            onPressed: () => setState(() => _visibleCount += _pageSize),
+                            icon: const Icon(Icons.expand_more),
+                            label: Text('Carregar mais (${patients.length - showingCount} restante(s))'),
+                          ),
+                        ),
+                      );
+                    }
+                    final patient = patients[index];
+                    final history = (state.allHistory.value ?? [])
+                        .where((a) => a.patientId == patient.id)
+                        .toList();
 
-                        // Agendamento (Futuro)
-                        final future = history
-                            .where(
-                              (a) =>
-                                  a.startTime.isAfter(DateTime.now()) &&
-                                  a.status != AppointmentStatus.cancelled &&
-                                  a.status != AppointmentStatus.noShow &&
-                                  a.status != AppointmentStatus.missed,
-                            )
-                            .toList();
-                        future.sort(
-                          (a, b) => a.startTime.compareTo(b.startTime),
-                        );
-                        final nextApp = future.isNotEmpty ? future.first : null;
+                    final past = history
+                        .where((a) => a.startTime.isBefore(DateTime.now()))
+                        .toList()
+                      ..sort((a, b) => b.startTime.compareTo(a.startTime));
+                    final lastApp = past.isNotEmpty ? past.first : null;
 
-                        return _buildDetailedPatientCard(
-                          context,
-                          ref,
-                          patient,
-                          lastApp,
-                          nextApp,
-                          history.length,
-                        );
-                      },
-                    ),
+                    final future = history
+                        .where(
+                          (a) =>
+                              a.startTime.isAfter(DateTime.now()) &&
+                              a.status != AppointmentStatus.cancelled &&
+                              a.status != AppointmentStatus.noShow &&
+                              a.status != AppointmentStatus.missed,
+                        )
+                        .toList()
+                      ..sort((a, b) => a.startTime.compareTo(b.startTime));
+                    final nextApp = future.isNotEmpty ? future.first : null;
+
+                    return _buildDetailedPatientCard(
+                      context,
+                      ref,
+                      patient,
+                      lastApp,
+                      nextApp,
+                      history.length,
+                    );
+                  },
+                );
+              },
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => Center(child: Text('Erro: $err')),
             ),
@@ -103,7 +141,9 @@ class PatientListScreen extends ConsumerWidget {
       return a.startTime.year == now.year &&
           a.startTime.month == now.month &&
           a.startTime.day == now.day &&
-          a.status != AppointmentStatus.cancelled;
+          a.status != AppointmentStatus.cancelled &&
+          a.status != AppointmentStatus.noShow &&
+          a.status != AppointmentStatus.missed;
     }).length;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -122,16 +162,15 @@ class PatientListScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSearchBar(WidgetRef ref) {
+  Widget _buildSearchBar() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: SearchBar(
-        elevation: MaterialStateProperty.all(0),
-        backgroundColor: MaterialStateProperty.all(Colors.white),
+        elevation: WidgetStateProperty.all(0),
+        backgroundColor: WidgetStateProperty.all(Colors.white),
         hintText: 'Pesquisar por nome ou CPF...',
         leading: const Icon(Icons.search, color: Color(0xFF006494)),
-        onChanged: (val) =>
-            ref.read(patientViewModelProvider.notifier).searchPatients(val),
+        onChanged: _onSearchChanged,
       ),
     );
   }
@@ -173,7 +212,7 @@ class PatientListScreen extends ConsumerWidget {
               child: Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: const Color(0xFF006494).withOpacity(0.1),
+                    backgroundColor: const Color(0xFF006494).withValues(alpha: 0.1),
                     child: Text(
                       patient.fullName[0],
                       style: const TextStyle(
@@ -362,7 +401,7 @@ class PatientListScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 14, color: color.withOpacity(0.7)),
+          Icon(icon, size: 14, color: color.withValues(alpha: 0.7)),
           const SizedBox(height: 2),
           Text(
             value,
@@ -407,7 +446,7 @@ class _StatChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(

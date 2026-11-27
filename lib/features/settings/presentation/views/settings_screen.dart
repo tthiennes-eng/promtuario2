@@ -1,12 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../auth/presentation/viewmodels/auth_viewmodel.dart';
+import '../../../../core/security/storage_service.dart';
 import '../../../../core/theme/theme_viewmodel.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/widgets/server_ip_dialog.dart';
 
+final pushNotificationsPrefProvider = StateNotifierProvider<PushNotificationsPrefNotifier, bool>((ref) {
+  final storage = ref.watch(storageServiceProvider);
+  return PushNotificationsPrefNotifier(storage);
+});
+
+class PushNotificationsPrefNotifier extends StateNotifier<bool> {
+  final StorageService _storage;
+
+  PushNotificationsPrefNotifier(this._storage) : super(true) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    state = await _storage.getPushNotificationsEnabled();
+  }
+
+  Future<void> setEnabled(bool value) async {
+    state = value;
+    await _storage.savePushNotificationsEnabled(value);
+  }
+}
+
 /// Tela de Configurações do Sistema e Perfil.
-/// Agora integrada ao ThemeViewModel para controle real de aparência.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -16,6 +39,7 @@ class SettingsScreen extends ConsumerWidget {
     final user = authState.user;
     final themeMode = ref.watch(themeViewModelProvider);
     final serverIp = ref.watch(serverIpProvider);
+    final pushEnabled = ref.watch(pushNotificationsPrefProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -30,8 +54,10 @@ class SettingsScreen extends ConsumerWidget {
               leading: CircleAvatar(
                 radius: 30,
                 backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                child: Text(user?.name.isNotEmpty == true ? user!.name.substring(0, 1).toUpperCase() : 'U', 
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                child: Text(
+                  user?.name.isNotEmpty == true ? user!.name.substring(0, 1).toUpperCase() : 'U',
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
               ),
               title: Text(user?.name ?? 'Usuário', style: const TextStyle(fontWeight: FontWeight.bold)),
               subtitle: Text(user?.email ?? 'email@instituicao.edu.br'),
@@ -52,17 +78,28 @@ class SettingsScreen extends ConsumerWidget {
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.dns_outlined),
-                  title: const Text('IP do Servidor'),
+                  title: const Text('IP / URL do Servidor'),
                   subtitle: Text(serverIp),
                   trailing: const Icon(Icons.edit_outlined),
                   onTap: () => showServerIpDialog(context, ref),
                 ),
                 const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.notifications_active_outlined),
+                SwitchListTile(
+                  secondary: const Icon(Icons.notifications_active_outlined),
                   title: const Text('Notificações Push'),
                   subtitle: const Text('Gerenciar alertas de agenda e assinaturas'),
-                  trailing: Switch(value: true, onChanged: (v) {}),
+                  value: pushEnabled,
+                  onChanged: (v) async {
+                    await ref.read(pushNotificationsPrefProvider.notifier).setEnabled(v);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(v ? 'Notificações ativadas.' : 'Notificações silenciadas.'),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  },
                 ),
               ],
             ),
@@ -74,7 +111,8 @@ class SettingsScreen extends ConsumerWidget {
               leading: const Icon(Icons.history_toggle_off),
               title: const Text('Logs de Acesso'),
               subtitle: const Text('Ver registros de quem acessou seus dados'),
-              onTap: () => Navigator.pushNamed(context, '/dashboard/audit-logs'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/dashboard/audit-logs'),
             ),
           ),
           const SizedBox(height: 48),
@@ -105,37 +143,22 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Escolha o Tema'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RadioListTile<ThemeMode>(
-              title: const Text('Claro'),
-              value: ThemeMode.light,
-              groupValue: ref.watch(themeViewModelProvider),
-              onChanged: (val) {
-                ref.read(themeViewModelProvider.notifier).setThemeMode(val!);
-                Navigator.pop(context);
-              },
-            ),
-            RadioListTile<ThemeMode>(
-              title: const Text('Escuro'),
-              value: ThemeMode.dark,
-              groupValue: ref.watch(themeViewModelProvider),
-              onChanged: (val) {
-                ref.read(themeViewModelProvider.notifier).setThemeMode(val!);
-                Navigator.pop(context);
-              },
-            ),
-            RadioListTile<ThemeMode>(
-              title: const Text('Padrão do Sistema'),
-              value: ThemeMode.system,
-              groupValue: ref.watch(themeViewModelProvider),
-              onChanged: (val) {
-                ref.read(themeViewModelProvider.notifier).setThemeMode(val!);
-                Navigator.pop(context);
-              },
-            ),
-          ],
+        content: RadioGroup<ThemeMode>(
+          groupValue: ref.watch(themeViewModelProvider),
+          onChanged: (val) {
+            if (val != null) {
+              ref.read(themeViewModelProvider.notifier).setThemeMode(val);
+              Navigator.pop(context);
+            }
+          },
+          child: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RadioListTile<ThemeMode>(title: Text('Claro'), value: ThemeMode.light),
+              RadioListTile<ThemeMode>(title: Text('Escuro'), value: ThemeMode.dark),
+              RadioListTile<ThemeMode>(title: Text('Sistema'), value: ThemeMode.system),
+            ],
+          ),
         ),
       ),
     );
@@ -143,10 +166,15 @@ class SettingsScreen extends ConsumerWidget {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 12),
+      padding: const EdgeInsets.only(bottom: 12, left: 4),
       child: Text(
-        title,
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey),
+        title.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey,
+          letterSpacing: 1.2,
+        ),
       ),
     );
   }

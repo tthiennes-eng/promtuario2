@@ -115,9 +115,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withOpacity(0.14),
-                  Colors.black.withOpacity(0.24),
-                  Colors.black.withOpacity(0.40),
+                  Colors.black.withValues(alpha: 0.14),
+                  Colors.black.withValues(alpha: 0.24),
+                  Colors.black.withValues(alpha: 0.40),
                 ],
               ),
             ),
@@ -140,14 +140,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(30.0),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.88),
+                          color: Colors.white.withValues(alpha: 0.88),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.65),
+                            color: Colors.white.withValues(alpha: 0.65),
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.24),
+                              color: Colors.black.withValues(alpha: 0.24),
                               blurRadius: 24,
                               offset: const Offset(0, 10),
                             ),
@@ -286,8 +286,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     ),
                                   ),
                                   TextButton(
-                                    onPressed:
-                                        authState.isLoading ? null : () {},
+                                    onPressed: authState.isLoading
+                                        ? null
+                                        : _showForgotPasswordDialog,
                                     child: const Text('Esqueceu a senha?'),
                                   ),
                                 ],
@@ -346,5 +347,90 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _showForgotPasswordDialog() async {
+    final emailCtrl = TextEditingController(text: _emailController.text.trim());
+    bool sending = false;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Recuperar Senha'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Informe seu e-mail institucional para registrar a solicitação de redefinição junto à coordenação.',
+                style: TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: emailCtrl,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'E-mail institucional',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.email_outlined),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: sending ? null : () => Navigator.pop(dialogCtx),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: sending
+                  ? null
+                  : () async {
+                      final email = emailCtrl.text.trim();
+                      if (email.isEmpty || !email.contains('@')) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Informe um e-mail válido.'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+                      setDialogState(() => sending = true);
+                      try {
+                        final msg = await ref
+                            .read(authViewModelProvider.notifier)
+                            .requestPasswordReset(email);
+                        if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(msg), backgroundColor: Colors.green),
+                          );
+                        }
+                      } catch (e) {
+                        setDialogState(() => sending = false);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Não foi possível enviar solicitação: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
+              child: sending
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Solicitar'),
+            ),
+          ],
+        ),
+      ),
+    );
+    emailCtrl.dispose();
   }
 }

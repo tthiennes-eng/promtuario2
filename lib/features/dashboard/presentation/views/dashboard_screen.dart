@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:promt/features/patients/presentation/viewmodels/patient_viewmodel.dart';
 import 'package:promt/features/agenda/domain/entities/appointment.dart';
+import 'package:promt/core/providers/sync_status_provider.dart';
 import 'package:promt/features/dashboard/presentation/viewmodels/statistical_studies_viewmodel.dart';
 import 'package:promt/features/dashboard/presentation/widgets/statistical_panel_widget.dart';
 
@@ -160,6 +161,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildHeader(BuildContext context, User? user) {
+    final pendingSync = ref.watch(pendingSyncCountProvider).valueOrNull ?? 0;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       decoration: BoxDecoration(
@@ -178,6 +181,35 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               overflow: TextOverflow.ellipsis,
             ),
           ),
+          if (pendingSync > 0) ...[
+            ActionChip(
+              avatar: const Icon(Icons.sync, size: 16, color: Colors.orange),
+              label: Text(
+                'Sincronizar ($pendingSync)',
+                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.orange.shade900),
+              ),
+              backgroundColor: Colors.orange.shade50,
+              side: BorderSide(color: Colors.orange.shade300),
+              onPressed: () async {
+                final remaining = await syncAllPendingRecords(ref);
+                ref.invalidate(dashboardSummaryProvider);
+                ref.invalidate(statisticalStudiesProvider);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        remaining == 0
+                            ? 'Todos os registros pendentes foram sincronizados!'
+                            : 'Sincronização executada. Ainda há $remaining pendência(s).',
+                      ),
+                      backgroundColor: remaining == 0 ? Colors.green : Colors.orange,
+                    ),
+                  );
+                }
+              },
+            ),
+            const SizedBox(width: 8),
+          ],
           IconButton(
             icon: const Icon(Icons.notifications_none),
             tooltip: 'Notificações',
@@ -359,7 +391,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: color, size: 20),
@@ -467,7 +499,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     return ListTile(
                       contentPadding: const EdgeInsets.symmetric(vertical: 8),
                       leading: CircleAvatar(
-                        backgroundColor: Colors.green.withOpacity(0.12),
+                        backgroundColor: Colors.green.withValues(alpha: 0.12),
                         child: const Icon(Icons.person_outline, color: Colors.green),
                       ),
                       title: Text(
@@ -515,9 +547,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         width: 150,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.05),
+          color: color.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.1)),
+          border: Border.all(color: color.withValues(alpha: 0.1)),
         ),
         child: Column(
           children: [

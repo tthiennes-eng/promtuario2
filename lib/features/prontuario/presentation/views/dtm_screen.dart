@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../data/services/prontuario_pdf_service.dart';
 import '../viewmodels/endodontia_viewmodel.dart';
 import '../viewmodels/prontuario_summary_provider.dart';
+import '../widgets/sheet_history_dialog.dart';
 
 class DtmTratamentoRow {
   String data;
@@ -353,6 +354,17 @@ class _DtmScreenState extends ConsumerState<DtmScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Histórico de Versões',
+            onPressed: () => showSheetHistoryDialog(
+              context: context,
+              ref: ref,
+              patientId: widget.patientId,
+              sheetType: 'dtm',
+              sheetTitle: 'DTM',
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.picture_as_pdf_outlined),
             tooltip: 'Exportar Ficha DTM em PDF',

@@ -53,6 +53,11 @@ class ProntuarioScreen extends ConsumerWidget {
       final certificates = await repo.getCertificateHistory(patient.id);
       final anamnese = await repo.getEndodontia('anamnese_${patient.id}');
       final tcle = await repo.getEndodontia('tcle_${patient.id}');
+      final dtm = await repo.getEndodontia('dtm_${patient.id}');
+      final ppr = await repo.getEndodontia('ppr_${patient.id}');
+      final endodontia = await repo.getEndodontia(patient.id);
+      final periograma = await repo.getPeriograma(patient.id);
+      final odontopediatria = await repo.getEndodontia('odontopediatria_${patient.id}');
 
       final file = await ProntuarioPdfService.generateFullProntuarioPdf(
         patient: patient,
@@ -63,6 +68,11 @@ class ProntuarioScreen extends ConsumerWidget {
         prescriptions: prescriptions,
         certificates: certificates,
         tcle: tcle,
+        dtm: dtm,
+        ppr: ppr,
+        endodontia: endodontia,
+        periograma: periograma,
+        odontopediatria: odontopediatria,
       );
 
       if (context.mounted) {
@@ -86,6 +96,7 @@ class ProntuarioScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final anamneseAsync = ref.watch(endodontiaViewModelProvider('anamnese_${patient.id}'));
+    final pedAsync = ref.watch(endodontiaViewModelProvider('odontopediatria_${patient.id}'));
     final summary = ref.watch(prontuarioSummaryProvider(patient.id)).valueOrNull ?? const <String, dynamic>{};
     final allAppointments = ref.watch(allAppointmentsProvider).valueOrNull ?? const <Appointment>[];
     final clinics = ref.watch(clinicsViewModelProvider).valueOrNull ?? const <Clinic>[];
@@ -117,6 +128,9 @@ class ProntuarioScreen extends ConsumerWidget {
     final certCount = (summary['certificatesCount'] as num?)?.toInt() ?? 0;
     final planTotal = (summary['treatmentPlanTotalItems'] as num?)?.toInt() ?? 0;
     final planDone = (summary['treatmentPlanCompletedItems'] as num?)?.toInt() ?? 0;
+
+    final anamneseData = anamneseAsync.valueOrNull;
+    final pedData = pedAsync.valueOrNull;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
@@ -150,16 +164,8 @@ class ProntuarioScreen extends ConsumerWidget {
           children: [
             _buildPatientHeaderCard(allAppointments, clinics),
             const SizedBox(height: 16),
-            anamneseAsync.maybeWhen(
-              data: (data) => Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildComorbidityAlert(data),
-                  _buildAllergyAlert(data),
-                ],
-              ),
-              orElse: () => const SizedBox.shrink(),
-            ),
+            _buildComorbidityAlert(anamneseData, pedData),
+            _buildAllergyAlert(anamneseData, pedData),
             const SizedBox(height: 8),
             _buildSectionTitle('PRONTUÁRIO E FICHAS CLÍNICAS'),
             GridView.count(
@@ -446,51 +452,78 @@ class ProntuarioScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildComorbidityAlert(Map<String, dynamic>? data) {
-    if (data == null) return const SizedBox.shrink();
-
-    final sistemico = data['sistemico'];
-    if (sistemico is! Map) return const SizedBox.shrink();
-
+  Widget _buildComorbidityAlert(
+    Map<String, dynamic>? data, [
+    Map<String, dynamic>? pedData,
+  ]) {
     final comorbidades = <String>[];
 
-    void addMapCondition(String key, String label) {
-      final condition = sistemico[key];
-      if (condition is Map && condition['sim'] == true) {
-        final detalhe = condition['qual']?.toString().trim() ?? '';
-        comorbidades.add(detalhe.isEmpty ? label : '$label: $detalhe');
-      } else if (condition is Map && condition['sim'] == 'true') {
-        comorbidades.add(label);
+    if (data != null) {
+      final sistemico = data['sistemico'];
+      if (sistemico is Map) {
+        void addMapCondition(String key, String label) {
+          final condition = sistemico[key];
+          if (condition is Map && condition['sim'] == true) {
+            final detalhe = condition['qual']?.toString().trim() ?? '';
+            comorbidades.add(detalhe.isEmpty ? label : '$label: $detalhe');
+          } else if (condition is Map && condition['sim'] == 'true') {
+            comorbidades.add(label);
+          }
+        }
+
+        addMapCondition('cardiacos', 'Problemas cardíacos');
+        addMapCondition('digestivos', 'Problemas digestivos');
+        addMapCondition('figado', 'Problemas de fígado');
+        addMapCondition('neurologicos', 'Problemas neurológicos');
+        addMapCondition('coagulacao', 'Problemas de coagulação');
+
+        final sinusite = sistemico['sinusite'];
+        if (sinusite is Map && sinusite['sim'] == true) {
+          comorbidades.add('Sinusite');
+        }
+
+        final pressao = sistemico['pressao'];
+        if (pressao is Map &&
+            ((pressao['qual']?.toString().trim().isNotEmpty ?? false) ||
+                pressao['usaMeds'] == true)) {
+          final detalhe = pressao['qual']?.toString().trim() ?? '';
+          comorbidades.add(detalhe.isEmpty
+              ? 'Problema de pressão arterial'
+              : 'Pressão arterial: $detalhe');
+        }
+
+        final diabetes = sistemico['diabetes'];
+        if (diabetes is Map && diabetes['sim'] == true) {
+          final controlada = diabetes['controlada']?.toString().trim() ?? '';
+          comorbidades.add(controlada.isEmpty
+              ? 'Diabetes'
+              : 'Diabetes ($controlada)');
+        }
       }
     }
 
-    addMapCondition('cardiacos', 'Problemas cardíacos');
-    addMapCondition('digestivos', 'Problemas digestivos');
-    addMapCondition('figado', 'Problemas de fígado');
-    addMapCondition('neurologicos', 'Problemas neurológicos');
-    addMapCondition('coagulacao', 'Problemas de coagulação');
+    if (pedData != null) {
+      final pedFields = pedData['fields'] is Map
+          ? Map<String, dynamic>.from(pedData['fields'] as Map)
+          : pedData;
+      String pedStr(String key) => pedFields[key]?.toString().trim() ?? '';
 
-    final sinusite = sistemico['sinusite'];
-    if (sinusite is Map && sinusite['sim'] == true) {
-      comorbidades.add('Sinusite');
-    }
+      if (pedStr('t5_hma_tratamento_medico') == '(1) Sim') {
+        final qual = pedStr('t5_hma_tratamento_qual');
+        comorbidades.add(qual.isEmpty
+            ? 'Em tratamento médico (Odontopediatria)'
+            : 'Tratamento médico (Pediatria): $qual');
+      }
 
-    final pressao = sistemico['pressao'];
-    if (pressao is Map &&
-        ((pressao['qual']?.toString().trim().isNotEmpty ?? false) ||
-            pressao['usaMeds'] == true)) {
-      final detalhe = pressao['qual']?.toString().trim() ?? '';
-      comorbidades.add(detalhe.isEmpty
-          ? 'Problema de pressão arterial'
-          : 'Pressão arterial: $detalhe');
-    }
+      final doencasInfancia = pedStr('t5_hma_doencas_infancia');
+      if (doencasInfancia.isNotEmpty) {
+        comorbidades.add('Doenças da infância: $doencasInfancia');
+      }
 
-    final diabetes = sistemico['diabetes'];
-    if (diabetes is Map && diabetes['sim'] == true) {
-      final controlada = diabetes['controlada']?.toString().trim() ?? '';
-      comorbidades.add(controlada.isEmpty
-          ? 'Diabetes'
-          : 'Diabetes ($controlada)');
+      final respiracao = pedStr('t5_hmat_respiracao');
+      if (respiracao.toLowerCase().contains('bucal')) {
+        comorbidades.add('Respiração: $respiracao (Pediatria)');
+      }
     }
 
     if (comorbidades.isEmpty) return const SizedBox.shrink();
@@ -529,17 +562,51 @@ class ProntuarioScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildAllergyAlert(Map<String, dynamic>? data) {
-    if (data == null) return const SizedBox.shrink();
+  Widget _buildAllergyAlert(
+    Map<String, dynamic>? data, [
+    Map<String, dynamic>? pedData,
+  ]) {
+    final alergias = <String>[];
 
-    final sistemico = data['sistemico'];
-    if (sistemico == null) return const SizedBox.shrink();
+    if (data != null) {
+      final sistemico = data['sistemico'];
+      if (sistemico is Map) {
+        final alergia = sistemico['alergia'];
+        final bool temAlergia =
+            alergia is Map && (alergia['sim'] == true || alergia['sim'] == 'true');
+        if (temAlergia) {
+          final qualAlergia = alergia['qual']?.toString().trim() ?? '';
+          alergias.add(
+            qualAlergia.isEmpty ? 'Alergia informada na Anamnese' : qualAlergia,
+          );
+        }
+      }
+    }
 
-    final alergia = sistemico['alergia'];
-    final bool temAlergia = alergia?['sim'] ?? false;
-    final String qualAlergia = alergia?['qual'] ?? '';
+    if (pedData != null) {
+      final pedFields = pedData['fields'] is Map
+          ? Map<String, dynamic>.from(pedData['fields'] as Map)
+          : pedData;
+      String pedStr(String key) => pedFields[key]?.toString().trim() ?? '';
 
-    if (!temAlergia) return const SizedBox.shrink();
+      if (pedStr('t4_hb_q17_alergia_anestesico') == '(1) Sim') {
+        alergias.add('Alergia a anestésico (Odontopediatria)');
+      }
+      if (pedStr('t5_hma_alergia') == '(1) Sim') {
+        final qual = pedStr('t5_hma_alergia_qual');
+        final tipo = pedStr('t5_hmat_tipo_alergia');
+        final detalhes = [qual, tipo].where((s) => s.isNotEmpty).join(' / ');
+        alergias.add(
+          detalhes.isEmpty
+              ? 'Alergia informada na Odontopediatria'
+              : '$detalhes (Odontopediatria)',
+        );
+      } else if (pedStr('t5_hmat_tipo_alergia').isNotEmpty) {
+        alergias.add('${pedStr('t5_hmat_tipo_alergia')} (Odontopediatria)');
+      }
+    }
+
+    if (alergias.isEmpty) return const SizedBox.shrink();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -559,7 +626,7 @@ class ProntuarioScreen extends ConsumerWidget {
               children: [
                 Text('ALERTA DE SAÚDE / ALERGIA', style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold, fontSize: 13)),
                 const SizedBox(height: 4),
-                Text('O paciente informou alergia a: $qualAlergia', style: TextStyle(color: Colors.red.shade700, fontSize: 13)),
+                Text('O paciente informou alergia a: ${alergias.join(' • ')}', style: TextStyle(color: Colors.red.shade700, fontSize: 13)),
               ],
             ),
           ),
