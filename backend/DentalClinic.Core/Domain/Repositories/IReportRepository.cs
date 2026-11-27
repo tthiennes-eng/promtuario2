@@ -7,6 +7,7 @@ public interface IReportRepository
 {
     Task<DashboardStats> GetDashboardStatsAsync();
     Task<IEnumerable<ProductionReport>> GetProductionByProfessionalAsync(DateTime start, DateTime end);
+    Task<Dictionary<string, object>> GetStatisticalStudiesAsync(DateTime? start, DateTime? end, Guid? clinicId);
 }
 
 public record DashboardStats(

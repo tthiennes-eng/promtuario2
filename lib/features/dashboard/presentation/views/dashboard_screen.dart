@@ -8,6 +8,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:promt/features/patients/presentation/viewmodels/patient_viewmodel.dart';
 import 'package:promt/features/agenda/domain/entities/appointment.dart';
+import 'package:promt/features/dashboard/presentation/viewmodels/statistical_studies_viewmodel.dart';
+import 'package:promt/features/dashboard/presentation/widgets/statistical_panel_widget.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -235,6 +237,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return RefreshIndicator(
       onRefresh: () async {
         ref.invalidate(dashboardSummaryProvider);
+        ref.invalidate(statisticalStudiesProvider);
         await Future<void>.delayed(const Duration(milliseconds: 100));
       },
       child: SingleChildScrollView(
@@ -324,6 +327,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
               ],
             ),
+            const SizedBox(height: 32),
+            const StatisticalPanelWidget(),
           ],
         ),
       ),

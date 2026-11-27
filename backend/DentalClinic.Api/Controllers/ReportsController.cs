@@ -49,4 +49,26 @@ public class ReportsController : ControllerBase
         var report = await _reportRepository.GetProductionByProfessionalAsync(start, end);
         return Ok(report);
     }
+
+    /// <summary>
+    /// Consolida todos os indicadores dos 5 grupos de estudos estatísticos (Epidemiológico,
+    /// Associações/Risco, Longitudinal, Gestão/Fluxo e Qualidade/LGPD) + base anonimizada.
+    /// </summary>
+    [HttpGet("statistical-studies")]
+    public async Task<IActionResult> GetStatisticalStudies(
+        [FromQuery] DateTime? start,
+        [FromQuery] DateTime? end,
+        [FromQuery] Guid? clinicId)
+    {
+        try
+        {
+            var payload = await _reportRepository.GetStatisticalStudiesAsync(start, end, clinicId);
+            return Ok(payload);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao processar estudos estatísticos.");
+            return StatusCode(500, new { message = "Erro ao processar estudos estatísticos." });
+        }
+    }
 }
