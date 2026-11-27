@@ -81,18 +81,30 @@ class AuthViewModel extends StateNotifier<AuthState> {
       
     } on DioException catch (e) {
       String message = 'Falha na autenticação. Verifique suas credenciais.';
-      
-      if (e.type == DioExceptionType.connectionTimeout || 
-          e.type == DioExceptionType.connectionError || 
+      final statusCode = e.response?.statusCode;
+      final serverMsg = e.response?.data is Map
+          ? (e.response!.data['message'] ?? e.response!.data['Message'])?.toString()
+          : null;
+
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.connectionError ||
           e.type == DioExceptionType.receiveTimeout) {
-        message = 'Não foi possível conectar ao servidor. Verifique o IP configurado e a rede.';
-      } else if (e.response?.statusCode == 401) {
-        message = 'E-mail ou senha inválidos.';
+        message = 'Não foi possível conectar ao servidor. Verifique se o backend está ativo e o IP configurado.';
+      } else if (statusCode == 401) {
+        message = (serverMsg != null && serverMsg.isNotEmpty)
+            ? serverMsg
+            : 'E-mail ou senha inválidos.';
+      } else if (statusCode != null && statusCode >= 500) {
+        message = (serverMsg != null && serverMsg.isNotEmpty)
+            ? 'Erro no servidor ($statusCode): $serverMsg'
+            : 'Erro interno no servidor ($statusCode). Verifique a conexão com o banco de dados PostgreSQL.';
+      } else if (serverMsg != null && serverMsg.isNotEmpty) {
+        message = serverMsg;
       }
 
       state = state.copyWith(
-        isLoading: false, 
-        errorMessage: message
+        isLoading: false,
+        errorMessage: message,
       );
     } catch (e) {
       state = state.copyWith(
