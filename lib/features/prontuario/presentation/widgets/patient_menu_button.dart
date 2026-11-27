@@ -27,6 +27,7 @@ class PatientMenuButton extends StatelessWidget {
       MenuAction(icon: Icons.healing, label: 'Ficha de Endodontia', actionId: 'endodontia'),
       MenuAction(icon: Icons.architecture_outlined, label: 'PPR', actionId: 'ppr'),
       MenuAction(icon: Icons.monitor_heart_outlined, label: 'DTM', actionId: 'dtm'),
+      MenuAction(icon: Icons.child_care_outlined, label: 'Odontopediatria', actionId: 'odontopediatria'),
       MenuAction(icon: Icons.assignment_outlined, label: 'Plano de Tratamento', actionId: 'plano'),
       MenuAction(icon: Icons.timeline_outlined, label: 'Linha do Tempo Clínica', actionId: 'timeline'),
     ];

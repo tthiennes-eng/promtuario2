@@ -329,6 +329,7 @@ class PatientRepository implements IPatientRepository {
                 t.patientId.equals('peri_$patientId') |
                 t.patientId.equals('endo_ppr_$patientId') |
                 t.patientId.equals('endo_dtm_$patientId') |
+                t.patientId.equals('endo_odontopediatria_$patientId') |
                 t.patientId.equals('endo_tcle_$patientId') |
                 t.patientId.equals('endo_anamnese_$patientId') |
                 t.patientId.equals('endo_extraoral_$patientId') |

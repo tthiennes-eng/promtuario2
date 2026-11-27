@@ -366,6 +366,120 @@ class ProntuarioPdfService {
     return _saveDocument(doc, 'ficha_dtm', patientName);
   }
 
+  static Future<File> generateOdontopediatriaPdf({
+    required String patientName,
+    required Map<String, dynamic> data,
+  }) async {
+    final doc = pw.Document();
+
+    String formatValue(dynamic v) {
+      if (v == null) return '';
+      if (v is bool) return v ? 'Sim' : 'Não';
+      if (v is List) return v.map((e) => e.toString()).where((s) => s.trim().isNotEmpty).join(', ');
+      if (v is Map) {
+        final entries = <String>[];
+        v.forEach((tooth, surfaces) {
+          if (surfaces is Map && surfaces.isNotEmpty) {
+            final pairs = surfaces.entries
+                .where((e) => e.value.toString().trim().isNotEmpty)
+                .map((e) => '${e.key}:${e.value}')
+                .join(' ');
+            if (pairs.isNotEmpty) entries.add('$tooth ($pairs)');
+          }
+        });
+        return entries.join(' | ');
+      }
+      return v.toString().trim();
+    }
+
+    String prettyKey(String rawKey) {
+      final parts = rawKey.split('_');
+      if (parts.length <= 1) return rawKey;
+      return parts.skip(1).join(' ').replaceAll('  ', ' ').trim();
+    }
+
+    const topicHeaders = <String, String>{
+      't1_': '1. Identificação do Paciente e Termo de Autorização',
+      't2_': '2. Parte 1 — Dados da Mãe ou Responsável',
+      't3_': '3. Parte 2 — Dieta da Mãe / Responsável',
+      't4_': '4. Parte 3 — Pré/Pós-Natal e Higiene Bucal da Criança',
+      't5_': '5. História Médica, Comportamento e Hábitos Deletérios',
+      't6_': '6. Marcadores de Consumo Alimentar',
+      't7_': '7. Índices IPV e ISG',
+      't8_': '8. Exame Clínico e Radiográfico',
+      't9_': '9. Parte 4 e 5 — Anomalias Dentárias e Avaliação Ortodôntica',
+      't10_': '10. Procedimentos Invasivos e Planejamento por Consulta',
+    };
+
+    final widgets = <pw.Widget>[
+      _header(
+        'Ficha Clínica — Odontopediatria',
+        patientName,
+        subtitle: 'UFMA • Odontopediatria / Clínica Integrada Infantil',
+      ),
+      pw.SizedBox(height: 10),
+    ];
+
+    for (final entry in topicHeaders.entries) {
+      final rows = <List<String>>[];
+      final matchingKeys = data.keys.where((k) => k.startsWith(entry.key)).toList()..sort();
+      for (final k in matchingKeys) {
+        final formatted = formatValue(data[k]);
+        if (formatted.isNotEmpty) {
+          rows.add([prettyKey(k), formatted]);
+        }
+      }
+      if (rows.isEmpty) continue;
+
+      widgets.add(
+        pw.Padding(
+          padding: const pw.EdgeInsets.only(top: 10, bottom: 4),
+          child: pw.Text(
+            entry.value,
+            style: pw.TextStyle(
+              fontSize: 10.5,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColor.fromHex('#006494'),
+            ),
+          ),
+        ),
+      );
+      widgets.add(
+        pw.TableHelper.fromTextArray(
+          headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5, color: PdfColors.white),
+          headerDecoration: pw.BoxDecoration(color: PdfColor.fromHex('#006494')),
+          cellStyle: const pw.TextStyle(fontSize: 8.5),
+          columnWidths: {
+            0: const pw.FlexColumnWidth(2),
+            1: const pw.FlexColumnWidth(3),
+          },
+          headers: const ['Campo', 'Registro'],
+          data: rows,
+        ),
+      );
+    }
+
+    if (widgets.length == 2) {
+      widgets.add(
+        pw.Text(
+          'Nenhum campo preenchido até o momento.',
+          style: const pw.TextStyle(fontSize: 9.5),
+        ),
+      );
+    }
+
+    widgets.add(_signatureFooter((data['t1_aluno'] ?? '').toString()));
+
+    doc.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(24),
+        build: (context) => widgets,
+      ),
+    );
+    return _saveDocument(doc, 'ficha_odontopediatria', patientName);
+  }
+
   static Future<File> generateTclePdf({
     required String patientName,
     required Map<String, dynamic> tcleData,
