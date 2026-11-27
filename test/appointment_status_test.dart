@@ -1,15 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 import 'package:promt/core/network/realtime_service.dart';
 import 'package:promt/core/providers/providers.dart';
 import 'package:promt/features/agenda/domain/entities/appointment.dart';
 import 'package:promt/features/agenda/domain/repositories/i_appointment_repository.dart';
+import 'package:promt/features/agenda/presentation/views/add_appointment_screen.dart';
 import 'package:promt/features/agenda/presentation/views/agenda_screen.dart';
+import 'package:promt/features/auth/domain/entities/user.dart';
+import 'package:promt/features/patients/domain/entities/patient.dart';
+import 'package:promt/features/patients/domain/repositories/i_patient_repository.dart';
 import 'package:promt/features/procedures/domain/entities/clinic.dart';
 import 'package:promt/features/procedures/domain/entities/procedure.dart';
 import 'package:promt/features/procedures/domain/repositories/i_procedures_repository.dart';
+import 'package:promt/features/users/domain/repositories/i_user_management_repository.dart';
+
+class _FakePatientRepository implements IPatientRepository {
+  @override
+  Future<List<Patient>> getPatients({int page = 1, String? query}) async => const [];
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+}
+
+class _FakeUserRepository implements IUserManagementRepository {
+  @override
+  Future<List<User>> getUsers({UserRole? role, String? query}) async => const [];
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+}
 
 class _FakeRealtimeService implements RealtimeService {
   @override
@@ -195,5 +218,107 @@ void main() {
     expect(repo.lastUpdatedStatus, AppointmentStatus.noShow);
     expect(find.text('Falta'), findsOneWidget);
     expect(find.text('Falta registrada com sucesso.'), findsOneWidget);
+  });
+
+  testWidgets('Tapping a free date/time slot in AgendaScreen opens Novo Agendamento with that exact date and time', (tester) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final clinic = Clinic(
+      id: 'clinic-1',
+      name: 'Clinica I',
+      startHour: 8,
+      endHour: 12,
+      slotDurationMinutes: 60,
+    );
+
+    final repo = _InMemoryAppointmentRepository([]);
+    DateTime? receivedTime;
+    Clinic? receivedClinic;
+
+    final router = GoRouter(
+      initialLocation: '/dashboard/agenda',
+      routes: [
+        GoRoute(
+          path: '/dashboard/agenda',
+          builder: (context, state) => const AgendaScreen(),
+          routes: [
+            GoRoute(
+              path: 'add',
+              builder: (context, state) {
+                final extra = state.extra as Map<String, dynamic>;
+                receivedClinic = extra['clinic'] as Clinic?;
+                receivedTime = extra['time'] as DateTime?;
+                return Scaffold(
+                  appBar: AppBar(title: const Text('Novo Agendamento')),
+                  body: Column(
+                    children: [
+                      Text(DateFormat('dd/MM/yyyy').format(receivedTime!)),
+                      Text(DateFormat('HH:mm').format(receivedTime!)),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          realtimeServiceProvider.overrideWithValue(_FakeRealtimeService()),
+          proceduresRepositoryProvider.overrideWithValue(_FakeProceduresRepository([clinic])),
+          appointmentRepositoryProvider.overrideWithValue(repo),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Avança 1 dia na agenda
+    await tester.tap(find.byIcon(Icons.arrow_forward_ios));
+    await tester.pumpAndSettle();
+
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    final expectedDate = DateFormat('dd/MM/yyyy').format(tomorrow);
+
+    // Toca no horário disponível de 10:00
+    await tester.tap(find.text('10:00'));
+    await tester.pumpAndSettle();
+
+    expect(receivedClinic?.name, 'Clinica I');
+    expect(receivedTime, isNotNull);
+    expect(receivedTime!.year, tomorrow.year);
+    expect(receivedTime!.month, tomorrow.month);
+    expect(receivedTime!.day, tomorrow.day);
+    expect(receivedTime!.hour, 10);
+    expect(receivedTime!.minute, 0);
+    expect(find.text(expectedDate), findsOneWidget);
+    expect(find.text('10:00'), findsOneWidget);
+  });
+
+  testWidgets('AddAppointmentScreen renders pre-filled initialDateTime date and 24h time', (tester) async {
+    final target = DateTime(2026, 12, 15, 14, 30);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          realtimeServiceProvider.overrideWithValue(_FakeRealtimeService()),
+          patientRepositoryProvider.overrideWithValue(_FakePatientRepository()),
+          userManagementRepositoryProvider.overrideWithValue(_FakeUserRepository()),
+          proceduresRepositoryProvider.overrideWithValue(_FakeProceduresRepository(const [])),
+          appointmentRepositoryProvider.overrideWithValue(_InMemoryAppointmentRepository([])),
+        ],
+        child: MaterialApp(
+          home: AddAppointmentScreen(initialDateTime: target),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('15/12/2026'), findsOneWidget);
+    expect(find.text('14:30'), findsOneWidget);
   });
 }

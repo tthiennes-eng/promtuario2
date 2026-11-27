@@ -486,15 +486,12 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                         final picked = await showDatePicker(
                           context: context,
                           initialDate: _selectedDate,
-                          firstDate: DateTime.now().subtract(
-                            const Duration(days: 30),
-                          ),
-                          lastDate: DateTime.now().add(
-                            const Duration(days: 365),
-                          ),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
                         );
-                        if (picked != null)
+                        if (picked != null) {
                           setState(() => _selectedDate = picked);
+                        }
                       },
                       child: InputDecorator(
                         decoration: const InputDecoration(
@@ -524,7 +521,9 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(Icons.access_time),
                         ),
-                        child: Text(_startTime.format(context)),
+                        child: Text(
+                          '${_startTime.hour.toString().padLeft(2, '0')}:${_startTime.minute.toString().padLeft(2, '0')}',
+                        ),
                       ),
                     ),
                   ),

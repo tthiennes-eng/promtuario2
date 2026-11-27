@@ -88,7 +88,22 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: const Color(0xFF006494),
-        onPressed: () => context.push('/dashboard/agenda/add', extra: state.selectedClinic),
+        onPressed: () {
+          final freeSlots = state.timeSlots.where((s) => s.isFree);
+          final defaultTime = freeSlots.isNotEmpty
+              ? freeSlots.first.startTime
+              : DateTime(
+                  state.selectedDate.year,
+                  state.selectedDate.month,
+                  state.selectedDate.day,
+                  state.selectedClinic?.startHour ?? 8,
+                  0,
+                );
+          context.push(
+            '/dashboard/agenda/add',
+            extra: {'clinic': state.selectedClinic, 'time': defaultTime},
+          );
+        },
         label: const Text('NOVO AGENDAMENTO', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         icon: const Icon(Icons.add, color: Colors.white),
       ),
@@ -162,7 +177,10 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
           leading: Container(width: 50, alignment: Alignment.center, decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)), child: Text(DateFormat('HH:mm').format(slot.startTime), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green))),
           title: const Text('Horário Disponível', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13)),
           trailing: const Icon(Icons.add_circle_outline, color: Colors.green, size: 20),
-          onTap: () => context.push('/dashboard/agenda/add', extra: selectedClinic),
+          onTap: () => context.push(
+            '/dashboard/agenda/add',
+            extra: {'clinic': selectedClinic, 'time': slot.startTime},
+          ),
         ),
       ),
     );
