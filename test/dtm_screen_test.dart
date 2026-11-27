@@ -21,7 +21,7 @@ class _FakeDtmNotifier extends EndodontiaViewModel {
 void main() {
   test('FichaDtmModel serializes and deserializes all fields round-trip', () {
     final model = FichaDtmModel(
-      profissional: 'Dra. Andrea Alac',
+      profissional: 'Prof. Responsável',
       data: '26/11/2026',
       riscoCarie: 'baixo',
       riscoOclusal: 'moderado',
@@ -39,7 +39,7 @@ void main() {
     );
 
     final restored = FichaDtmModel.fromMap(model.toMap());
-    expect(restored.profissional, 'Dra. Andrea Alac');
+    expect(restored.profissional, 'Prof. Responsável');
     expect(restored.data, '26/11/2026');
     expect(restored.riscoCarie, 'baixo');
     expect(restored.riscoOclusal, 'moderado');
@@ -73,6 +73,7 @@ void main() {
 
     expect(find.text('DTM'), findsOneWidget);
     expect(find.text('FICHA CLÍNICA'), findsOneWidget);
+    expect(find.text('Dra. Andrea Alac'), findsNothing);
     expect(find.text('AVALIAÇÃO DE RISCO (avaliado pela sua dentista)'), findsOneWidget);
     expect(find.text('Risco de Cárie'), findsOneWidget);
     expect(find.text('Risco Oclusal'), findsOneWidget);

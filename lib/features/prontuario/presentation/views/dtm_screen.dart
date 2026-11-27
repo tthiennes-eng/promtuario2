@@ -71,7 +71,7 @@ class FichaDtmModel {
   List<DtmTratamentoRow> tratamentos;
 
   FichaDtmModel({
-    this.profissional = 'Dra. Andrea Alac',
+    this.profissional = '',
     this.data = '',
     this.riscoCarie = '',
     this.riscoOclusal = '',
@@ -102,10 +102,9 @@ class FichaDtmModel {
     Map<String, dynamic>? asMap(dynamic v) =>
         v is Map ? Map<String, dynamic>.from(v) : null;
 
+    final savedProf = map['profissional']?.toString() ?? '';
     return FichaDtmModel(
-      profissional: (map['profissional']?.toString().trim().isNotEmpty ?? false)
-          ? map['profissional'].toString()
-          : 'Dra. Andrea Alac',
+      profissional: savedProf.trim().toLowerCase() == 'dra. andrea alac' ? '' : savedProf,
       data: map['data']?.toString() ?? '',
       riscoCarie: map['riscoCarie']?.toString() ?? '',
       riscoOclusal: map['riscoOclusal']?.toString() ?? '',

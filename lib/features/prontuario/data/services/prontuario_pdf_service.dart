@@ -322,13 +322,21 @@ class ProntuarioPdfService {
       }
     }
 
-    final prof = field('profissional').isEmpty ? 'Dra. Andrea Alac' : field('profissional');
+    final prof = field('profissional');
+    final subtitleParts = <String>[
+      if (prof.isNotEmpty) prof,
+      if (field('data').isNotEmpty) 'Data: ${field("data")}',
+    ];
     doc.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(24),
         build: (context) => [
-          _header('Ficha Clínica - DTM', patientName, subtitle: '$prof  |  Data: ${field("data")}'),
+          _header(
+            'Ficha Clínica - DTM',
+            patientName,
+            subtitle: subtitleParts.isEmpty ? null : subtitleParts.join('  |  '),
+          ),
           pw.SizedBox(height: 10),
           pw.Text('AVALIAÇÃO DE RISCO (avaliado pela sua dentista)', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 4),
