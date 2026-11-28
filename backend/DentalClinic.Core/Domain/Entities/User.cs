@@ -28,9 +28,13 @@ public class User : Entity
     [NotMapped]
     public Address? Address { get; set; }
 
-    public UserRole Role { get; set; } = UserRole.Student;
-
     public List<UserRole> Roles { get; set; } = new();
+
+    public UserRole Role
+    {
+        get => Roles.Count > 0 ? Roles[0] : UserRole.Student;
+        set => Roles = new List<UserRole> { value };
+    }
 
     public bool IsActive { get; set; } = true;
 

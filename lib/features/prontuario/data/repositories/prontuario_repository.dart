@@ -180,8 +180,27 @@ class ProntuarioRepository implements IProntuarioRepository {
                 ..where((t) => t.patientId.equals(row.patientId)))
               .write(const drift_db.OdontogramLocalCompanion(isSynced: Value(true)));
         } catch (e) {
-      _logger.warning('Falha de sincronização/leitura no prontuário: $e');
-    }
+          _logger.warning('Falha de sincronização/leitura no prontuário: $e');
+        }
+      }
+
+      final pendingEvolutions = await (_localDb.select(_localDb.evolutionsLocal)
+            ..where((t) => t.isSynced.equals(false)))
+          .get();
+
+      for (final evo in pendingEvolutions) {
+        try {
+          await _apiClient.instance.post('Evolutions', data: {
+            'patientId': evo.patientId,
+            'description': evo.description,
+            'clinicId': await _resolveClinicId(null),
+          });
+          await (_localDb.update(_localDb.evolutionsLocal)
+                ..where((t) => t.id.equals(evo.id)))
+              .write(const drift_db.EvolutionsLocalCompanion(isSynced: Value(true)));
+        } catch (e) {
+          _logger.warning('Falha ao sincronizar evolução offline ${evo.id}: $e');
+        }
       }
     } catch (e) {
       _logger.warning('Falha de sincronização/leitura no prontuário: $e');

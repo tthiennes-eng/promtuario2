@@ -161,7 +161,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildHeader(BuildContext context, User? user) {
-    final pendingSync = ref.watch(pendingSyncCountProvider).valueOrNull ?? 0;
+    final pendingSummary = ref.watch(pendingSyncSummaryProvider).valueOrNull ?? const PendingSyncSummary();
+    final pendingSync = pendingSummary.total;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -182,31 +183,34 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
           ),
           if (pendingSync > 0) ...[
-            ActionChip(
-              avatar: const Icon(Icons.sync, size: 16, color: Colors.orange),
-              label: Text(
-                'Sincronizar ($pendingSync)',
-                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.orange.shade900),
-              ),
-              backgroundColor: Colors.orange.shade50,
-              side: BorderSide(color: Colors.orange.shade300),
-              onPressed: () async {
-                final remaining = await syncAllPendingRecords(ref);
-                ref.invalidate(dashboardSummaryProvider);
-                ref.invalidate(statisticalStudiesProvider);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        remaining == 0
-                            ? 'Todos os registros pendentes foram sincronizados!'
-                            : 'Sincronização executada. Ainda há $remaining pendência(s).',
+            Tooltip(
+              message: 'Pendente de envio ao servidor: ${pendingSummary.breakdown}',
+              child: ActionChip(
+                avatar: const Icon(Icons.sync, size: 16, color: Colors.orange),
+                label: Text(
+                  'Sincronizar ($pendingSync)',
+                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.orange.shade900),
+                ),
+                backgroundColor: Colors.orange.shade50,
+                side: BorderSide(color: Colors.orange.shade300),
+                onPressed: () async {
+                  final remaining = await syncAllPendingRecords(ref);
+                  ref.invalidate(dashboardSummaryProvider);
+                  ref.invalidate(statisticalStudiesProvider);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          remaining.total == 0
+                              ? 'Todos os registros pendentes foram sincronizados!'
+                              : 'Ainda há ${remaining.total} pendência(s): ${remaining.breakdown}.',
+                        ),
+                        backgroundColor: remaining.total == 0 ? Colors.green : Colors.orange,
                       ),
-                      backgroundColor: remaining == 0 ? Colors.green : Colors.orange,
-                    ),
-                  );
-                }
-              },
+                    );
+                  }
+                },
+              ),
             ),
             const SizedBox(width: 8),
           ],

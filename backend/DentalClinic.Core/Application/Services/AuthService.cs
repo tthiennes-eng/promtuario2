@@ -65,7 +65,7 @@ public class AuthService : IAuthService
         user.ResetFailedLogin();
         await _userRepository.UpdateAsync(user);
 
-        var userDto = new UserDto(user.Id, user.Name, user.EmailAddress.Value, user.Role.ToString().ToLower());
+        var userDto = new UserDto(user.Id, user.Name, user.EmailAddress.Value, user.Role.ToString().ToLower(), user.IsActive);
         return Result<TokenDto>.Ok(new TokenDto(accessToken, refreshToken, userDto));
     }
 
@@ -89,7 +89,7 @@ public class AuthService : IAuthService
         var newSession = UserSession.Create(user.Id, newRefreshToken, 7, session.CreatedByIp);
         await _sessionRepository.AddAsync(newSession);
 
-        var userDto = new UserDto(user.Id, user.Name, user.EmailAddress.Value, user.Role.ToString().ToLower());
+        var userDto = new UserDto(user.Id, user.Name, user.EmailAddress.Value, user.Role.ToString().ToLower(), user.IsActive);
         return Result<TokenDto>.Ok(new TokenDto(newAccessToken, newRefreshToken, userDto));
     }
 

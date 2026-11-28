@@ -234,6 +234,16 @@ await RunTest("NotificationsController enforces ownership on MarkAsRead and Dele
     Assert(okDel is NoContentResult && await repo.GetByIdAsync(notif.Id) == null, "Owner should be able to delete notification");
 });
 
+await RunTest("User.Role reflects persisted Roles list (never defaults Admin to Student)", async () =>
+{
+    var u = User.Create("Admin", "admin@odontoclinica.edu.br", "", null, null, null, UserRole.Admin);
+    // Simula materialização EF Core onde apenas Roles (perfis_json) é populado
+    u.Roles = new List<UserRole> { UserRole.Admin };
+    Assert(u.Role == UserRole.Admin, $"Expected Admin, got {u.Role}");
+    u.Roles = new List<UserRole> { UserRole.Coordinator };
+    Assert(u.Role == UserRole.Coordinator, $"Expected Coordinator, got {u.Role}");
+});
+
 Console.WriteLine($"\nBackend test summary: {passed} passed, {failed} failed.");
 return failed == 0 ? 0 : 1;
 

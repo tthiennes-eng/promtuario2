@@ -53,7 +53,8 @@ public class AuthController : ControllerBase
             user.Id,
             user.Name,
             user.EmailAddress.Value,
-            user.Role.ToString().ToLower());
+            user.Role.ToString().ToLower(),
+            user.IsActive);
 
         return Ok(userDto);
     }
