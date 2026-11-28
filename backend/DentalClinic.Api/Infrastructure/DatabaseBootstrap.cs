@@ -93,7 +93,14 @@ public static class DatabaseBootstrap
             ON CONFLICT (""MigrationId"") DO NOTHING;
         ");
 
-        context.Database.Migrate();
+        try
+        {
+            context.Database.Migrate();
+        }
+        catch (Exception migrateEx)
+        {
+            logger.LogWarning(migrateEx, "Aviso ao executar EF Core Migrate(); prosseguindo com DDL idempotente.");
+        }
 
         // Garante que todas as tabelas e colunas do Prontuário existam mesmo em bancos legados
         context.Database.ExecuteSqlRaw(@"
