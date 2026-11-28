@@ -19,8 +19,10 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetByEmailAsync(string email)
     {
+        if (string.IsNullOrWhiteSpace(email)) return null;
+        var normalized = email.Trim().ToLowerInvariant();
         return await _context.Users
-            .FirstOrDefaultAsync(u => u.EmailAddress.Value == email.ToLower());
+            .FirstOrDefaultAsync(u => u.EmailAddress.Value == normalized);
     }
 
     public async Task<User?> GetByIdAsync(Guid id)

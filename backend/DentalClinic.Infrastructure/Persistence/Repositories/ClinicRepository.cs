@@ -37,11 +37,15 @@ public class ClinicRepository : IClinicRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<Clinic>> GetAllAsync()
+    public async Task<IEnumerable<Clinic>> GetAllAsync(bool includeInactive = false)
     {
-        var clinics = await _context.Set<Clinic>()
-            .Where(c => c.IsActive)
-            .ToListAsync();
+        var query = _context.Set<Clinic>().AsQueryable();
+        if (!includeInactive)
+        {
+            query = query.Where(c => c.IsActive);
+        }
+
+        var clinics = await query.ToListAsync();
 
         return clinics
             .OrderBy(c => GetSequenceNumber(c.Name).HasValue ? 0 : 1)

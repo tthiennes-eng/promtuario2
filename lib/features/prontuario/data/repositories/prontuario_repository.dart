@@ -184,6 +184,25 @@ class ProntuarioRepository implements IProntuarioRepository {
         }
       }
 
+      final pendingAnamneses = await (_localDb.select(_localDb.anamneseLocal)
+            ..where((t) => t.isSynced.equals(false)))
+          .get();
+
+      for (final anam in pendingAnamneses) {
+        try {
+          final decoded = jsonDecode(anam.responsesJson);
+          final payload = decoded is Map && decoded.containsKey('responses') && decoded['responses'] is Map
+              ? decoded['responses']
+              : decoded;
+          await _apiClient.instance.post('Prontuario/${anam.patientId}/anamnese', data: payload);
+          await (_localDb.update(_localDb.anamneseLocal)
+                ..where((t) => t.patientId.equals(anam.patientId)))
+              .write(const drift_db.AnamneseLocalCompanion(isSynced: Value(true)));
+        } catch (e) {
+          _logger.warning('Falha ao sincronizar anamnese offline ${anam.patientId}: $e');
+        }
+      }
+
       final pendingEvolutions = await (_localDb.select(_localDb.evolutionsLocal)
             ..where((t) => t.isSynced.equals(false)))
           .get();
@@ -348,24 +367,80 @@ class ProntuarioRepository implements IProntuarioRepository {
     String professorId, {
     String? clinicId,
   }) async {
-    await _apiClient.instance.post('Evolutions', data: {
+    final response = await _apiClient.instance.post('Evolutions', data: {
       'patientId': patientId,
       'description': description,
       if (professorId.isNotEmpty) 'professorId': professorId,
       if (clinicId != null && clinicId.isNotEmpty) 'clinicId': clinicId,
     });
+    try {
+      final map = response.data is Map ? Map<String, dynamic>.from(response.data as Map) : <String, dynamic>{};
+      final id = (map['id'] ?? map['Id'] ?? const Uuid().v4()).toString();
+      await _localDb.into(_localDb.evolutionsLocal).insertOnConflictUpdate(
+        drift_db.EvolutionsLocalCompanion(
+          id: Value(id),
+          patientId: Value(patientId),
+          description: Value(description),
+          professorName: Value((map['professorName'] ?? 'Professor').toString()),
+          studentName: Value((map['studentName'] ?? 'Aluno').toString()),
+          isSignedByProfessor: Value((map['isSignedByProfessor'] ?? false) == true),
+          createdAt: Value(DateTime.now()),
+          isSynced: const Value(true),
+        ),
+      );
+    } catch (_) {}
   }
 
   @override
   Future<List<Evolution>> getEvolutions(String patientId) async {
     try {
       final response = await _apiClient.instance.get('Prontuario/$patientId/evolutions');
-      return (response.data as List)
+      final evolutions = (response.data as List)
           .whereType<Map>()
           .map((json) => Evolution.fromJson(Map<String, dynamic>.from(json)))
           .toList();
+      for (final evo in evolutions) {
+        try {
+          await _localDb.into(_localDb.evolutionsLocal).insertOnConflictUpdate(
+            drift_db.EvolutionsLocalCompanion(
+              id: Value(evo.id),
+              patientId: Value(evo.patientId.isNotEmpty ? evo.patientId : patientId),
+              studentId: Value(evo.studentId),
+              studentName: Value(evo.studentName),
+              professorId: Value(evo.professorId),
+              professorName: Value(evo.professorName),
+              description: Value(evo.description),
+              isSignedByProfessor: Value(evo.isSignedByProfessor),
+              signedAt: Value(evo.signedAt),
+              createdAt: Value(evo.createdAt),
+              isSynced: const Value(true),
+            ),
+          );
+        } catch (_) {}
+      }
+      return evolutions;
     } catch (_) {
-      return [];
+      try {
+        final localRows = await (_localDb.select(_localDb.evolutionsLocal)
+              ..where((t) => t.patientId.equals(patientId)))
+            .get();
+        return localRows
+            .map((r) => Evolution(
+                  id: r.id,
+                  patientId: r.patientId,
+                  studentId: r.studentId ?? '',
+                  studentName: r.studentName ?? 'Aluno',
+                  professorId: r.professorId ?? '',
+                  professorName: r.professorName ?? 'Professor',
+                  description: r.description,
+                  isSignedByProfessor: r.isSignedByProfessor,
+                  signedAt: r.signedAt,
+                  createdAt: r.createdAt,
+                ))
+            .toList();
+      } catch (_) {
+        return [];
+      }
     }
   }
 

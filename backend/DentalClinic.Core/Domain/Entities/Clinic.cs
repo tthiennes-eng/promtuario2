@@ -57,6 +57,11 @@ public sealed class Clinic : Entity
     /// </summary>
     public string ClosingTime { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// Duração padrão do slot de agendamento em minutos.
+    /// </summary>
+    public int SlotDurationMinutes { get; private set; } = 60;
+
     private Clinic()
     {
         Name = string.Empty;
@@ -65,22 +70,14 @@ public sealed class Clinic : Entity
         OpeningTime = "08:00";
         ClosingTime = "18:00";
         MaxCapacity = 1;
+        SlotDurationMinutes = 60;
         Address = Address.Create(".", ".", null, ".", ".", "MA", "00000-000");
     }
 
     /// <summary>
     /// Cria uma nova clínica com validações.
     /// </summary>
-    /// <param name="name">Nome da clínica.</param>
-    /// <param name="description">Descrição da clínica.</param>
-    /// <param name="specialty">Especialidade dentária.</param>
-    /// <param name="address">Endereço (Value Object).</param>
-    /// <param name="maxCapacity">Capacidade máxima.</param>
-    /// <param name="coordinatorUserId">ID do professor coordenador.</param>
-    /// <param name="openingTime">Horário de abertura (HH:mm).</param>
-    /// <param name="closingTime">Horário de fechamento (HH:mm).</param>
-    /// <returns>Uma nova clínica.</returns>
-    public static Clinic CreateBasic(string name, string description, int maxCapacity, int startHour, int endHour, string? location = null)
+    public static Clinic CreateBasic(string name, string description, int maxCapacity, int startHour, int endHour, string? location = null, int slotDurationMinutes = 60)
     {
         ValidateName(name);
         ValidateCapacity(maxCapacity);
@@ -107,11 +104,12 @@ public sealed class Clinic : Entity
             CoordinatorUserId = Guid.Empty,
             OpeningTime = opening,
             ClosingTime = closing,
+            SlotDurationMinutes = slotDurationMinutes > 0 ? slotDurationMinutes : 60,
             IsActive = true
         };
     }
 
-    public void UpdateBasic(string name, string? description, int maxCapacity, int startHour, int endHour, bool isActive, string? location = null)
+    public void UpdateBasic(string name, string? description, int maxCapacity, int startHour, int endHour, bool isActive, string? location = null, int slotDurationMinutes = 60)
     {
         ValidateName(name);
         ValidateCapacity(maxCapacity);
@@ -127,6 +125,7 @@ public sealed class Clinic : Entity
         MaxCapacity = maxCapacity;
         OpeningTime = opening;
         ClosingTime = closing;
+        SlotDurationMinutes = slotDurationMinutes > 0 ? slotDurationMinutes : 60;
         IsActive = isActive;
         if (!string.IsNullOrWhiteSpace(Location))
         {

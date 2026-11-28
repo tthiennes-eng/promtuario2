@@ -21,10 +21,17 @@ public class AppointmentRepository : IAppointmentRepository
             .FirstOrDefaultAsync(a => a.Id == id);
     }
 
+    private static DateTime NormalizeUtc(DateTime value) =>
+        value.Kind == DateTimeKind.Utc
+            ? value
+            : value.Kind == DateTimeKind.Local
+                ? value.ToUniversalTime()
+                : DateTime.SpecifyKind(value, DateTimeKind.Utc);
+
     public async Task<IEnumerable<Appointment>> GetByRangeAsync(DateTime start, DateTime end, Guid? clinicId)
     {
-        start = start.Kind == DateTimeKind.Utc ? start : DateTime.SpecifyKind(start, DateTimeKind.Utc);
-        end = end.Kind == DateTimeKind.Utc ? end : DateTime.SpecifyKind(end, DateTimeKind.Utc);
+        start = NormalizeUtc(start);
+        end = NormalizeUtc(end);
 
         var query = _context.Appointments
             .Include(a => a.Patient)
@@ -37,6 +44,16 @@ public class AppointmentRepository : IAppointmentRepository
         }
 
         return await query.OrderBy(a => a.StartTime).ToListAsync();
+    }
+
+    public async Task<IEnumerable<Appointment>> GetByPatientIdAsync(Guid patientId)
+    {
+        return await _context.Appointments
+            .Include(a => a.Patient)
+            .Include(a => a.Doctor)
+            .Where(a => a.PatientId == patientId)
+            .OrderByDescending(a => a.StartTime)
+            .ToListAsync();
     }
 
     public async Task AddAsync(Appointment appointment)

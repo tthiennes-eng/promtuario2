@@ -68,19 +68,22 @@ class OdontogramWidget extends ConsumerWidget {
   }
 
   Widget _buildQuadrantRow(BuildContext context, WidgetRef ref, List<int> left, List<int> right, Odontogram? odontogram) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        ...left.map((n) => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 5.0),
-          child: _ToothTile(number: n, toothConditions: _getConditionsForTooth(odontogram, n), ref: ref, patientId: patientId, getSurfaceLabel: _getSurfaceLabel, getConditionLabel: _getConditionLabel),
-        )),
-        const SizedBox(width: 56),
-        ...right.map((n) => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 5.0),
-          child: _ToothTile(number: n, toothConditions: _getConditionsForTooth(odontogram, n), ref: ref, patientId: patientId, getSurfaceLabel: _getSurfaceLabel, getConditionLabel: _getConditionLabel),
-        )),
-      ],
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          ...left.map((n) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5.0),
+            child: _ToothTile(number: n, toothConditions: _getConditionsForTooth(odontogram, n), ref: ref, patientId: patientId, getSurfaceLabel: _getSurfaceLabel, getConditionLabel: _getConditionLabel),
+          )),
+          const SizedBox(width: 56),
+          ...right.map((n) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5.0),
+            child: _ToothTile(number: n, toothConditions: _getConditionsForTooth(odontogram, n), ref: ref, patientId: patientId, getSurfaceLabel: _getSurfaceLabel, getConditionLabel: _getConditionLabel),
+          )),
+        ],
+      ),
     );
   }
 
@@ -305,6 +308,12 @@ class _FaceActionSheetState extends State<_FaceActionSheet> {
   }
 
   @override
+  void dispose() {
+    _obs.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
@@ -342,7 +351,11 @@ class _FaceActionSheetState extends State<_FaceActionSheet> {
             child: FilledButton(
               style: FilledButton.styleFrom(backgroundColor: const Color(0xFF006494)),
               onPressed: () => widget.onSave(
-                widget.condition.copyWith(condition: _type, observation: _obs.text),
+                widget.condition.copyWith(
+                  surfaces: [widget.surface],
+                  condition: _type,
+                  observation: _obs.text,
+                ),
                 _addToTreatmentPlan,
               ),
               child: const Text('SALVAR ALTERAÇÃO', style: TextStyle(fontWeight: FontWeight.bold)),

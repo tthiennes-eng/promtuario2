@@ -40,6 +40,7 @@ public class DocumentosController : ControllerBase
     }
 
     [HttpPost("receitas")]
+    [Authorize(Roles = "Admin,Coordinator,Professor")]
     public async Task<IActionResult> CreatePrescription([FromBody] CreatePrescriptionRequest request)
     {
         var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -48,22 +49,22 @@ public class DocumentosController : ControllerBase
 
         if (request.PatientId == Guid.Empty)
             return BadRequest(new { message = "Paciente inválido." });
-        if (request.Items == null || request.Items.Count == 0)
-            return BadRequest(new { message = "Adicione pelo menos um medicamento à receita." });
+        var validItems = request.Items?
+            .Where(i => !string.IsNullOrWhiteSpace(i.MedicineName))
+            .ToList() ?? new List<PrescriptionItemDto>();
+        if (validItems.Count == 0)
+            return BadRequest(new { message = "Adicione pelo menos um medicamento válido à receita." });
 
         try
         {
             var clinicId = await ResolveClinicIdAsync(request.ClinicId);
             var prescription = Prescription.Create(request.PatientId, doctorId, clinicId, request.Observations);
-            foreach (var item in request.Items)
+            foreach (var item in validItems)
             {
-                if (!string.IsNullOrWhiteSpace(item.MedicineName))
-                {
-                    prescription.AddItem(
-                        item.MedicineName.Trim(),
-                        item.Dosage?.Trim() ?? string.Empty,
-                        item.Instructions?.Trim() ?? string.Empty);
-                }
+                prescription.AddItem(
+                    item.MedicineName.Trim(),
+                    item.Dosage?.Trim() ?? string.Empty,
+                    item.Instructions?.Trim() ?? string.Empty);
             }
 
             var created = await _prontuarioRepository.CreatePrescriptionAsync(prescription);
@@ -72,7 +73,7 @@ public class DocumentosController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao emitir receita para o paciente {PatientId}", request.PatientId);
-            return StatusCode(500, new { message = ex.InnerException?.Message ?? ex.Message });
+            return StatusCode(500, new { message = "Erro interno ao emitir receita." });
         }
     }
 
@@ -84,6 +85,7 @@ public class DocumentosController : ControllerBase
     }
 
     [HttpPost("atestados")]
+    [Authorize(Roles = "Admin,Coordinator,Professor")]
     public async Task<IActionResult> CreateCertificate([FromBody] CreateCertificateRequest request)
     {
         var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -112,7 +114,7 @@ public class DocumentosController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao emitir atestado para o paciente {PatientId}", request.PatientId);
-            return StatusCode(500, new { message = ex.InnerException?.Message ?? ex.Message });
+            return StatusCode(500, new { message = "Erro interno ao emitir atestado." });
         }
     }
 

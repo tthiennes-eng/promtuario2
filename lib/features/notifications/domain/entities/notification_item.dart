@@ -40,18 +40,46 @@ class NotificationItem {
     }
   }
 
+  static NotificationType _parseType(dynamic raw) {
+    if (raw is int) {
+      return switch (raw) {
+        1 => NotificationType.appointmentReminder,
+        2 => NotificationType.pendingSignature,
+        3 => NotificationType.treatmentApproved,
+        4 => NotificationType.systemAlert,
+        _ => NotificationType.info,
+      };
+    }
+    final s = (raw ?? '').toString().trim();
+    final asInt = int.tryParse(s);
+    if (asInt != null) return _parseType(asInt);
+    return NotificationType.values.firstWhere(
+      (e) => e.name.toLowerCase() == s.toLowerCase(),
+      orElse: () => NotificationType.info,
+    );
+  }
+
   factory NotificationItem.fromJson(Map<String, dynamic> json) {
+    Map<String, dynamic>? parsedData;
+    final rawData = json['data'] ?? json['Data'];
+    if (rawData is Map) {
+      parsedData = Map<String, dynamic>.from(rawData);
+    } else if (json['relatedEntityId'] != null || json['RelatedEntityId'] != null) {
+      parsedData = {
+        'relatedEntityId': (json['relatedEntityId'] ?? json['RelatedEntityId']).toString(),
+      };
+    }
+
     return NotificationItem(
       id: (json['id'] ?? json['Id'])?.toString() ?? '',
-      title: (json['title'] ?? json['Title'] ?? '') as String,
-      message: (json['message'] ?? json['Message'] ?? '') as String,
-      type: NotificationType.values.firstWhere(
-        (e) => e.name == (json['type'] ?? json['Type']),
-        orElse: () => NotificationType.info,
+      title: (json['title'] ?? json['Title'] ?? '').toString(),
+      message: (json['message'] ?? json['Message'] ?? '').toString(),
+      type: _parseType(json['type'] ?? json['Type']),
+      timestamp: _safeParse(
+        json['timestamp'] ?? json['Timestamp'] ?? json['createdAt'] ?? json['CreatedAt'],
       ),
-      timestamp: _safeParse(json['timestamp'] ?? json['Timestamp']),
       isRead: (json['isRead'] ?? json['IsRead'] ?? false) as bool,
-      data: json['data'] as Map<String, dynamic>?,
+      data: parsedData,
     );
   }
 

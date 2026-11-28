@@ -167,12 +167,49 @@ class AttachmentRepository implements IAttachmentRepository {
     return attachment;
   }
 
+  Future<Attachment?> _tryUploadRemote(
+    String patientId,
+    File file,
+    AttachmentType type,
+    String fileName,
+  ) async {
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(file.path, filename: fileName),
+    });
+    final response = await _apiClient.instance.post(
+      'Anexos/upload/$patientId',
+      queryParameters: {'tipo': _typeToApiLabel(type)},
+      data: formData,
+    );
+    if (response.data is Map) {
+      final map = Map<String, dynamic>.from(response.data as Map);
+      final remoteId = (map['id'] ?? map['Id'] ?? const Uuid().v4()).toString();
+      final remoteUrl = _resolveAuthenticatedFileUrl(remoteId, (map['url'] ?? map['Url'])?.toString());
+      return Attachment(
+        id: remoteId,
+        patientId: patientId,
+        localPath: file.path,
+        remoteUrl: remoteUrl.isEmpty ? null : remoteUrl,
+        type: type,
+        description: (map['nome'] ?? map['Nome'] ?? fileName).toString(),
+        createdAt: DateTime.now(),
+        isSynced: true,
+      );
+    }
+    return null;
+  }
+
   @override
   Future<void> deleteAttachment(String id) async {
     try {
       await _apiClient.instance.delete('Anexos/$id');
-    } catch (e) {
-      _logger.warning('Erro ao excluir anexo no servidor ($id): $e');
+    } on DioException catch (e) {
+      if (e.response != null && e.response?.statusCode != 404) {
+        final data = e.response?.data;
+        final msg = data is Map ? (data['message'] ?? data['title'])?.toString() : data?.toString();
+        throw Exception(msg ?? 'Sem permissão ou erro ao excluir anexo (HTTP ${e.response?.statusCode}).');
+      }
+      _logger.warning('Erro de rede ao excluir anexo no servidor ($id): $e');
     }
     try {
       await (_localDb.delete(_localDb.attachmentsLocal)..where((t) => t.id.equals(id))).go();
@@ -195,16 +232,18 @@ class AttachmentRepository implements IAttachmentRepository {
         (e) => e.name == row.type,
         orElse: () => AttachmentType.other,
       );
-      final uploaded = await uploadAttachment(
-        row.patientId,
-        file,
-        type,
-        description: row.description,
-      );
-      if (uploaded.isSynced && uploaded.id != id) {
-        await (_localDb.delete(_localDb.attachmentsLocal)..where((t) => t.id.equals(id))).go();
+      final fileName = (row.description != null && row.description!.trim().isNotEmpty)
+          ? row.description!.trim()
+          : p.basename(file.path);
+      final uploaded = await _tryUploadRemote(row.patientId, file, type, fileName);
+      if (uploaded != null && uploaded.isSynced) {
+        await _saveLocal(uploaded);
+        if (uploaded.id != id) {
+          await (_localDb.delete(_localDb.attachmentsLocal)..where((t) => t.id.equals(id))).go();
+        }
+        return true;
       }
-      return uploaded.isSynced;
+      return false;
     } catch (e) {
       _logger.warning('Erro ao sincronizar anexo pendente ($id): $e');
       return false;

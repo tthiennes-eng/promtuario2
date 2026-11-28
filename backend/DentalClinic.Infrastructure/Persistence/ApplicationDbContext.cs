@@ -33,6 +33,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<WaitListEntry> WaitListEntries => Set<WaitListEntry>();
     public DbSet<PatientChangeLog> PatientChangeLogs => Set<PatientChangeLog>();
     public DbSet<ClinicalSheetRecord> ClinicalSheets => Set<ClinicalSheetRecord>();
+    public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<Procedure> Procedures => Set<Procedure>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

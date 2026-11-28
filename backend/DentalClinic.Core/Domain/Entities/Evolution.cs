@@ -51,6 +51,11 @@ public sealed class Evolution : Entity
         if (!allowOverride && ProfessorId != Guid.Empty && ProfessorId != professorId)
             throw new InvalidOperationException("Apenas o professor responsável pode assinar esta evolução.");
 
+        if (professorId != Guid.Empty && (ProfessorId == Guid.Empty || allowOverride))
+        {
+            ProfessorId = professorId;
+        }
+
         IsSignedByProfessor = true;
         SignedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;

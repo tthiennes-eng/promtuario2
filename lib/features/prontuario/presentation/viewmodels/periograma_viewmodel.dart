@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:promt/core/providers/providers.dart';
+import 'package:promt/features/prontuario/presentation/viewmodels/prontuario_summary_provider.dart';
 
 class PeriogramaViewModel extends StateNotifier<AsyncValue<Map<String, dynamic>?>> {
   final Ref ref;
@@ -19,6 +20,8 @@ class PeriogramaViewModel extends StateNotifier<AsyncValue<Map<String, dynamic>?
   Future<void> save(Map<String, dynamic> data) async {
     await ref.read(prontuarioRepositoryProvider).savePeriograma(patientId, data);
     state = AsyncValue.data(data);
+    ref.invalidate(prontuarioSummaryProvider(patientId));
+    ref.invalidate(clinicalTimelineProvider(patientId));
   }
 }
 

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:promt/core/providers/providers.dart';
 import 'package:promt/features/prontuario/domain/entities/odontogram.dart';
+import 'package:promt/features/prontuario/presentation/viewmodels/prontuario_summary_provider.dart';
 
 /// Gerencia o prontuário eletrônico com suporte a faces de dentes independentes.
 class ProntuarioViewModel extends StateNotifier<AsyncValue<Odontogram?>> {
@@ -19,28 +20,29 @@ class ProntuarioViewModel extends StateNotifier<AsyncValue<Odontogram?>> {
 
   Future<void> refresh() async => _fetchOdontogram();
 
-  /// Atualiza a condição de uma face específica preservando as demais condições do dente.
+  /// Atualiza a condição das faces especificadas preservando as demais condições do dente.
   Future<void> updateToothCondition(ToothCondition newCondition) async {
     final current = state.value;
-    if (current == null) return;
+    if (current == null || newCondition.surfaces.isEmpty) return;
 
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-      List<ToothCondition> updatedTeeth = List.from(current.teeth);
-      
-      // 1. Remove a face atual de qualquer registro existente deste dente
-      final surfaceToUpdate = newCondition.surfaces.first;
-      
+      final List<ToothCondition> updatedTeeth = List.from(current.teeth);
+      final surfacesToUpdate = newCondition.surfaces.toSet();
+
+      // 1. Remove as faces atualizadas de qualquer registro existente deste dente
       for (int i = 0; i < updatedTeeth.length; i++) {
         if (updatedTeeth[i].toothNumber == newCondition.toothNumber) {
-          // Se o registro contém a face que estamos editando, removemos essa face dele
-          if (updatedTeeth[i].surfaces.contains(surfaceToUpdate)) {
-            final newSurfaces = updatedTeeth[i].surfaces.where((s) => s != surfaceToUpdate).toList();
-            if (newSurfaces.isEmpty) {
+          final remaining = updatedTeeth[i]
+              .surfaces
+              .where((s) => !surfacesToUpdate.contains(s))
+              .toList();
+          if (remaining.length != updatedTeeth[i].surfaces.length) {
+            if (remaining.isEmpty) {
               updatedTeeth.removeAt(i);
               i--;
             } else {
-              updatedTeeth[i] = updatedTeeth[i].copyWith(surfaces: newSurfaces);
+              updatedTeeth[i] = updatedTeeth[i].copyWith(surfaces: remaining);
             }
           }
         }
@@ -57,6 +59,8 @@ class ProntuarioViewModel extends StateNotifier<AsyncValue<Odontogram?>> {
       );
 
       await ref.read(prontuarioRepositoryProvider).saveOdontogram(updated);
+      ref.invalidate(prontuarioSummaryProvider(patientId));
+      ref.invalidate(clinicalTimelineProvider(patientId));
       return updated;
     });
   }

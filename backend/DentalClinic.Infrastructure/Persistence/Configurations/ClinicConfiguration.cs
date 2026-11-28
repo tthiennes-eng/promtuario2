@@ -24,6 +24,7 @@ public class ClinicConfiguration : IEntityTypeConfiguration<Clinic>
         builder.Property(c => c.MaxCapacity).HasColumnName("capacidade").HasDefaultValue(1);
         builder.Property(c => c.OpeningTime).HasColumnName("horario_abertura").HasMaxLength(10).HasDefaultValue("08:00");
         builder.Property(c => c.ClosingTime).HasColumnName("horario_fechamento").HasMaxLength(10).HasDefaultValue("18:00");
+        builder.Property(c => c.SlotDurationMinutes).HasColumnName("duracao_slot_minutos").HasDefaultValue(60);
 
         builder.Property(c => c.IsActive).HasColumnName("ativo").HasDefaultValue(true);
         builder.Property(c => c.CreatedAt).HasColumnName("criado_em");

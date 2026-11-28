@@ -74,24 +74,26 @@ public class AnexosController : ControllerBase
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
+        var normalizedExt = extension.ToLowerInvariant();
         var resolvedTipo = string.IsNullOrWhiteSpace(tipo)
-            ? (extension is ".txt" or ".md" or ".csv" or ".json" or ".xml" or ".log" or ".rtf" or ".pdf" or ".doc" or ".docx"
+            ? (normalizedExt is ".txt" or ".md" or ".csv" or ".json" or ".xml" or ".log" or ".rtf" or ".pdf" or ".doc" or ".docx"
                 ? "Documento"
                 : "Foto")
             : tipo.Trim();
 
+        string? uploadedUrl = null;
         try
         {
             _logger.LogInformation("Iniciando upload de {Tipo} ({FileName}) para o paciente {PacienteId}", resolvedTipo, file.FileName, pacienteId);
 
             using var stream = file.OpenReadStream();
-            var url = await _storageService.UploadFileAsync(stream, file.FileName, file.ContentType);
+            uploadedUrl = await _storageService.UploadFileAsync(stream, file.FileName, file.ContentType);
 
             var anexo = Anexo.Create(
                 pacienteId,
                 file.FileName,
                 resolvedTipo,
-                url,
+                uploadedUrl,
                 file.Length,
                 Guid.Parse(userId)
             );
@@ -102,6 +104,10 @@ public class AnexosController : ControllerBase
         }
         catch (Exception ex)
         {
+            if (!string.IsNullOrWhiteSpace(uploadedUrl))
+            {
+                try { await _storageService.DeleteFileAsync(uploadedUrl); } catch { }
+            }
             _logger.LogError(ex, "Falha crítica no processamento de anexo.");
             return StatusCode(500, "Erro interno ao processar o arquivo clínico.");
         }

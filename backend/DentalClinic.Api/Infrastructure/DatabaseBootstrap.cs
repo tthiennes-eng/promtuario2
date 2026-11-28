@@ -24,6 +24,17 @@ public static class DatabaseBootstrap
         var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("DatabaseBootstrap");
 
     try {
+        // Se o banco estiver completamente vazio, cria diretamente o schema atual do modelo EF Core
+        // (evita rodar migrations legadas incompatíveis em bancos novos).
+        try
+        {
+            context.Database.EnsureCreated();
+        }
+        catch (Exception ensureEx)
+        {
+            logger.LogWarning(ensureEx, "Aviso ao executar EnsureCreated(); prosseguindo com DDL idempotente.");
+        }
+
         context.Database.ExecuteSqlRaw(@"
             CREATE TABLE IF NOT EXISTS ""__EFMigrationsHistory"" (
                 ""MigrationId"" character varying(150) NOT NULL PRIMARY KEY,
@@ -40,11 +51,17 @@ public static class DatabaseBootstrap
                 ADD COLUMN IF NOT EXISTS endereco_bairro character varying(100),
                 ADD COLUMN IF NOT EXISTS endereco_cidade character varying(100),
                 ADD COLUMN IF NOT EXISTS endereco_estado character varying(2),
-                ADD COLUMN IF NOT EXISTS endereco_cep character varying(10);
+                ADD COLUMN IF NOT EXISTS endereco_cep character varying(10),
+                ADD COLUMN IF NOT EXISTS ativo boolean NOT NULL DEFAULT true;
             ALTER TABLE IF EXISTS pacientes
                 ALTER COLUMN ultima_modificacao SET DEFAULT now();
-            UPDATE pacientes SET ultima_modificacao = COALESCE(ultima_modificacao, now())
-                WHERE ultima_modificacao IS NULL;
+            DO $$
+            BEGIN
+                IF to_regclass('public.pacientes') IS NOT NULL THEN
+                    UPDATE pacientes SET ultima_modificacao = COALESCE(ultima_modificacao, now())
+                        WHERE ultima_modificacao IS NULL;
+                END IF;
+            END $$;
 
             -- CORREÇÃO: remove restrições NOT NULL legadas de colunas que hoje
             -- são opcionais na entidade Patient (email/telefone). Sem isso, o
@@ -102,7 +119,7 @@ public static class DatabaseBootstrap
             logger.LogWarning(migrateEx, "Aviso ao executar EF Core Migrate(); prosseguindo com DDL idempotente.");
         }
 
-        // Garante que todas as tabelas e colunas do Prontuário existam mesmo em bancos legados
+        // Garante que todas as tabelas e colunas do Prontuário, Notificações, Procedimentos e Auditoria existam mesmo em bancos legados
         context.Database.ExecuteSqlRaw(@"
             CREATE TABLE IF NOT EXISTS public.prontuario_fichas (
                 id uuid PRIMARY KEY,
@@ -183,14 +200,63 @@ public static class DatabaseBootstrap
             ALTER TABLE IF EXISTS public.""TreatmentItems""
                 ADD COLUMN IF NOT EXISTS ""Observation"" text NULL;
 
+            CREATE TABLE IF NOT EXISTS public.patient_change_logs (
+                id uuid PRIMARY KEY,
+                patient_id uuid NOT NULL,
+                user_id uuid NOT NULL,
+                user_name character varying(255) NOT NULL DEFAULT '',
+                timestamp timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                changes_json jsonb NOT NULL DEFAULT '{}'::jsonb
+            );
+            CREATE INDEX IF NOT EXISTS ix_patient_change_logs_patient_id
+                ON public.patient_change_logs (patient_id, timestamp DESC);
+
+            CREATE TABLE IF NOT EXISTS public.notificacoes (
+                id uuid PRIMARY KEY,
+                usuario_id uuid NOT NULL,
+                titulo character varying(200) NOT NULL,
+                mensagem character varying(2000) NOT NULL,
+                lida boolean NOT NULL DEFAULT false,
+                tipo integer NOT NULL DEFAULT 4,
+                entidade_relacionada_id character varying(100) NULL,
+                criado_em timestamp with time zone NOT NULL DEFAULT now(),
+                atualizado_em timestamp with time zone NULL
+            );
+            CREATE INDEX IF NOT EXISTS ix_notificacoes_usuario_lida
+                ON public.notificacoes (usuario_id, lida);
+
+            CREATE TABLE IF NOT EXISTS public.procedimentos (
+                id uuid PRIMARY KEY,
+                nome character varying(200) NOT NULL,
+                codigo character varying(50) NOT NULL DEFAULT '',
+                valor_base numeric(12,2) NOT NULL DEFAULT 0,
+                especialidade integer NULL,
+                tempo_estimado_minutos integer NOT NULL DEFAULT 60,
+                criado_em timestamp with time zone NOT NULL DEFAULT now(),
+                atualizado_em timestamp with time zone NULL
+            );
+            CREATE INDEX IF NOT EXISTS ix_procedimentos_codigo
+                ON public.procedimentos (codigo);
+
             ALTER TABLE IF EXISTS public.evolucoes
                 ADD COLUMN IF NOT EXISTS assinado_em timestamp with time zone NULL;
+            DO $$
+            BEGIN
+                IF to_regclass('public.evolucoes') IS NOT NULL THEN
+                    UPDATE public.evolucoes
+                       SET assinatura_professor_digital = ''
+                     WHERE assinatura_professor_digital IS NULL;
+                    ALTER TABLE public.evolucoes
+                        ALTER COLUMN assinatura_professor_digital SET DEFAULT '';
+                END IF;
+            END $$;
 
             ALTER TABLE IF EXISTS public.clinicas
                 ADD COLUMN IF NOT EXISTS localizacao character varying(255) NOT NULL DEFAULT '',
                 ADD COLUMN IF NOT EXISTS capacidade integer NOT NULL DEFAULT 1,
                 ADD COLUMN IF NOT EXISTS horario_abertura character varying(10) NOT NULL DEFAULT '08:00',
-                ADD COLUMN IF NOT EXISTS horario_fechamento character varying(10) NOT NULL DEFAULT '18:00';
+                ADD COLUMN IF NOT EXISTS horario_fechamento character varying(10) NOT NULL DEFAULT '18:00',
+                ADD COLUMN IF NOT EXISTS duracao_slot_minutos integer NOT NULL DEFAULT 60;
 
             -- Se a FK legada evolucoes_prontuario_id_fkey apontar para prontuarios em vez de pacientes, remove para permitir gravação direta por paciente
             DO $$

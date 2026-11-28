@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:promt/core/providers/providers.dart';
+import 'package:promt/core/utils/date_utils.dart';
 import 'package:promt/features/agenda/domain/entities/appointment.dart';
 import 'package:promt/features/patients/domain/entities/patient.dart';
 import 'package:promt/features/patients/presentation/viewmodels/patient_viewmodel.dart';
@@ -40,27 +41,27 @@ class ProntuarioScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _exportFullRecord(BuildContext context, WidgetRef ref) async {
+  Future<void> _exportFullRecord(BuildContext context, WidgetRef ref, Patient activePatient) async {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Gerando PDF completo do prontuário...')),
     );
     try {
       final repo = ref.read(prontuarioRepositoryProvider);
-      final odontogram = await repo.getOdontogram(patient.id);
-      final evolutions = await repo.getEvolutions(patient.id);
-      final plans = await repo.getTreatmentPlans(patient.id);
-      final prescriptions = await repo.getPrescriptionHistory(patient.id);
-      final certificates = await repo.getCertificateHistory(patient.id);
-      final anamnese = await repo.getEndodontia('anamnese_${patient.id}');
-      final tcle = await repo.getEndodontia('tcle_${patient.id}');
-      final dtm = await repo.getEndodontia('dtm_${patient.id}');
-      final ppr = await repo.getEndodontia('ppr_${patient.id}');
-      final endodontia = await repo.getEndodontia(patient.id);
-      final periograma = await repo.getPeriograma(patient.id);
-      final odontopediatria = await repo.getEndodontia('odontopediatria_${patient.id}');
+      final odontogram = await repo.getOdontogram(activePatient.id);
+      final evolutions = await repo.getEvolutions(activePatient.id);
+      final plans = await repo.getTreatmentPlans(activePatient.id);
+      final prescriptions = await repo.getPrescriptionHistory(activePatient.id);
+      final certificates = await repo.getCertificateHistory(activePatient.id);
+      final anamnese = await repo.getEndodontia('anamnese_${activePatient.id}');
+      final tcle = await repo.getEndodontia('tcle_${activePatient.id}');
+      final dtm = await repo.getEndodontia('dtm_${activePatient.id}');
+      final ppr = await repo.getEndodontia('ppr_${activePatient.id}');
+      final endodontia = await repo.getEndodontia(activePatient.id);
+      final periograma = await repo.getPeriograma(activePatient.id);
+      final odontopediatria = await repo.getEndodontia('odontopediatria_${activePatient.id}');
 
       final file = await ProntuarioPdfService.generateFullProntuarioPdf(
-        patient: patient,
+        patient: activePatient,
         anamnese: anamnese,
         odontogram: odontogram,
         evolutions: evolutions,
@@ -95,9 +96,15 @@ class ProntuarioScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final anamneseAsync = ref.watch(endodontiaViewModelProvider('anamnese_${patient.id}'));
-    final pedAsync = ref.watch(endodontiaViewModelProvider('odontopediatria_${patient.id}'));
-    final summary = ref.watch(prontuarioSummaryProvider(patient.id)).valueOrNull ?? const <String, dynamic>{};
+    final patientsList = ref.watch(patientViewModelProvider).valueOrNull ?? const <Patient>[];
+    final activePatient = patientsList.firstWhere(
+      (p) => p.id == patient.id,
+      orElse: () => patient,
+    );
+
+    final anamneseAsync = ref.watch(endodontiaViewModelProvider('anamnese_${activePatient.id}'));
+    final pedAsync = ref.watch(endodontiaViewModelProvider('odontopediatria_${activePatient.id}'));
+    final summary = ref.watch(prontuarioSummaryProvider(activePatient.id)).valueOrNull ?? const <String, dynamic>{};
     final allAppointments = ref.watch(allAppointmentsProvider).valueOrNull ?? const <Appointment>[];
     final clinics = ref.watch(clinicsViewModelProvider).valueOrNull ?? const <Clinic>[];
 
@@ -138,22 +145,22 @@ class ProntuarioScreen extends ConsumerWidget {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(patient.fullName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            Text('Paciente ID: ${patient.id.length >= 8 ? patient.id.substring(0, 8) : patient.id}', style: const TextStyle(fontSize: 11, color: Colors.blueGrey)),
+            Text(activePatient.fullName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('Paciente ID: ${activePatient.id.length >= 8 ? activePatient.id.substring(0, 8) : activePatient.id}', style: const TextStyle(fontSize: 11, color: Colors.blueGrey)),
           ],
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.picture_as_pdf_outlined),
             tooltip: 'Exportar Prontuário Completo (PDF)',
-            onPressed: () => _exportFullRecord(context, ref),
+            onPressed: () => _exportFullRecord(context, ref, activePatient),
           ),
           IconButton(
             icon: const Icon(Icons.edit_note),
             tooltip: 'Editar Dados Cadastrais',
-            onPressed: () => context.push('/dashboard/patients/add', extra: patient),
+            onPressed: () => context.push('/dashboard/patients/add', extra: activePatient),
           ),
-          PatientMenuButton(onActionSelected: (id) => _handleMenuAction(context, id, patient)),
+          PatientMenuButton(onActionSelected: (id) => _handleMenuAction(context, id, activePatient)),
           const SizedBox(width: 8),
         ],
       ),
@@ -162,7 +169,7 @@ class ProntuarioScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildPatientHeaderCard(allAppointments, clinics),
+            _buildPatientHeaderCard(activePatient, allAppointments, clinics),
             const SizedBox(height: 16),
             _buildComorbidityAlert(anamneseData, pedData),
             _buildAllergyAlert(anamneseData, pedData),
@@ -338,9 +345,9 @@ class ProntuarioScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPatientHeaderCard(List<Appointment> allAppointments, List<Clinic> clinics) {
-    final age = DateTime.now().year - patient.birthDate.year;
-    final patientApps = allAppointments.where((a) => a.patientId == patient.id).toList();
+  Widget _buildPatientHeaderCard(Patient activePatient, List<Appointment> allAppointments, List<Clinic> clinics) {
+    final age = SafeDateParser.calculateAge(activePatient.birthDate);
+    final patientApps = allAppointments.where((a) => a.patientId == activePatient.id).toList();
     final now = DateTime.now();
 
     final past = patientApps.where((a) => a.startTime.isBefore(now)).toList()
@@ -379,7 +386,7 @@ class ProntuarioScreen extends ConsumerWidget {
                 radius: 24,
                 backgroundColor: const Color(0xFF006494).withValues(alpha: 0.12),
                 child: Text(
-                  patient.fullName.isNotEmpty ? patient.fullName[0].toUpperCase() : 'P',
+                  activePatient.fullName.trim().isNotEmpty ? activePatient.fullName.trim()[0].toUpperCase() : 'P',
                   style: const TextStyle(
                     color: Color(0xFF006494),
                     fontWeight: FontWeight.bold,
@@ -393,7 +400,7 @@ class ProntuarioScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      patient.fullName,
+                      activePatient.fullName,
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     const SizedBox(height: 2),
@@ -401,12 +408,12 @@ class ProntuarioScreen extends ConsumerWidget {
                       spacing: 12,
                       runSpacing: 4,
                       children: [
-                        Text('CPF: ${patient.cpf}', style: const TextStyle(fontSize: 12, color: Colors.blueGrey)),
-                        Text('$age anos (${DateFormat('dd/MM/yyyy').format(patient.birthDate)})', style: const TextStyle(fontSize: 12, color: Colors.blueGrey)),
-                        if (patient.susNumber != null && patient.susNumber!.isNotEmpty)
-                          Text('SUS: ${patient.susNumber}', style: const TextStyle(fontSize: 12, color: Colors.blueGrey)),
-                        if (patient.phone != null && patient.phone!.isNotEmpty)
-                          Text('Tel: ${patient.phone}', style: const TextStyle(fontSize: 12, color: Colors.blueGrey)),
+                        Text('CPF: ${activePatient.cpf}', style: const TextStyle(fontSize: 12, color: Colors.blueGrey)),
+                        Text('$age anos (${DateFormat('dd/MM/yyyy').format(activePatient.birthDate)})', style: const TextStyle(fontSize: 12, color: Colors.blueGrey)),
+                        if (activePatient.susNumber != null && activePatient.susNumber!.isNotEmpty)
+                          Text('SUS: ${activePatient.susNumber}', style: const TextStyle(fontSize: 12, color: Colors.blueGrey)),
+                        if (activePatient.phone != null && activePatient.phone!.isNotEmpty)
+                          Text('Tel: ${activePatient.phone}', style: const TextStyle(fontSize: 12, color: Colors.blueGrey)),
                       ],
                     ),
                   ],
@@ -509,7 +516,8 @@ class ProntuarioScreen extends ConsumerWidget {
       String pedStr(String key) => pedFields[key]?.toString().trim() ?? '';
 
       if (pedStr('t5_hma_tratamento_medico') == '(1) Sim') {
-        final qual = pedStr('t5_hma_tratamento_qual');
+        final detalhe = pedStr('t5_hma_tratamento_detalhe');
+        final qual = detalhe.isNotEmpty ? detalhe : pedStr('t5_hma_tratamento_qual');
         comorbidades.add(qual.isEmpty
             ? 'Em tratamento médico (Odontopediatria)'
             : 'Tratamento médico (Pediatria): $qual');

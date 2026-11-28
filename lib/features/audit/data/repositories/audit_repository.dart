@@ -12,8 +12,9 @@ class AuditRepository implements IAuditRepository {
 
   @override
   Future<void> registerAccess(String resourceId, String action) async {
+    int? localId;
     try {
-      await _localDb.into(_localDb.auditLocal).insert(
+      localId = await _localDb.into(_localDb.auditLocal).insert(
         AuditLocalCompanion(
           resourceId: Value(resourceId),
           action: Value(action),
@@ -28,6 +29,11 @@ class AuditRepository implements IAuditRepository {
         'resourceId': resourceId,
         'action': action,
       });
+      final insertedId = localId;
+      if (insertedId != null) {
+        await (_localDb.update(_localDb.auditLocal)..where((t) => t.id.equals(insertedId)))
+            .write(const AuditLocalCompanion(isSynced: Value(true)));
+      }
     } catch (_) {}
   }
 

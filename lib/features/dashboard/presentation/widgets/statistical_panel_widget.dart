@@ -574,6 +574,7 @@ class _StatisticalPanelWidgetState extends ConsumerState<StatisticalPanelWidget>
               LayoutBuilder(
                 builder: (context, constraints) {
                   final expDrop = DropdownButtonFormField<String>(
+                    key: ValueKey('exp_$_exposureKey'),
                     initialValue: _exposureKey,
                     isExpanded: true,
                     decoration: InputDecoration(
@@ -591,6 +592,7 @@ class _StatisticalPanelWidgetState extends ConsumerState<StatisticalPanelWidget>
                     },
                   );
                   final outDrop = DropdownButtonFormField<String>(
+                    key: ValueKey('out_$_outcomeKey'),
                     initialValue: _outcomeKey,
                     isExpanded: true,
                     decoration: InputDecoration(

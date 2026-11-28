@@ -32,23 +32,21 @@ public class LogsController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
         [FromQuery] Guid? userId = null,
-        [FromQuery] string? action = null)
+        [FromQuery] string? action = null,
+        [FromQuery] string? resourceId = null)
     {
         try
         {
-            var logs = await _repository.FindAsync(x =>
-                (userId == null || x.UsuarioId == userId) &&
-                (string.IsNullOrWhiteSpace(action) || x.Acao.Contains(action)));
-            var ordered = logs.OrderByDescending(x => x.DataHora).ToList();
-            var total = ordered.Count;
-            var paged = ordered.Skip(Math.Max(0, page - 1) * pageSize).Take(pageSize).ToList();
+            var safePage = Math.Max(1, page);
+            var safePageSize = Math.Clamp(pageSize, 1, 200);
+            var (items, total) = await _repository.GetPagedAsync(safePage, safePageSize, userId, action, resourceId);
 
             return Ok(new
             {
-                Items = paged,
+                Items = items,
                 Total = total,
-                Page = page,
-                PageSize = pageSize
+                Page = safePage,
+                PageSize = safePageSize
             });
         }
         catch (Exception ex)

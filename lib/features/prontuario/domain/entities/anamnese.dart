@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class Anamnese {
   final String id;
   final String patientId;
@@ -28,13 +30,34 @@ class Anamnese {
     }
   }
 
+  static Map<String, dynamic> _parseResponses(Map<String, dynamic> json) {
+    final direct = json['responses'] ?? json['Responses'];
+    if (direct is Map) {
+      return Map<String, dynamic>.from(direct);
+    }
+    final rawJson = json['respostasJson'] ?? json['RespostasJson'];
+    if (rawJson is String && rawJson.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(rawJson);
+        if (decoded is Map) return Map<String, dynamic>.from(decoded);
+      } catch (_) {}
+    } else if (rawJson is Map) {
+      return Map<String, dynamic>.from(rawJson);
+    }
+    // Se o próprio objeto JSON já for um mapa de respostas puro (cache local antigo)
+    if (!json.containsKey('id') && !json.containsKey('Id') && !json.containsKey('patientId') && json.isNotEmpty) {
+      return Map<String, dynamic>.from(json);
+    }
+    return {};
+  }
+
   factory Anamnese.fromJson(Map<String, dynamic> json) {
     return Anamnese(
       id: (json['id'] ?? json['Id'])?.toString() ?? '',
       patientId: (json['patientId'] ?? json['PatientId'])?.toString() ?? '',
-      responses: Map<String, dynamic>.from(json['responses'] as Map? ?? json['Responses'] as Map? ?? {}),
-      updatedAt: _safeParse(json['updatedAt'] ?? json['UpdatedAt']),
-      updatedBy: (json['updatedBy'] ?? json['UpdatedBy'] ?? '') as String,
+      responses: _parseResponses(json),
+      updatedAt: _safeParse(json['updatedAt'] ?? json['UpdatedAt'] ?? json['createdAt'] ?? json['CreatedAt']),
+      updatedBy: (json['updatedBy'] ?? json['UpdatedBy'] ?? json['criadoPorId'] ?? json['CriadoPorId'] ?? '').toString(),
     );
   }
 

@@ -38,6 +38,13 @@ public class TreatmentPlanRepository : ITreatmentPlanRepository
 
     public async Task UpdateAsync(TreatmentPlan plan)
     {
+        var existingItemIds = await _context.TreatmentItems
+            .AsNoTracking()
+            .Where(i => i.TreatmentPlanId == plan.Id)
+            .Select(i => i.Id)
+            .ToListAsync();
+        var existingSet = existingItemIds.ToHashSet();
+
         var planEntry = _context.Entry(plan);
         if (planEntry.State == EntityState.Detached)
         {
@@ -48,9 +55,13 @@ public class TreatmentPlanRepository : ITreatmentPlanRepository
         foreach (var item in plan.Items)
         {
             var itemEntry = _context.Entry(item);
-            if (itemEntry.State == EntityState.Detached)
+            if (!existingSet.Contains(item.Id))
             {
                 itemEntry.State = EntityState.Added;
+            }
+            else if (itemEntry.State == EntityState.Detached)
+            {
+                itemEntry.State = EntityState.Modified;
             }
         }
 

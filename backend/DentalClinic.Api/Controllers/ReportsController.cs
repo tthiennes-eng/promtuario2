@@ -40,7 +40,7 @@ public class ReportsController : ControllerBase
     }
 
     /// <summary>
-    /// Obtém o relatório de produção por profissional em um período.
+    /// Obtém o relatório de produção por clínica/especialidade em um período.
     /// </summary>
     [HttpGet("production")]
     [Authorize(Roles = "Admin,Coordinator")]
@@ -48,12 +48,13 @@ public class ReportsController : ControllerBase
         [FromQuery] DateTime? start,
         [FromQuery] DateTime? end,
         [FromQuery] DateTime? startDate,
-        [FromQuery] DateTime? endDate)
+        [FromQuery] DateTime? endDate,
+        [FromQuery] Guid? clinicId = null)
     {
         var effectiveStart = start ?? startDate ?? DateTime.UtcNow.AddMonths(-1);
         var effectiveEnd = end ?? endDate ?? DateTime.UtcNow;
-        var report = await _reportRepository.GetProductionByProfessionalAsync(effectiveStart, effectiveEnd);
-        return Ok(report);
+        var metrics = await _reportRepository.GetClinicMetricsAsync(effectiveStart, effectiveEnd, clinicId);
+        return Ok(metrics.SpecialtyProduction);
     }
 
     /// <summary>

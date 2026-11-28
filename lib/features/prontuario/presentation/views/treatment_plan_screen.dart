@@ -464,10 +464,19 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
             trailing: PopupMenuButton<String>(
               onSelected: (action) async {
                 if (action == 'delete') {
-                  await ref
-                      .read(treatmentPlanViewModelProvider(widget.patientId).notifier)
-                      .removeItem(plan.id, item.id);
-                  ref.invalidate(prontuarioSummaryProvider(widget.patientId));
+                  try {
+                    await ref
+                        .read(treatmentPlanViewModelProvider(widget.patientId).notifier)
+                        .removeItem(plan.id, item.id);
+                    ref.invalidate(prontuarioSummaryProvider(widget.patientId));
+                    ref.invalidate(clinicalTimelineProvider(widget.patientId));
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(this.context).showSnackBar(
+                        SnackBar(content: Text('Erro ao remover item: $e'), backgroundColor: Colors.red),
+                      );
+                    }
+                  }
                 } else {
                   final target = TreatmentItemStatus.values.firstWhere((s) => s.name == action);
                   await _changeItemStatus(plan, item, target);

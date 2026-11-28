@@ -319,7 +319,9 @@ class _EvolutionScreenState extends ConsumerState<EvolutionScreen> {
                         ref.invalidate(clinicalTimelineProvider(widget.patientId));
                         if (dialogContext.mounted) Navigator.pop(dialogContext);
                       } catch (e) {
-                        setBtnState(() => isSubmitting = false);
+                        if (dialogContext.mounted) {
+                          setBtnState(() => isSubmitting = false);
+                        }
                         if (mounted) {
                           ScaffoldMessenger.of(this.context).showSnackBar(
                             SnackBar(content: Text('Erro ao salvar evolução: $e'), backgroundColor: Colors.red),
@@ -338,6 +340,6 @@ class _EvolutionScreenState extends ConsumerState<EvolutionScreen> {
           ),
         ],
       ),
-    );
+    ).then((_) => controller.dispose());
   }
 }

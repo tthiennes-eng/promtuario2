@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
 import 'package:promt/core/network/api_client.dart';
 import 'package:promt/core/database/local_database.dart';
@@ -20,13 +21,13 @@ class WaitListRepository implements IWaitListRepository {
           .whereType<Map>()
           .map((json) => WaitListEntry.fromJson(Map<String, dynamic>.from(json)))
           .toList();
-      _updateLocalCache(entries);
+      await _updateLocalCache(clinicId, entries);
       return entries;
     } catch (e) {
       final results = await (_localDb.select(_localDb.waitListLocal)
             ..where((t) => t.clinicId.equals(clinicId)))
           .get();
-      
+
       return results.map((row) => WaitListEntry(
         id: row.id,
         patientId: row.patientId,
@@ -34,6 +35,7 @@ class WaitListRepository implements IWaitListRepository {
         clinicId: row.clinicId,
         specialty: row.specialty,
         priority: row.priority,
+        observation: row.observation,
         createdAt: row.createdAt,
       )).toList();
     }
@@ -42,9 +44,18 @@ class WaitListRepository implements IWaitListRepository {
   @override
   Future<void> addToWaitList(WaitListEntry entry) async {
     try {
-      await _apiClient.instance.post('WaitList', data: entry.toJson());
-      await _saveLocal(entry, true);
-    } catch (e) {
+      final response = await _apiClient.instance.post('WaitList', data: entry.toJson());
+      var saved = entry;
+      if (response.data is Map) {
+        saved = WaitListEntry.fromJson(Map<String, dynamic>.from(response.data as Map));
+      }
+      await _saveLocal(saved, true);
+    } on DioException catch (e) {
+      if (e.response != null) {
+        final data = e.response?.data;
+        final msg = data is Map ? (data['message'] ?? data['title'])?.toString() : data?.toString();
+        throw Exception(msg ?? 'Erro ao adicionar à lista de espera (HTTP ${e.response?.statusCode}).');
+      }
       await _saveLocal(entry, false);
     }
   }
@@ -54,7 +65,14 @@ class WaitListRepository implements IWaitListRepository {
     try {
       await _apiClient.instance.patch('WaitList/$entryId/resolve');
       await (_localDb.delete(_localDb.waitListLocal)..where((t) => t.id.equals(entryId))).go();
-    } catch (_) {}
+    } on DioException catch (e) {
+      if (e.response != null) {
+        final data = e.response?.data;
+        final msg = data is Map ? (data['message'] ?? data['title'])?.toString() : data?.toString();
+        throw Exception(msg ?? 'Erro ao atualizar lista de espera (HTTP ${e.response?.statusCode}).');
+      }
+      rethrow;
+    }
   }
 
   @override
@@ -72,10 +90,18 @@ class WaitListRepository implements IWaitListRepository {
           clinicId: row.clinicId,
           priority: row.priority,
           specialty: row.specialty,
+          observation: row.observation,
           createdAt: row.createdAt,
         );
-        await _apiClient.instance.post('WaitList', data: entry.toJson());
-        
+        final response = await _apiClient.instance.post('WaitList', data: entry.toJson());
+        if (response.data is Map) {
+          final remote = WaitListEntry.fromJson(Map<String, dynamic>.from(response.data as Map));
+          if (remote.id.isNotEmpty && remote.id != row.id) {
+            await (_localDb.delete(_localDb.waitListLocal)..where((t) => t.id.equals(row.id))).go();
+            await _saveLocal(remote, true);
+            continue;
+          }
+        }
         await (_localDb.update(_localDb.waitListLocal)..where((t) => t.id.equals(row.id))).write(
           const WaitListLocalCompanion(isSynced: Value(true)),
         );
@@ -92,13 +118,23 @@ class WaitListRepository implements IWaitListRepository {
         clinicId: entry.clinicId,
         priority: entry.priority,
         specialty: entry.specialty,
+        observation: Value(entry.observation),
         createdAt: entry.createdAt,
         isSynced: Value(isSynced),
       ),
     );
   }
 
-  void _updateLocalCache(List<WaitListEntry> entries) async {
+  Future<void> _updateLocalCache(String clinicId, List<WaitListEntry> entries) async {
+    final remoteIds = entries.map((e) => e.id).toSet();
+    final existingSynced = await (_localDb.select(_localDb.waitListLocal)
+          ..where((t) => t.clinicId.equals(clinicId) & t.isSynced.equals(true)))
+        .get();
+    for (final row in existingSynced) {
+      if (!remoteIds.contains(row.id)) {
+        await (_localDb.delete(_localDb.waitListLocal)..where((t) => t.id.equals(row.id))).go();
+      }
+    }
     for (var entry in entries) {
       await _saveLocal(entry, true);
     }

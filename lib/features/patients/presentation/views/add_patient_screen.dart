@@ -112,13 +112,16 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
           address: PatientAddress(
             street: _streetController.text.trim(),
             number: _numberController.text.trim(),
+            complement: widget.patient?.address?.complement,
             neighborhood: _neighborhoodController.text.trim(),
             city: _cityController.text.trim(),
-            state: 'SP',
+            state: (widget.patient?.address?.state.trim().isNotEmpty ?? false)
+                ? widget.patient!.address!.state.trim()
+                : 'MA',
             zipCode: _zipCodeController.text.trim(),
           ),
           createdAt: widget.patient?.createdAt ?? DateTime.now(),
-          lgpdConsent: true,
+          lgpdConsent: widget.patient?.lgpdConsent ?? true,
         );
 
         if (widget.patient == null) {
@@ -219,7 +222,13 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.badge),
                       ),
-                      validator: (v) => v!.length < 11 ? 'CPF inválido' : null,
+                      validator: (v) {
+                        final digits =
+                            v?.replaceAll(RegExp(r'[^\d]'), '') ?? '';
+                        return digits.length == 11
+                            ? null
+                            : 'CPF inválido (11 dígitos)';
+                      },
                     ),
                   ),
                   const SizedBox(width: 16),

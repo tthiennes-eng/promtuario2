@@ -38,10 +38,13 @@ class UserManagementViewModel extends StateNotifier<AsyncValue<List<User>>> {
   }
 
   Future<void> toggleStatus(String userId, bool active) async {
-    state = await AsyncValue.guard(() async {
-      await ref.read(userManagementRepositoryProvider).toggleUserStatus(userId, active);
-      return _fetchUsers();
-    });
+    await ref.read(userManagementRepositoryProvider).toggleUserStatus(userId, active);
+    state = await AsyncValue.guard(() => _fetchUsers());
+  }
+
+  Future<void> updateRole(String userId, UserRole role) async {
+    await ref.read(userManagementRepositoryProvider).updateUserRole(userId, role);
+    state = await AsyncValue.guard(() => _fetchUsers());
   }
 }
 

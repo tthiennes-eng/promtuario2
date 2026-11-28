@@ -76,23 +76,68 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ],
       ),
+      drawer: !isDesktop
+          ? Drawer(
+              child: SafeArea(
+                child: ListView(
+                  padding: EdgeInsets.zero,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: _buildRailHeader(context),
+                    ),
+                    const Divider(height: 1),
+                    ...menuItems.map((item) => ListTile(
+                          leading: Icon(item['icon'] as IconData),
+                          title: Text(item['label'] as String),
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            final route = item['route'] as String?;
+                            if (route != null) {
+                              context.push(route);
+                            } else {
+                              setState(() => _selectedIndex = 0);
+                            }
+                          },
+                        )),
+                  ],
+                ),
+              ),
+            )
+          : null,
       bottomNavigationBar: !isDesktop
-          ? NavigationBar(
-              selectedIndex: _selectedIndex,
-              onDestinationSelected: (index) {
-                final route = menuItems[index]['route'] as String?;
-                if (route != null) {
-                  context.push(route);
-                } else {
-                  setState(() => _selectedIndex = index);
-                }
-              },
-              destinations: menuItems.take(4).map((item) {
-                return NavigationDestination(
-                  icon: Icon(item['icon'] as IconData),
-                  label: item['label'] as String,
+          ? Builder(
+              builder: (navContext) {
+                final hasOverflow = menuItems.length > 4;
+                final visibleItems = hasOverflow ? menuItems.take(3).toList() : menuItems;
+                final destinations = [
+                  ...visibleItems.map((item) => NavigationDestination(
+                        icon: Icon(item['icon'] as IconData),
+                        label: item['label'] as String,
+                      )),
+                  if (hasOverflow)
+                    const NavigationDestination(
+                      icon: Icon(Icons.menu),
+                      label: 'Mais',
+                    ),
+                ];
+                return NavigationBar(
+                  selectedIndex: _selectedIndex.clamp(0, destinations.length - 1),
+                  onDestinationSelected: (index) {
+                    if (hasOverflow && index == destinations.length - 1) {
+                      Scaffold.of(navContext).openDrawer();
+                      return;
+                    }
+                    final route = visibleItems[index]['route'] as String?;
+                    if (route != null) {
+                      context.push(route);
+                    } else {
+                      setState(() => _selectedIndex = index);
+                    }
+                  },
+                  destinations: destinations,
                 );
-              }).toList(),
+              },
             )
           : null,
     );

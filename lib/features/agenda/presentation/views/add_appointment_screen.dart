@@ -44,6 +44,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
   late DateTime _selectedDate;
   late TimeOfDay _startTime;
   final _notesController = TextEditingController();
+  bool _isSaving = false;
 
   final List<String> _clinicOptions = [
     'Clinica I',
@@ -449,12 +450,21 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
 
               proceduresAsync.when(
                 data: (procedures) {
-                  final allOptions = procedures.isEmpty
+                  final rawOptions = procedures.isEmpty
                       ? _defaultProcedures
-                      : procedures.map((p) => p.name).toList();
+                      : procedures.map((p) => p.name.trim()).where((n) => n.isNotEmpty).toList();
+                  final allOptions = <String>{...rawOptions}.toList();
+                  if (_selectedProcedureName != null &&
+                      _selectedProcedureName!.isNotEmpty &&
+                      !allOptions.contains(_selectedProcedureName)) {
+                    allOptions.insert(0, _selectedProcedureName!);
+                  }
+                  final effectiveValue = allOptions.contains(_selectedProcedureName)
+                      ? _selectedProcedureName
+                      : null;
 
                   return DropdownButtonFormField<String>(
-                    value: _selectedProcedureName,
+                    initialValue: effectiveValue,
                     isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: 'Procedimento Previsto',
@@ -560,7 +570,9 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
   }
 
   void _saveAppointment() async {
+    if (_isSaving) return;
     if (_formKey.currentState!.validate()) {
+      setState(() => _isSaving = true);
       final start = DateTime(
         _selectedDate.year,
         _selectedDate.month,
@@ -627,6 +639,8 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
             backgroundColor: Colors.red.shade700,
           ),
         );
+      } finally {
+        if (mounted) setState(() => _isSaving = false);
       }
     }
   }

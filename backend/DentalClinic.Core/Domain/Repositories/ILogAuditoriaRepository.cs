@@ -9,6 +9,12 @@ namespace DentalClinic.Core.Domain.Repositories
         Task<IEnumerable<LogAuditoria>> GetAllAsync();
         Task<IEnumerable<LogAuditoria>> FindAsync(Expression<Func<LogAuditoria, bool>> predicate);
         Task<LogAuditoria?> GetByIdAsync(Guid id);
+        Task<(IReadOnlyList<LogAuditoria> Items, int Total)> GetPagedAsync(
+            int page,
+            int pageSize,
+            Guid? userId = null,
+            string? action = null,
+            string? resourceId = null);
         Task<int> SaveChangesAsync();
     }
 }

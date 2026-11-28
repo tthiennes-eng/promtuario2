@@ -30,9 +30,10 @@ public class EvolutionConfiguration : IEntityTypeConfiguration<Evolution>
 
         builder.Property(e => e.IsSignedByProfessor)
             .HasColumnName("assinatura_professor_digital")
+            .HasDefaultValue(false)
             .HasConversion(
-                v => v ? "ASSINADO" : null, // Salva um texto se estiver assinado
-                v => v != null
+                v => v ? "ASSINADO" : "",
+                v => !string.IsNullOrEmpty(v)
             );
 
         builder.Property(e => e.CreatedAt).HasColumnName("data_atendimento");

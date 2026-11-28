@@ -30,19 +30,43 @@ class ToothCondition {
     );
   }
 
+  static ToothSurface _parseSurface(dynamic raw) {
+    if (raw is int && raw >= 0 && raw < ToothSurface.values.length) {
+      return ToothSurface.values[raw];
+    }
+    final s = (raw ?? '').toString().trim();
+    final asInt = int.tryParse(s);
+    if (asInt != null && asInt >= 0 && asInt < ToothSurface.values.length) {
+      return ToothSurface.values[asInt];
+    }
+    return ToothSurface.values.firstWhere(
+      (v) => v.name.toLowerCase() == s.toLowerCase(),
+      orElse: () => ToothSurface.occlusal,
+    );
+  }
+
+  static ConditionType _parseCondition(dynamic raw) {
+    if (raw is int && raw >= 0 && raw < ConditionType.values.length) {
+      return ConditionType.values[raw];
+    }
+    final s = (raw ?? '').toString().trim();
+    final asInt = int.tryParse(s);
+    if (asInt != null && asInt >= 0 && asInt < ConditionType.values.length) {
+      return ConditionType.values[asInt];
+    }
+    return ConditionType.values.firstWhere(
+      (v) => v.name.toLowerCase() == s.toLowerCase(),
+      orElse: () => ConditionType.healthy,
+    );
+  }
+
   factory ToothCondition.fromJson(Map<String, dynamic> json) {
     return ToothCondition(
       toothNumber: (json['toothNumber'] ?? json['ToothNumber'] ?? 0) as int,
       surfaces: (json['surfaces'] as List? ?? json['Surfaces'] as List? ?? [])
-          .map((e) => ToothSurface.values.firstWhere(
-                (s) => s.name == e.toString(),
-                orElse: () => ToothSurface.occlusal,
-              ))
+          .map(_parseSurface)
           .toList(),
-      condition: ConditionType.values.firstWhere(
-        (e) => e.name == (json['condition'] ?? json['Condition']),
-        orElse: () => ConditionType.healthy,
-      ),
+      condition: _parseCondition(json['condition'] ?? json['Condition']),
       observation: (json['observation'] ?? json['Observation']) as String?,
     );
   }

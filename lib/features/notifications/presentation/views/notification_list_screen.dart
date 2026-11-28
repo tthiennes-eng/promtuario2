@@ -17,7 +17,17 @@ class NotificationListScreen extends ConsumerWidget {
         title: const Text('Notificações'),
         actions: [
           TextButton(
-            onPressed: () => ref.read(notificationViewModelProvider.notifier).markAllAsRead(),
+            onPressed: () async {
+              try {
+                await ref.read(notificationViewModelProvider.notifier).markAllAsRead();
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Erro ao marcar notificações: $e'), backgroundColor: Colors.red),
+                  );
+                }
+              }
+            },
             child: const Text('Limpar tudo'),
           ),
           const SizedBox(width: 8),
@@ -48,7 +58,7 @@ class NotificationListScreen extends ConsumerWidget {
         children: [
           Icon(Icons.notifications_none_outlined, size: 64, color: Colors.grey),
           SizedBox(height: 16),
-          const Text('Você não possui novas notificações.', style: TextStyle(color: Colors.grey)),
+          Text('Você não possui novas notificações.', style: TextStyle(color: Colors.grey)),
         ],
       ),
     );
@@ -70,7 +80,7 @@ class _NotificationCard extends ConsumerWidget {
       ),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: _getTypeColor(item.type).withOpacity(0.1),
+          backgroundColor: _getTypeColor(item.type).withValues(alpha: 0.1),
           child: Icon(_getTypeIcon(item.type), color: _getTypeColor(item.type), size: 20),
         ),
         title: Text(
@@ -88,9 +98,17 @@ class _NotificationCard extends ConsumerWidget {
             ),
           ],
         ),
-        onTap: () {
+        onTap: () async {
           if (!item.isRead) {
-            ref.read(notificationViewModelProvider.notifier).markAsRead(item.id);
+            try {
+              await ref.read(notificationViewModelProvider.notifier).markAsRead(item.id);
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Erro ao marcar como lida: $e'), backgroundColor: Colors.red),
+                );
+              }
+            }
           }
         },
       ),

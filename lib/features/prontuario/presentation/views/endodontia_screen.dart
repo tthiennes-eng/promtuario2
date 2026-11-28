@@ -250,6 +250,7 @@ class _EndodontiaScreenState extends ConsumerState<EndodontiaScreen> {
   final _formKey = GlobalKey<FormState>();
   final FichaEndodontiaModel _model = FichaEndodontiaModel();
   bool _initialized = false;
+  int _dataVersion = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -285,6 +286,7 @@ class _EndodontiaScreenState extends ConsumerState<EndodontiaScreen> {
           if (!_initialized && data != null) {
             _model.fromMap(data);
             _initialized = true;
+            _dataVersion++;
           }
           return _buildForm();
         },
@@ -344,9 +346,9 @@ class _EndodontiaScreenState extends ConsumerState<EndodontiaScreen> {
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: TextFormField(key: ValueKey('suspeito_${_model.denteSuspeitoNum}'), initialValue: _model.denteSuspeitoNum, decoration: const InputDecoration(labelText: "Dente Suspeito", border: OutlineInputBorder()), onChanged: (v) => _model.denteSuspeitoNum = v)),
+                Expanded(child: TextFormField(key: ValueKey('suspeito_$_dataVersion'), initialValue: _model.denteSuspeitoNum, decoration: const InputDecoration(labelText: "Dente Suspeito", border: OutlineInputBorder()), onChanged: (v) => _model.denteSuspeitoNum = v)),
                 const SizedBox(width: 16),
-                Expanded(child: TextFormField(key: ValueKey('controle_${_model.denteControleNum}'), initialValue: _model.denteControleNum, decoration: const InputDecoration(labelText: "Dente Controle", border: OutlineInputBorder()), onChanged: (v) => _model.denteControleNum = v)),
+                Expanded(child: TextFormField(key: ValueKey('controle_$_dataVersion'), initialValue: _model.denteControleNum, decoration: const InputDecoration(labelText: "Dente Controle", border: OutlineInputBorder()), onChanged: (v) => _model.denteControleNum = v)),
               ],
             ),
             const SizedBox(height: 12),
@@ -374,7 +376,7 @@ class _EndodontiaScreenState extends ConsumerState<EndodontiaScreen> {
             _buildComparisonRow("Percussão:", ["Normal", "Exacerbado"], _model.respPercussao, (v) => setState(() => _model.respPercussao = v)),
             _buildComparisonRow("Palpação:", ["Norm.", "Exacerb."], _model.respPalpacao, (v) => setState(() => _model.respPalpacao = v)),
             const SizedBox(height: 12),
-            TextFormField(key: ValueKey('outros_${_model.outrosTestes}'), initialValue: _model.outrosTestes, decoration: const InputDecoration(labelText: "Outros Testes (cavidade, anestesia, térmico quente)", border: OutlineInputBorder()), onChanged: (v) => _model.outrosTestes = v),
+            TextFormField(key: ValueKey('outros_$_dataVersion'), initialValue: _model.outrosTestes, decoration: const InputDecoration(labelText: "Outros Testes (cavidade, anestesia, térmico quente)", border: OutlineInputBorder()), onChanged: (v) => _model.outrosTestes = v),
           ],
         ),
       ),
@@ -560,7 +562,7 @@ class _EndodontiaScreenState extends ConsumerState<EndodontiaScreen> {
       const Text("Positivo", style: TextStyle(fontSize: 12)),
       const SizedBox(width: 20),
       const Text("Intensid. (0-10): ", style: TextStyle(fontSize: 12)),
-      SizedBox(width: 45, child: TextFormField(key: ValueKey('intensity_${label}_${intensity}_${DateTime.now().millisecondsSinceEpoch}'), initialValue: intensity.toString(), enabled: isPositive, keyboardType: TextInputType.number, textAlign: TextAlign.center, decoration: const InputDecoration(isDense: true), onChanged: onChangedValue, validator: (v) => (isPositive && (int.tryParse(v ?? '') ?? -1) > 10) ? "!" : null)),
+      SizedBox(width: 45, child: TextFormField(key: ValueKey('intensity_${label}_$_dataVersion'), initialValue: intensity.toString(), enabled: isPositive, keyboardType: TextInputType.number, textAlign: TextAlign.center, decoration: const InputDecoration(isDense: true), onChanged: onChangedValue, validator: (v) => (isPositive && (int.tryParse(v ?? '') ?? -1) > 10) ? "!" : null)),
     ]));
   }
 
@@ -573,6 +575,6 @@ class _EndodontiaScreenState extends ConsumerState<EndodontiaScreen> {
   }
 
   Widget _smallTextField(String initial, Function(String) onChanged, {String? hint, double width = 80, String? key}) {
-    return Container(width: width, child: TextFormField(key: ValueKey('fld_${key ?? initial}_${DateTime.now().millisecondsSinceEpoch}'), initialValue: initial, style: const TextStyle(fontSize: 12), decoration: InputDecoration(hintText: hint, isDense: true, border: const UnderlineInputBorder()), onChanged: onChanged));
+    return SizedBox(width: width, child: TextFormField(key: key != null ? ValueKey('fld_${key}_$_dataVersion') : null, initialValue: initial, style: const TextStyle(fontSize: 12), decoration: InputDecoration(hintText: hint, isDense: true, border: const UnderlineInputBorder()), onChanged: onChanged));
   }
 }

@@ -72,13 +72,28 @@ class _InstitutionalAgendaScreenState extends ConsumerState<InstitutionalAgendaS
               notifier.fetchInstitutionalData();
             },
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              children: [
-                Text(formattedDate, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF006494))),
-                const Text('Clique para alterar a data', style: TextStyle(fontSize: 10, color: Colors.grey)),
-              ],
+          InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: selectedDate,
+                firstDate: DateTime(2020),
+                lastDate: DateTime(2100),
+              );
+              if (picked != null) {
+                notifier.selectDate(picked);
+                notifier.fetchInstitutionalData();
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+              child: Column(
+                children: [
+                  Text(formattedDate, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF006494))),
+                  const Text('Clique para alterar a data', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                ],
+              ),
             ),
           ),
           IconButton.filledTonal(
@@ -129,7 +144,9 @@ class _InstitutionalAgendaScreenState extends ConsumerState<InstitutionalAgendaS
               cells: [
                 DataCell(Text(DateFormat('HH:00').format(DateTime(2024, 1, 1, hour)), style: const TextStyle(fontWeight: FontWeight.bold))),
                 ...clinics.map((clinic) {
-                  final appts = appointments.where((a) => a.clinicId == clinic.id && a.startTime.hour == hour).toList();
+                  final appts = appointments
+                      .where((a) => a.clinicId == clinic.id && a.startTime.toLocal().hour == hour)
+                      .toList();
                   return DataCell(
                     InkWell(
                       onTap: () {
@@ -137,8 +154,35 @@ class _InstitutionalAgendaScreenState extends ConsumerState<InstitutionalAgendaS
                           final sel = ref.read(appointmentViewModelProvider).selectedDate;
                           final targetTime = DateTime(sel.year, sel.month, sel.day, hour, 0);
                           context.push('/dashboard/agenda/add', extra: {'clinic': clinic, 'time': targetTime});
-                        } else {
+                        } else if (appts.length == 1) {
                           _showAppointmentDetails(appts.first);
+                        } else {
+                          showModalBottomSheet(
+                            context: context,
+                            builder: (sheetCtx) => SafeArea(
+                              child: ListView(
+                                shrinkWrap: true,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Text(
+                                      '${clinic.name} — ${hour.toString().padLeft(2, '0')}:00 (${appts.length} agendamentos)',
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                    ),
+                                  ),
+                                  ...appts.map((a) => ListTile(
+                                        leading: const Icon(Icons.event),
+                                        title: Text(a.patientName),
+                                        subtitle: Text('${DateFormat('HH:mm').format(a.startTime.toLocal())} • ${a.procedureName ?? 'Consulta'}'),
+                                        onTap: () {
+                                          Navigator.pop(sheetCtx);
+                                          _showAppointmentDetails(a);
+                                        },
+                                      )),
+                                ],
+                              ),
+                            ),
+                          );
                         }
                       },
                       child: _buildCellContent(appts),
@@ -175,6 +219,11 @@ class _InstitutionalAgendaScreenState extends ConsumerState<InstitutionalAgendaS
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (appts.length > 1)
+            Text(
+              '+${appts.length - 1} no horário',
+              style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color),
+            ),
           Text(appt.patientName, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: color), overflow: TextOverflow.ellipsis),
           const SizedBox(height: 2),
           Text('${appt.procedureName ?? 'Avaliação'} • ${appt.status.displayName}',

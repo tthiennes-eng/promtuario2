@@ -69,7 +69,9 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
             .HasColumnName("ultima_modificacao")
             .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-        builder.Ignore(p => p.IsActive);
+        builder.Property(p => p.IsActive)
+            .HasColumnName("ativo")
+            .HasDefaultValue(true);
 
         builder.HasIndex(p => p.FullName);
         builder.HasIndex(p => p.LastModifiedAt);

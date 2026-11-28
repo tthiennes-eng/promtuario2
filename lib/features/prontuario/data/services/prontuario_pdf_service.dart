@@ -4,6 +4,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:promt/core/utils/date_utils.dart';
 import 'package:promt/features/patients/domain/entities/patient.dart';
 import 'package:promt/features/prontuario/domain/entities/evolution.dart';
 import 'package:promt/features/prontuario/domain/entities/odontogram.dart';
@@ -132,61 +133,58 @@ class ProntuarioPdfService {
   }) async {
     final doc = pw.Document();
     doc.addPage(
-      pw.Page(
+      pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(28),
-        build: (context) => pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            _header('Receituário Odontológico', patientName, subtitle: clinicName),
-            pw.SizedBox(height: 16),
-            pw.Text(
-              'PRESCRIÇÃO',
-              style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
-            ),
-            pw.SizedBox(height: 12),
-            ...prescription.items.asMap().entries.map((entry) {
-              final idx = entry.key + 1;
-              final item = entry.value;
-              return pw.Container(
-                margin: const pw.EdgeInsets.only(bottom: 12),
-                padding: const pw.EdgeInsets.all(10),
-                decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: PdfColors.grey300),
-                  borderRadius: pw.BorderRadius.circular(4),
-                ),
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text(
-                      '$idx. ${item.medicineName} — ${item.dosage}',
-                      style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
-                    ),
-                    if (item.instructions.isNotEmpty) ...[
-                      pw.SizedBox(height: 4),
-                      pw.Text(
-                        'Uso: ${item.instructions}',
-                        style: const pw.TextStyle(fontSize: 10),
-                      ),
-                    ],
-                  ],
-                ),
-              );
-            }),
-            if (prescription.observations != null &&
-                prescription.observations!.trim().isNotEmpty) ...[
-              pw.SizedBox(height: 12),
-              pw.Text(
-                'Observações / Recomendações:',
-                style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+        build: (context) => [
+          _header('Receituário Odontológico', patientName, subtitle: clinicName),
+          pw.SizedBox(height: 16),
+          pw.Text(
+            'PRESCRIÇÃO',
+            style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 12),
+          ...prescription.items.asMap().entries.map((entry) {
+            final idx = entry.key + 1;
+            final item = entry.value;
+            return pw.Container(
+              margin: const pw.EdgeInsets.only(bottom: 12),
+              padding: const pw.EdgeInsets.all(10),
+              decoration: pw.BoxDecoration(
+                border: pw.Border.all(color: PdfColors.grey300),
+                borderRadius: pw.BorderRadius.circular(4),
               ),
-              pw.SizedBox(height: 4),
-              pw.Text(prescription.observations!, style: const pw.TextStyle(fontSize: 10)),
-            ],
-            pw.Spacer(),
-            _signatureFooter(prescription.doctorName),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    '$idx. ${item.medicineName} — ${item.dosage}',
+                    style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
+                  ),
+                  if (item.instructions.isNotEmpty) ...[
+                    pw.SizedBox(height: 4),
+                    pw.Text(
+                      'Uso: ${item.instructions}',
+                      style: const pw.TextStyle(fontSize: 10),
+                    ),
+                  ],
+                ],
+              ),
+            );
+          }),
+          if (prescription.observations != null &&
+              prescription.observations!.trim().isNotEmpty) ...[
+            pw.SizedBox(height: 12),
+            pw.Text(
+              'Observações / Recomendações:',
+              style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+            ),
+            pw.SizedBox(height: 4),
+            pw.Text(prescription.observations!, style: const pw.TextStyle(fontSize: 10)),
           ],
-        ),
+          pw.SizedBox(height: 24),
+          _signatureFooter(prescription.doctorName),
+        ],
       ),
     );
     return _saveDocument(doc, 'receita', patientName);
@@ -199,32 +197,29 @@ class ProntuarioPdfService {
   }) async {
     final doc = pw.Document();
     doc.addPage(
-      pw.Page(
+      pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(28),
-        build: (context) => pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            _header('Atestado Odontológico', patientName, subtitle: clinicName),
-            pw.SizedBox(height: 28),
-            pw.Text(
-              certificate.content,
-              style: const pw.TextStyle(fontSize: 12, lineSpacing: 6),
-              textAlign: pw.TextAlign.justify,
-            ),
-            pw.SizedBox(height: 20),
-            pw.Text(
-              'Dias de afastamento/repouso: ${certificate.daysOfRest} dia(s)',
-              style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
-            ),
-            if (certificate.cid != null && certificate.cid!.trim().isNotEmpty) ...[
-              pw.SizedBox(height: 6),
-              pw.Text('CID-10: ${certificate.cid}', style: const pw.TextStyle(fontSize: 10)),
-            ],
-            pw.Spacer(),
-            _signatureFooter(certificate.doctorName),
+        build: (context) => [
+          _header('Atestado Odontológico', patientName, subtitle: clinicName),
+          pw.SizedBox(height: 28),
+          pw.Text(
+            certificate.content,
+            style: const pw.TextStyle(fontSize: 12, lineSpacing: 6),
+            textAlign: pw.TextAlign.justify,
+          ),
+          pw.SizedBox(height: 20),
+          pw.Text(
+            'Dias de afastamento/repouso: ${certificate.daysOfRest} dia(s)',
+            style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
+          ),
+          if (certificate.cid != null && certificate.cid!.trim().isNotEmpty) ...[
+            pw.SizedBox(height: 6),
+            pw.Text('CID-10: ${certificate.cid}', style: const pw.TextStyle(fontSize: 10)),
           ],
-        ),
+          pw.SizedBox(height: 28),
+          _signatureFooter(certificate.doctorName),
+        ],
       ),
     );
     return _saveDocument(doc, 'atestado', patientName);
@@ -275,6 +270,49 @@ class ProntuarioPdfService {
     final doc = pw.Document();
     String field(String key) => (pprData[key] ?? '').toString().trim();
 
+    final maxila = pprData['maxila'] == true;
+    final mandibula = pprData['mandibula'] == true;
+    final arcada = [
+      if (maxila) 'Maxila',
+      if (mandibula) 'Mandíbula',
+    ].join(' / ');
+
+    final retDiretos = (pprData['retentoresDiretos'] as List? ?? const [])
+        .whereType<Map>()
+        .where((r) =>
+            (r['dente'] ?? '').toString().trim().isNotEmpty ||
+            (r['apoio'] ?? '').toString().trim().isNotEmpty ||
+            (r['grampos'] ?? '').toString().trim().isNotEmpty)
+        .toList();
+
+    final retIndiretos = (pprData['retentoresIndiretos'] as List? ?? const [])
+        .whereType<Map>()
+        .where((r) =>
+            (r['dente'] ?? '').toString().trim().isNotEmpty ||
+            (r['tipo'] ?? '').toString().trim().isNotEmpty)
+        .toList();
+
+    final planoGuia = (pprData['planoGuia'] as List? ?? const [])
+        .whereType<Map>()
+        .where((r) =>
+            (r['dente'] ?? '').toString().trim().isNotEmpty ||
+            (r['local'] ?? '').toString().trim().isNotEmpty)
+        .toList();
+
+    final areaRetentiva = (pprData['areaRetentiva'] as List? ?? const [])
+        .whereType<Map>()
+        .where((r) =>
+            (r['dente'] ?? '').toString().trim().isNotEmpty ||
+            (r['local'] ?? '').toString().trim().isNotEmpty)
+        .toList();
+
+    final preparos = pprData['preparos'] is Map
+        ? Map<String, dynamic>.from(pprData['preparos'] as Map)
+            .entries
+            .where((e) => e.value.toString().trim().isNotEmpty)
+            .toList()
+        : const <MapEntry<String, dynamic>>[];
+
     doc.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
@@ -282,12 +320,86 @@ class ProntuarioPdfService {
         build: (context) => [
           _header('Ficha de Planejamento e Delineamento - PPR', patientName),
           pw.SizedBox(height: 8),
-          pw.Text('Aluno: ${field("aluno")}   |   Professor: ${field("professor")}', style: const pw.TextStyle(fontSize: 9)),
-          pw.Text('Prontuário: ${field("prontuario")}   |   Data: ${field("data")}', style: const pw.TextStyle(fontSize: 9)),
+          pw.Text(
+            'Arcada: ${arcada.isEmpty ? "Não informada" : arcada}   |   Classificação de Kennedy: ${field("classificacaoKennedy").isEmpty ? "-" : field("classificacaoKennedy")}',
+            style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+          ),
           pw.SizedBox(height: 10),
-          pw.Text('Classificação de Kennedy: ${field("classificacaoKennedy")}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
-          pw.Text('Observações / Notas Técnicas:', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
-          pw.Text(field('observacoes').isEmpty ? 'Sem observações registradas.' : field('observacoes'), style: const pw.TextStyle(fontSize: 9)),
+          pw.Text('Retentores Diretos', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+          if (retDiretos.isEmpty)
+            pw.Text('Nenhum retentor direto registrado.', style: const pw.TextStyle(fontSize: 9))
+          else
+            pw.TableHelper.fromTextArray(
+              headerStyle: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold),
+              cellStyle: const pw.TextStyle(fontSize: 8.5),
+              headers: const ['Dente', 'Apoio', 'Grampos'],
+              data: retDiretos
+                  .map((r) => [
+                        (r['dente'] ?? '').toString(),
+                        (r['apoio'] ?? '').toString(),
+                        (r['grampos'] ?? '').toString(),
+                      ])
+                  .toList(),
+            ),
+          pw.SizedBox(height: 8),
+          pw.Text('Retentores Indiretos', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+          if (retIndiretos.isEmpty)
+            pw.Text('Nenhum retentor indireto registrado.', style: const pw.TextStyle(fontSize: 9))
+          else
+            pw.TableHelper.fromTextArray(
+              headerStyle: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold),
+              cellStyle: const pw.TextStyle(fontSize: 8.5),
+              headers: const ['Dente', 'Tipo'],
+              data: retIndiretos
+                  .map((r) => [(r['dente'] ?? '').toString(), (r['tipo'] ?? '').toString()])
+                  .toList(),
+            ),
+          pw.SizedBox(height: 8),
+          if (planoGuia.isNotEmpty) ...[
+            pw.Text('Plano Guia', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+            pw.TableHelper.fromTextArray(
+              headerStyle: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+              cellStyle: const pw.TextStyle(fontSize: 8),
+              headers: const ['Dente', 'Local', 'Traj. 1', 'Traj. 2', 'Traj. 3'],
+              data: planoGuia
+                  .map((r) => [
+                        (r['dente'] ?? '').toString(),
+                        (r['local'] ?? '').toString(),
+                        (r['trajetoria1'] ?? '').toString(),
+                        (r['trajetoria2'] ?? '').toString(),
+                        (r['trajetoria3'] ?? '').toString(),
+                      ])
+                  .toList(),
+            ),
+            pw.SizedBox(height: 8),
+          ],
+          if (areaRetentiva.isNotEmpty) ...[
+            pw.Text('Área Retentiva', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+            pw.TableHelper.fromTextArray(
+              headerStyle: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+              cellStyle: const pw.TextStyle(fontSize: 8),
+              headers: const ['Dente', 'Local', 'Traj. 1', 'Traj. 2', 'Traj. 3'],
+              data: areaRetentiva
+                  .map((r) => [
+                        (r['dente'] ?? '').toString(),
+                        (r['local'] ?? '').toString(),
+                        (r['trajetoria1'] ?? '').toString(),
+                        (r['trajetoria2'] ?? '').toString(),
+                        (r['trajetoria3'] ?? '').toString(),
+                      ])
+                  .toList(),
+            ),
+            pw.SizedBox(height: 8),
+          ],
+          if (preparos.isNotEmpty) ...[
+            pw.Text('Preparos Prévios', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+            ...preparos.map((e) => pw.Text('• ${e.key}: ${e.value}', style: const pw.TextStyle(fontSize: 9))),
+            pw.SizedBox(height: 8),
+          ],
+          if (field('observacoes').isNotEmpty) ...[
+            pw.Text('Observações:', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+            pw.Text(field('observacoes'), style: const pw.TextStyle(fontSize: 9)),
+          ],
           _signatureFooter(field('professor').isEmpty ? 'Professor Responsável' : field('professor')),
         ],
       ),
@@ -535,7 +647,24 @@ class ProntuarioPdfService {
     Map<String, dynamic>? odontopediatria,
   }) async {
     final doc = pw.Document();
-    final age = DateTime.now().year - patient.birthDate.year;
+    final age = SafeDateParser.calculateAge(patient.birthDate);
+
+    final anamneseLines = <String>[];
+    if (anamnese != null && anamnese.isNotEmpty) {
+      final qp = (anamnese['queixaPrincipal'] ?? '').toString().trim();
+      if (qp.isNotEmpty) anamneseLines.add('Queixa Principal: $qp');
+      final hda = (anamnese['hda'] ?? '').toString().trim();
+      if (hda.isNotEmpty) anamneseLines.add('História da Doença Atual: $hda');
+      final sistemico = anamnese['sistemico'];
+      if (sistemico is Map) {
+        sistemico.forEach((k, v) {
+          if (v is Map && v['sim'] == true) {
+            final detalhe = (v['qual'] ?? v['obs'] ?? v['controlada'] ?? v['periodo'] ?? '').toString().trim();
+            anamneseLines.add(detalhe.isEmpty ? 'Condição sistêmica ($k): Sim' : 'Condição sistêmica ($k): Sim ($detalhe)');
+          }
+        });
+      }
+    }
 
     final specialtyEntries = <(String, Map<String, dynamic>?)>[
       ('DTM', dtm),
@@ -557,6 +686,14 @@ class ProntuarioPdfService {
             pw.Text('Cartão SUS: ${patient.susNumber}', style: const pw.TextStyle(fontSize: 9)),
           if (patient.phone != null && patient.phone!.isNotEmpty)
             pw.Text('Telefone: ${patient.phone}  |  E-mail: ${patient.email ?? "-"}', style: const pw.TextStyle(fontSize: 9)),
+          pw.SizedBox(height: 12),
+
+          pw.Text('0. ANAMNESE', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 4),
+          if (anamneseLines.isEmpty)
+            pw.Text('Nenhuma anamnese registrada.', style: const pw.TextStyle(fontSize: 9))
+          else
+            ...anamneseLines.map((line) => pw.Text('• $line', style: const pw.TextStyle(fontSize: 9))),
           pw.SizedBox(height: 12),
 
           pw.Text('1. ODONTOGRAMA (${odontogram?.teeth.length ?? 0} registros)', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),

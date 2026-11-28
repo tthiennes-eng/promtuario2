@@ -65,12 +65,12 @@ public class EvolutionsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao registrar evolução clínica.");
-            return BadRequest(new { message = ex.InnerException?.Message ?? ex.Message });
+            return StatusCode(500, new { message = "Erro interno ao registrar evolução clínica." });
         }
     }
 
     /// <summary>
-    /// Assina digitalmente uma evolução (Ação exclusiva do Professor/Admin/Coordenador).
+    /// Assina digitalmente uma evolução (Ação exclusiva do Professor responsável, Admin ou Coordenador).
     /// </summary>
     [HttpPost("{id}/sign")]
     [Authorize(Roles = "Professor,Admin,Coordinator")]
@@ -86,19 +86,25 @@ public class EvolutionsController : ControllerBase
         var isAdminOrCoord = User.IsInRole("Admin") || User.IsInRole("Coordinator");
         try
         {
-            evolution.Sign(signerId, allowOverride: isAdminOrCoord || User.IsInRole("Professor"));
+            evolution.Sign(signerId, allowOverride: isAdminOrCoord);
             await _prontuarioRepository.UpdateEvolutionAsync(evolution);
             return Ok(new
             {
                 id = evolution.Id,
+                professorId = evolution.ProfessorId,
                 isSignedByProfessor = evolution.IsSignedByProfessor,
                 signedAt = evolution.SignedAt,
                 message = "Evolução assinada com sucesso."
             });
         }
+        catch (InvalidOperationException)
+        {
+            return Forbid();
+        }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            _logger.LogError(ex, "Erro ao assinar evolução {EvolutionId}.", id);
+            return StatusCode(500, new { message = "Erro interno ao assinar evolução." });
         }
     }
 }

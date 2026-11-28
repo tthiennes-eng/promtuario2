@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,11 +7,33 @@ import '../../../auth/domain/entities/user.dart';
 
 /// Tela de gestão de usuários do sistema.
 /// Apenas acessível por Administradores e Coordenadores.
-class UserListScreen extends ConsumerWidget {
+class UserListScreen extends ConsumerStatefulWidget {
   const UserListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<UserListScreen> createState() => _UserListScreenState();
+}
+
+class _UserListScreenState extends ConsumerState<UserListScreen> {
+  Timer? _searchDebounce;
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        ref.read(userManagementViewModelProvider.notifier).search(value);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final usersAsync = ref.watch(userManagementViewModelProvider);
 
     return Scaffold(
@@ -19,7 +42,7 @@ class UserListScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
-            onPressed: () => _showFilterDialog(context, ref),
+            onPressed: () => _showFilterDialog(context),
           ),
         ],
       ),
@@ -30,7 +53,7 @@ class UserListScreen extends ConsumerWidget {
             child: SearchBar(
               hintText: 'Buscar por nome ou e-mail...',
               leading: const Icon(Icons.search),
-              onChanged: (value) => ref.read(userManagementViewModelProvider.notifier).search(value),
+              onChanged: _onSearchChanged,
             ),
           ),
           Expanded(
@@ -59,9 +82,7 @@ class UserListScreen extends ConsumerWidget {
                                 .read(userManagementViewModelProvider.notifier)
                                 .toggleStatus(user.id, val),
                           ),
-                          onTap: () {
-                            // Editar usuário
-                          },
+                          onTap: () => _showEditRoleDialog(context, user),
                         );
                       },
                     ),
@@ -79,7 +100,50 @@ class UserListScreen extends ConsumerWidget {
     );
   }
 
-  void _showFilterDialog(BuildContext context, WidgetRef ref) {
+  void _showEditRoleDialog(BuildContext context, User user) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: Text('Alterar Perfil: ${user.name}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: UserRole.values.map((role) {
+            final isSelected = role == user.role;
+            return ListTile(
+              title: Text(role.displayName),
+              trailing: isSelected ? const Icon(Icons.check, color: Colors.green) : null,
+              onTap: () async {
+                Navigator.pop(dialogCtx);
+                if (role == user.role) return;
+                try {
+                  await ref.read(userManagementViewModelProvider.notifier).updateRole(user.id, role);
+                  if (mounted) {
+                    ScaffoldMessenger.of(this.context).showSnackBar(
+                      SnackBar(
+                        content: Text('Perfil de ${user.name} atualizado para ${role.displayName}.'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(this.context).showSnackBar(
+                      SnackBar(
+                        content: Text('Erro ao alterar perfil: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  void _showFilterDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

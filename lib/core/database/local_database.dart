@@ -233,10 +233,18 @@ class AppDatabase extends _$AppDatabase {
         final existingColumns = rows
             .map((row) => row.read<String>('name'))
             .toSet();
-        final expectedColumns = table.$columns.map((c) => c.$name).toSet();
-        if (!existingColumns.containsAll(expectedColumns)) {
-          await migrator.deleteTable(table.actualTableName);
-          await migrator.createTable(table);
+        final missingColumns = table.$columns
+            .where((c) => !existingColumns.contains(c.$name))
+            .toList();
+        if (missingColumns.isNotEmpty) {
+          try {
+            for (final column in missingColumns) {
+              await migrator.addColumn(table, column);
+            }
+          } catch (_) {
+            await migrator.deleteTable(table.actualTableName);
+            await migrator.createTable(table);
+          }
         }
       }
     },

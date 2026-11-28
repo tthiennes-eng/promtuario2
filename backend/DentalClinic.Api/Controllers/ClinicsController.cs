@@ -21,23 +21,44 @@ public class ClinicsController : ControllerBase
     }
 
     /// <summary>
-    /// Lista todas as clínicas ativas.
+    /// Lista clínicas (por padrão retorna todas para permitir reativação na gestão; passe onlyActive=true para filtrar).
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] bool onlyActive = false)
     {
-        var clinics = await _repository.GetAllAsync();
-        var result = clinics.Select(clinic => new ClinicResponse(
-            clinic.Id,
-            clinic.Name,
-            clinic.Description,
-            !string.IsNullOrWhiteSpace(clinic.Location) ? clinic.Location : (clinic.Address?.City == "." ? "" : clinic.Address?.City),
-            clinic.MaxCapacity > 0 ? clinic.MaxCapacity : 1,
-            clinic.IsActive,
-            ParseHour(clinic.OpeningTime, 8),
-            ParseHour(clinic.ClosingTime, 18),
-            60));
+        var clinics = await _repository.GetAllAsync(includeInactive: !onlyActive);
+        var result = clinics.Select(MapClinic);
         return Ok(result);
+    }
+
+    private static ClinicResponse MapClinic(Clinic clinic) => new(
+        clinic.Id,
+        clinic.Name,
+        clinic.Description,
+        !string.IsNullOrWhiteSpace(clinic.Location) ? clinic.Location : (clinic.Address?.City == "." ? "" : clinic.Address?.City),
+        clinic.MaxCapacity > 0 ? clinic.MaxCapacity : 1,
+        clinic.IsActive,
+        ParseHour(clinic.OpeningTime, 8),
+        ParseHour(clinic.ClosingTime, 18),
+        clinic.SlotDurationMinutes > 0 ? clinic.SlotDurationMinutes : 60);
+
+    private static string? ValidateRequest(CreateClinicRequest request, out int startHour, out int endHour, out int slotDuration)
+    {
+        startHour = request.StartHour;
+        endHour = request.EndHour;
+        slotDuration = request.SlotDurationMinutes > 0 ? request.SlotDurationMinutes : 60;
+
+        var trimmedName = request.Name?.Trim() ?? string.Empty;
+        if (trimmedName.Length < 3 || trimmedName.Length > 100)
+            return "Nome da clínica deve ter entre 3 e 100 caracteres.";
+
+        if (startHour < 0 || startHour > 23 || endHour < 0 || endHour > 23)
+            return "Horários de abertura e fechamento devem estar entre 0 e 23.";
+
+        if (endHour <= startHour)
+            return "O horário de fechamento deve ser posterior ao horário de abertura.";
+
+        return null;
     }
 
     /// <summary>
@@ -47,43 +68,49 @@ public class ClinicsController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create([FromBody] CreateClinicRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Name)) return BadRequest("Nome da clínica é obrigatório.");
+        var validationError = ValidateRequest(request, out var startHour, out var endHour, out var slotDuration);
+        if (validationError != null) return BadRequest(new { message = validationError });
 
-        if (Guid.TryParse(request.Id, out var existingId) && existingId != Guid.Empty)
+        try
         {
-            var existing = await _repository.GetByIdAsync(existingId);
-            if (existing != null)
+            if (Guid.TryParse(request.Id, out var existingId) && existingId != Guid.Empty)
             {
-                existing.UpdateBasic(
-                    request.Name,
-                    request.Description,
-                    request.Capacity > 0 ? request.Capacity : 1,
-                    request.StartHour > 0 ? request.StartHour : 8,
-                    request.EndHour > request.StartHour ? request.EndHour : 18,
-                    request.IsActive,
-                    request.Location);
-                await _repository.UpdateAsync(existing);
-                return Ok(new ClinicResponse(existing.Id, existing.Name, existing.Description, request.Location,
-                    existing.MaxCapacity, existing.IsActive, request.StartHour, request.EndHour, request.SlotDurationMinutes));
+                var existing = await _repository.GetByIdAsync(existingId);
+                if (existing != null)
+                {
+                    existing.UpdateBasic(
+                        request.Name,
+                        request.Description,
+                        request.Capacity > 0 ? request.Capacity : 1,
+                        startHour,
+                        endHour,
+                        request.IsActive,
+                        request.Location,
+                        slotDuration);
+                    await _repository.UpdateAsync(existing);
+                    return Ok(MapClinic(existing));
+                }
             }
+
+            var clinic = Clinic.CreateBasic(
+                request.Name,
+                request.Description ?? string.Empty,
+                request.Capacity > 0 ? request.Capacity : 1,
+                startHour,
+                endHour,
+                request.Location,
+                slotDuration);
+
+            if (Guid.TryParse(request.Id, out var parsedId) && parsedId != Guid.Empty)
+                clinic.Id = parsedId;
+
+            await _repository.AddAsync(clinic);
+            return StatusCode(201, MapClinic(clinic));
         }
-
-        var startHour = request.StartHour > 0 ? request.StartHour : 8;
-        var endHour = request.EndHour > startHour ? request.EndHour : 18;
-        var clinic = Clinic.CreateBasic(
-            request.Name,
-            request.Description ?? string.Empty,
-            request.Capacity > 0 ? request.Capacity : 1,
-            startHour,
-            endHour,
-            request.Location);
-
-        if (Guid.TryParse(request.Id, out var parsedId) && parsedId != Guid.Empty)
-            clinic.Id = parsedId;
-
-        await _repository.AddAsync(clinic);
-        return StatusCode(201, new ClinicResponse(clinic.Id, clinic.Name, clinic.Description, request.Location,
-            clinic.MaxCapacity, clinic.IsActive, startHour, endHour, request.SlotDurationMinutes > 0 ? request.SlotDurationMinutes : 60));
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     /// <summary>
@@ -93,24 +120,31 @@ public class ClinicsController : ControllerBase
     [Authorize(Roles = "Admin,Coordinator")]
     public async Task<IActionResult> Update(Guid id, [FromBody] CreateClinicRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Name)) return BadRequest("Nome da clínica é obrigatório.");
+        var validationError = ValidateRequest(request, out var startHour, out var endHour, out var slotDuration);
+        if (validationError != null) return BadRequest(new { message = validationError });
 
         var clinic = await _repository.GetByIdAsync(id);
         if (clinic == null) return NotFound();
 
-        var startHour = request.StartHour > 0 ? request.StartHour : 8;
-        var endHour = request.EndHour > startHour ? request.EndHour : 18;
-        clinic.UpdateBasic(
-            request.Name,
-            request.Description,
-            request.Capacity > 0 ? request.Capacity : 1,
-            startHour,
-            endHour,
-            request.IsActive,
-            request.Location);
+        try
+        {
+            clinic.UpdateBasic(
+                request.Name,
+                request.Description,
+                request.Capacity > 0 ? request.Capacity : 1,
+                startHour,
+                endHour,
+                request.IsActive,
+                request.Location,
+                slotDuration);
 
-        await _repository.UpdateAsync(clinic);
-        return NoContent();
+            await _repository.UpdateAsync(clinic);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     private static int ParseHour(string? time, int fallback)

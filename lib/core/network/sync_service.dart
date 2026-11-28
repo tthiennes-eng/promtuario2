@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:promt/core/database/local_database.dart';
 import 'package:promt/core/providers/providers.dart';
+import 'package:promt/core/security/storage_service.dart';
 import 'package:drift/drift.dart';
 
 class SyncService {
@@ -22,6 +23,9 @@ class SyncService {
 
   Future<void> syncAll() async {
     if (_isSynchronizing) return;
+    final token = await _ref.read(storageServiceProvider).getAccessToken();
+    if (token == null || token.isEmpty) return;
+
     _isSynchronizing = true;
     try {
       _logger.info('Iniciando sincronização completa...');

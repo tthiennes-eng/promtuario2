@@ -29,11 +29,59 @@ public class ProntuarioController : ControllerBase
         _appointmentRepository = appointmentRepository;
     }
 
+    private static string ToCamelCase(string value) =>
+        string.IsNullOrEmpty(value) ? value : char.ToLowerInvariant(value[0]) + value[1..];
+
+    private static object? MapOdontogram(Odontogram? o)
+    {
+        if (o == null) return null;
+        return new
+        {
+            id = o.Id,
+            patientId = o.PatientId,
+            teeth = o.Teeth.Select(t => new
+            {
+                toothNumber = t.ToothNumber,
+                surfaces = t.Surfaces.Select(s => ToCamelCase(s.ToString())).ToList(),
+                condition = ToCamelCase(t.Condition.ToString()),
+                observation = t.Observation
+            }).ToList(),
+            updatedAt = o.UpdatedAt ?? o.CreatedAt,
+            updatedBy = o.UpdatedBy.ToString()
+        };
+    }
+
+    private static object? MapAnamnese(Anamnese? a)
+    {
+        if (a == null) return null;
+        JsonElement responses;
+        try
+        {
+            using var doc = JsonDocument.Parse(string.IsNullOrWhiteSpace(a.RespostasJson) ? "{}" : a.RespostasJson);
+            responses = doc.RootElement.Clone();
+        }
+        catch
+        {
+            using var doc = JsonDocument.Parse("{}");
+            responses = doc.RootElement.Clone();
+        }
+
+        return new
+        {
+            id = a.Id,
+            patientId = a.PatientId,
+            responses,
+            respostasJson = a.RespostasJson,
+            updatedAt = a.UpdatedAt ?? a.CreatedAt,
+            updatedBy = a.CriadoPorId.ToString()
+        };
+    }
+
     [HttpGet("{patientId}/odontogram")]
     public async Task<IActionResult> GetOdontogram(Guid patientId)
     {
         var odontogram = await _prontuarioRepository.GetOdontogramByPatientIdAsync(patientId);
-        return Ok(odontogram);
+        return Ok(MapOdontogram(odontogram));
     }
 
     [HttpPost("odontogram")]
@@ -56,14 +104,16 @@ public class ProntuarioController : ControllerBase
                 {
                     foreach (var s in item.Surfaces)
                     {
-                        if (Enum.TryParse<ToothSurface>(s, true, out var parsedSurface))
+                        if (Enum.TryParse<ToothSurface>(s, true, out var parsedSurface) &&
+                            Enum.IsDefined(typeof(ToothSurface), parsedSurface))
                         {
                             surfaces.Add(parsedSurface);
                         }
                     }
                 }
 
-                if (!Enum.TryParse<ConditionType>(item.Condition, true, out var parsedCondition))
+                if (!Enum.TryParse<ConditionType>(item.Condition, true, out var parsedCondition) ||
+                    !Enum.IsDefined(typeof(ConditionType), parsedCondition))
                 {
                     parsedCondition = ConditionType.Healthy;
                 }
@@ -75,15 +125,16 @@ public class ProntuarioController : ControllerBase
         var odontogram = Odontogram.Create(request.PatientId, userId);
         odontogram.ReplaceTeeth(teeth, userId);
         await _prontuarioRepository.SaveOdontogramAsync(odontogram);
+        var persisted = await _prontuarioRepository.GetOdontogramByPatientIdAsync(request.PatientId) ?? odontogram;
 
-        return Ok(odontogram);
+        return Ok(MapOdontogram(persisted));
     }
 
     [HttpGet("{patientId}/anamnese")]
     public async Task<IActionResult> GetAnamnese(Guid patientId)
     {
         var anamnese = await _prontuarioRepository.GetAnamneseByPatientIdAsync(patientId);
-        return Ok(anamnese);
+        return Ok(MapAnamnese(anamnese));
     }
 
     [HttpPost("{patientId}/anamnese")]
@@ -328,10 +379,7 @@ public class ProntuarioController : ControllerBase
                 s.SheetType));
         }
 
-        var appointments = (await _appointmentRepository.GetByRangeAsync(
-            DateTime.UtcNow.AddYears(-5),
-            DateTime.UtcNow.AddYears(2),
-            null)).Where(a => a.PatientId == patientId);
+        var appointments = await _appointmentRepository.GetByPatientIdAsync(patientId);
         foreach (var a in appointments)
         {
             items.Add(new TimelineEventDto(

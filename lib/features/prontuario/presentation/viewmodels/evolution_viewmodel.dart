@@ -24,27 +24,22 @@ class EvolutionViewModel extends StateNotifier<AsyncValue<List<Evolution>>> {
     String professorId, {
     String? clinicId,
   }) async {
-    state = const AsyncValue.loading();
-    final result = await AsyncValue.guard(() async {
-      await ref.read(prontuarioRepositoryProvider).addEvolution(
-        patientId,
-        description,
-        professorId,
-        clinicId: clinicId,
-      );
-      return await ref.read(prontuarioRepositoryProvider).getEvolutions(patientId);
-    });
-    state = result;
-    if (result is AsyncError) throw result.error!;
+    await ref.read(prontuarioRepositoryProvider).addEvolution(
+      patientId,
+      description,
+      professorId,
+      clinicId: clinicId,
+    );
+    state = await AsyncValue.guard(() =>
+      ref.read(prontuarioRepositoryProvider).getEvolutions(patientId)
+    );
   }
 
   Future<void> signEvolution(String evolutionId) async {
-    final result = await AsyncValue.guard(() async {
-      await ref.read(prontuarioRepositoryProvider).signEvolution(evolutionId);
-      return await ref.read(prontuarioRepositoryProvider).getEvolutions(patientId);
-    });
-    state = result;
-    if (result is AsyncError) throw result.error!;
+    await ref.read(prontuarioRepositoryProvider).signEvolution(evolutionId);
+    state = await AsyncValue.guard(() =>
+      ref.read(prontuarioRepositoryProvider).getEvolutions(patientId)
+    );
   }
 }
 

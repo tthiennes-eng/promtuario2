@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../auth/domain/entities/user.dart';
 import '../../../auth/presentation/viewmodels/auth_viewmodel.dart';
 import '../../../../core/security/storage_service.dart';
 import '../../../../core/theme/theme_viewmodel.dart';
@@ -104,17 +105,19 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(height: 32),
-          _buildSectionHeader('Privacidade (LGPD)'),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.history_toggle_off),
-              title: const Text('Logs de Acesso'),
-              subtitle: const Text('Ver registros de quem acessou seus dados'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push('/dashboard/audit-logs'),
+          if (user?.role == UserRole.admin) ...[
+            const SizedBox(height: 32),
+            _buildSectionHeader('Privacidade (LGPD)'),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.history_toggle_off),
+                title: const Text('Logs de Acesso'),
+                subtitle: const Text('Ver registros de auditoria e acessos do sistema'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/dashboard/audit-logs'),
+              ),
             ),
-          ),
+          ],
           const SizedBox(height: 48),
           OutlinedButton.icon(
             onPressed: () => ref.read(authViewModelProvider.notifier).logout(),

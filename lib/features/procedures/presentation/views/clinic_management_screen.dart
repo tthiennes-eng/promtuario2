@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:promt/features/auth/domain/entities/user.dart';
+import 'package:promt/features/auth/presentation/viewmodels/auth_viewmodel.dart';
 import 'package:promt/features/procedures/presentation/viewmodels/clinics_viewmodel.dart';
 import 'package:promt/features/procedures/domain/entities/clinic.dart';
 
@@ -9,6 +11,7 @@ class ClinicManagementScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final clinicsAsync = ref.watch(clinicsViewModelProvider);
+    final isAdmin = ref.watch(authViewModelProvider).user?.role == UserRole.admin;
 
     return Scaffold(
       appBar: AppBar(
@@ -20,7 +23,6 @@ class ClinicManagementScreen extends ConsumerWidget {
           itemCount: clinics.length,
           itemBuilder: (context, index) {
             final clinic = clinics[index];
-            // Acesso seguro via extensão ClinicX definida na entidade
             final startHour = clinic.startHourSafe;
             final endHour = clinic.endHourSafe;
             final slotDuration = clinic.slotDurationMinutesSafe;
@@ -30,7 +32,7 @@ class ClinicManagementScreen extends ConsumerWidget {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
               child: ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: clinic.isActive ? const Color(0xFF006494).withOpacity(0.1) : Colors.grey.shade100,
+                  backgroundColor: clinic.isActive ? const Color(0xFF006494).withValues(alpha: 0.1) : Colors.grey.shade100,
                   child: Icon(
                     Icons.business,
                     color: clinic.isActive ? const Color(0xFF006494) : Colors.grey,
@@ -41,13 +43,23 @@ class ClinicManagementScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('${clinic.location.isNotEmpty ? clinic.location : "Sem local"} • ${clinic.capacity} consultórios'),
-                    Text('Funcionamento: ${startHour}h às ${endHour}h • Slots: ${slotDuration}min', 
+                    Text('Funcionamento: ${startHour}h às ${endHour}h • Slots: ${slotDuration}min',
                       style: const TextStyle(fontSize: 11, color: Colors.blueGrey)),
                   ],
                 ),
                 trailing: Switch(
                   value: clinic.isActive,
-                  onChanged: (val) => ref.read(clinicsViewModelProvider.notifier).toggleClinicStatus(clinic),
+                  onChanged: (val) async {
+                    try {
+                      await ref.read(clinicsViewModelProvider.notifier).toggleClinicStatus(clinic);
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Erro ao alterar status da clínica: $e'), backgroundColor: Colors.red),
+                        );
+                      }
+                    }
+                  },
                 ),
                 onTap: () => _showEditClinicDialog(context, ref, clinic),
               ),
@@ -57,11 +69,13 @@ class ClinicManagementScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Erro: $err')),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showEditClinicDialog(context, ref, null),
-        label: const Text('Cadastrar Clínica'),
-        icon: const Icon(Icons.add_business),
-      ),
+      floatingActionButton: isAdmin
+          ? FloatingActionButton.extended(
+              onPressed: () => _showEditClinicDialog(context, ref, null),
+              label: const Text('Cadastrar Clínica'),
+              icon: const Icon(Icons.add_business),
+            )
+          : null,
     );
   }
 
@@ -149,23 +163,63 @@ class ClinicManagementScreen extends ConsumerWidget {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
           FilledButton(
-            onPressed: () {
-              // Criando o objeto com campos nomeados explicitamente para o construtor manual
+            onPressed: () async {
+              final trimmedName = nameController.text.trim();
+              final parsedStart = int.tryParse(startController.text) ?? 8;
+              final parsedEnd = int.tryParse(endController.text) ?? 18;
+              if (trimmedName.length < 3) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Informe um nome de clínica com pelo menos 3 caracteres.'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+              if (parsedStart < 0 || parsedStart > 23 || parsedEnd < 0 || parsedEnd > 23 || parsedEnd <= parsedStart) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Horários inválidos: a hora fim deve ser maior que a hora início (0 a 23).'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
               final newClinic = Clinic(
                 id: clinic?.id ?? '',
-                name: nameController.text,
-                location: locationController.text,
-                description: descController.text,
-                capacity: int.tryParse(capacityController.text) ?? 1,
-                startHour: int.tryParse(startController.text) ?? 8,
-                endHour: int.tryParse(endController.text) ?? 18,
-                slotDurationMinutes: int.tryParse(slotController.text) ?? 60,
+                name: trimmedName,
+                location: locationController.text.trim(),
+                description: descController.text.trim(),
+                capacity: (int.tryParse(capacityController.text) ?? 1).clamp(1, 500),
+                startHour: parsedStart,
+                endHour: parsedEnd,
+                slotDurationMinutes: (int.tryParse(slotController.text) ?? 60).clamp(10, 240),
                 isActive: clinic?.isActive ?? true,
                 metadata: clinic?.metadata ?? {},
               );
 
-              ref.read(clinicsViewModelProvider.notifier).saveClinic(newClinic);
-              Navigator.pop(context);
+              try {
+                await ref.read(clinicsViewModelProvider.notifier).saveClinic(newClinic);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Clínica salva com sucesso!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Erro ao salvar clínica: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
             child: const Text('Salvar Alterações'),
           ),

@@ -44,6 +44,44 @@ public class LogAuditoriaRepository : ILogAuditoriaRepository
             .FirstOrDefaultAsync(l => l.Id == id);
     }
 
+    public async Task<(IReadOnlyList<LogAuditoria> Items, int Total)> GetPagedAsync(
+        int page,
+        int pageSize,
+        Guid? userId = null,
+        string? action = null,
+        string? resourceId = null)
+    {
+        var safePage = Math.Max(1, page);
+        var safePageSize = Math.Clamp(pageSize, 1, 200);
+
+        var query = _context.Set<LogAuditoria>().AsNoTracking().AsQueryable();
+        if (userId.HasValue)
+        {
+            query = query.Where(x => x.UsuarioId == userId.Value);
+        }
+        if (!string.IsNullOrWhiteSpace(action))
+        {
+            var term = action.Trim().ToLower();
+            query = query.Where(x => x.Acao.ToLower().Contains(term));
+        }
+        if (!string.IsNullOrWhiteSpace(resourceId))
+        {
+            var resTerm = resourceId.Trim().ToLower();
+            query = query.Where(x =>
+                (x.Recurso != null && x.Recurso.ToLower().Contains(resTerm)) ||
+                (x.Detalhes != null && x.Detalhes.ToLower().Contains(resTerm)));
+        }
+
+        var total = await query.CountAsync();
+        var items = await query
+            .OrderByDescending(x => x.DataHora)
+            .Skip((safePage - 1) * safePageSize)
+            .Take(safePageSize)
+            .ToListAsync();
+
+        return (items, total);
+    }
+
     public async Task<int> SaveChangesAsync()
     {
         return await _context.SaveChangesAsync();

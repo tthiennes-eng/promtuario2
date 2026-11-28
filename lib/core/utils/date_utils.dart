@@ -16,8 +16,8 @@ class SafeDateParser {
       
       // 2. Se for um número (Timestamp vindo do Drift ou API)
       if (v is int) {
-        // Drift armazena segundos por padrão se < 10^11
-        if (v < 100000000000) return DateTime.fromMillisecondsSinceEpoch(v * 1000).toLocal();
+        // Drift armazena segundos por padrão se |v| < 10^11
+        if (v.abs() < 100000000000) return DateTime.fromMillisecondsSinceEpoch(v * 1000).toLocal();
         return DateTime.fromMillisecondsSinceEpoch(v).toLocal();
       }
       
@@ -26,7 +26,7 @@ class SafeDateParser {
       // 3. Tentar parse de String numérica
       final n = int.tryParse(s);
       if (n != null) {
-        if (n < 100000000000) return DateTime.fromMillisecondsSinceEpoch(n * 1000).toLocal();
+        if (n.abs() < 100000000000) return DateTime.fromMillisecondsSinceEpoch(n * 1000).toLocal();
         return DateTime.fromMillisecondsSinceEpoch(n).toLocal();
       }
 
@@ -37,5 +37,16 @@ class SafeDateParser {
     } catch (_) {
       return null;
     }
+  }
+
+  /// Calcula a idade exata em anos completos considerando mês e dia de nascimento.
+  static int calculateAge(DateTime birthDate, [DateTime? reference]) {
+    final now = reference ?? DateTime.now();
+    var age = now.year - birthDate.year;
+    if (now.month < birthDate.month ||
+        (now.month == birthDate.month && now.day < birthDate.day)) {
+      age--;
+    }
+    return age < 0 ? 0 : age;
   }
 }

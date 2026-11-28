@@ -9,9 +9,10 @@ namespace DentalClinic.Api.Controllers;
 
 /// <summary>
 /// Controller para gestão de usuários (Colaboradores, Professores, Alunos).
-/// Acesso restrito a Administradores e Coordenadores.
+/// Listagem disponível para usuários autenticados (seletores de agenda/evolução);
+/// operações de escrita restritas a Administradores e Coordenadores.
 /// </summary>
-[Authorize(Roles = "Admin,Coordinator")]
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class UsersController : ControllerBase
@@ -29,6 +30,9 @@ public class UsersController : ControllerBase
         _passwordHasher = passwordHasher;
         _logger = logger;
     }
+
+    private bool IsCoordinatorOnly =>
+        User?.IsInRole("Coordinator") == true && !(User?.IsInRole("Admin") == true);
 
     private static bool TryParseUserRole(string? raw, out UserRole role)
     {
@@ -95,6 +99,7 @@ public class UsersController : ControllerBase
     /// Cadastra um novo usuário.
     /// </summary>
     [HttpPost]
+    [Authorize(Roles = "Admin,Coordinator")]
     public async Task<IActionResult> Create([FromBody] CreateUserRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
@@ -107,49 +112,82 @@ public class UsersController : ControllerBase
             return BadRequest("Papel de usuário inválido.");
         }
 
-        DentalClinic.Core.Domain.ValueObjects.Address? address = null;
-        if (!string.IsNullOrWhiteSpace(request.Street) && !string.IsNullOrWhiteSpace(request.City))
+        if (IsCoordinatorOnly && role == UserRole.Admin)
         {
-            address = DentalClinic.Core.Domain.ValueObjects.Address.Create(
-                request.Street,
-                request.Number ?? "S/N",
-                request.Complement,
-                request.Neighborhood ?? "Centro",
-                request.City,
-                request.State ?? "MA",
-                request.ZipCode ?? "00000-000");
+            return Forbid();
         }
 
-        var user = DentalClinic.Core.Domain.Entities.User.Create(
-            request.Name.Trim(),
-            request.Email.Trim(),
-            request.CPF ?? string.Empty,
-            request.DateOfBirth,
-            request.Phone,
-            address,
-            role
-        );
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        if (await _userRepository.GetByEmailAsync(normalizedEmail) != null)
+        {
+            return Conflict(new { message = "Já existe um usuário cadastrado com este e-mail." });
+        }
 
-        user.SetPasswordHash(_passwordHasher.HashPassword(request.Password));
-        user.ConfirmEmail();
-        user.Activate();
+        DentalClinic.Core.Domain.ValueObjects.Address? address = null;
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(request.Street) && !string.IsNullOrWhiteSpace(request.City))
+            {
+                address = DentalClinic.Core.Domain.ValueObjects.Address.Create(
+                    request.Street,
+                    request.Number ?? "S/N",
+                    request.Complement,
+                    request.Neighborhood ?? "Centro",
+                    request.City,
+                    request.State ?? "MA",
+                    request.ZipCode ?? "00000-000");
+            }
 
-        await _userRepository.AddAsync(user);
+            var user = DentalClinic.Core.Domain.Entities.User.Create(
+                request.Name.Trim(),
+                normalizedEmail,
+                request.CPF ?? string.Empty,
+                request.DateOfBirth,
+                request.Phone,
+                address,
+                role
+            );
 
-        return CreatedAtAction(
-            nameof(Get),
-            new { id = user.Id },
-            new UserDto(user.Id, user.Name, user.EmailAddress.Value, user.Role.ToString(), user.IsActive));
+            user.SetPasswordHash(_passwordHasher.HashPassword(request.Password));
+            user.ConfirmEmail();
+            user.Activate();
+
+            await _userRepository.AddAsync(user);
+
+            return CreatedAtAction(
+                nameof(Get),
+                new { id = user.Id },
+                new UserDto(user.Id, user.Name, user.EmailAddress.Value, user.Role.ToString(), user.IsActive));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            var root = ex;
+            while (root.InnerException != null) root = root.InnerException;
+            if (root.Message.Contains("23505", StringComparison.OrdinalIgnoreCase))
+            {
+                return Conflict(new { message = "Já existe um usuário com este e-mail ou CPF." });
+            }
+            _logger.LogError(ex, "Erro ao criar usuário.");
+            return StatusCode(500, new { message = "Erro interno ao cadastrar usuário." });
+        }
     }
 
     /// <summary>
     /// Altera o status de ativação de um usuário.
     /// </summary>
     [HttpPatch("{id}/status")]
+    [Authorize(Roles = "Admin,Coordinator")]
     public async Task<IActionResult> ToggleStatus(Guid id, [FromBody] ToggleStatusRequest request)
     {
         var user = await _userRepository.GetByIdAsync(id);
         if (user == null) return NotFound();
+
+        if (IsCoordinatorOnly && user.Role == UserRole.Admin)
+            return Forbid();
 
         if (request.Active) user.Activate();
         else user.Deactivate();
@@ -162,6 +200,7 @@ public class UsersController : ControllerBase
     /// Altera o papel (perfil de acesso) de um usuário.
     /// </summary>
     [HttpPatch("{id}/role")]
+    [Authorize(Roles = "Admin,Coordinator")]
     public async Task<IActionResult> UpdateRole(Guid id, [FromBody] UpdateRoleRequest request)
     {
         if (!TryParseUserRole(request.Role, out var newRole))
@@ -169,6 +208,9 @@ public class UsersController : ControllerBase
 
         var user = await _userRepository.GetByIdAsync(id);
         if (user == null) return NotFound();
+
+        if (IsCoordinatorOnly && (newRole == UserRole.Admin || user.Role == UserRole.Admin))
+            return Forbid();
 
         user.UpdateRole(newRole);
         await _userRepository.UpdateAsync(user);

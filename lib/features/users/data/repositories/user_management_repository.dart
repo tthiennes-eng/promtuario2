@@ -23,18 +23,30 @@ class UserManagementRepository implements IUserManagementRepository {
       final data = response.data as List;
       final users = data.map((json) => UserModel.fromJson(json as Map<String, dynamic>).toEntity()).toList();
 
-      _updateLocalCache(users);
+      await _updateLocalCache(users, replaceAll: role == null && (query == null || query.trim().isEmpty));
       return users;
     } catch (e) {
       final results = await _localDb.select(_localDb.usersLocal).get();
-      
-      return results.map((row) => User(
-        id: row.id,
-        name: row.name,
-        email: row.email,
-        role: UserRole.values.firstWhere((e) => e.name == row.role, orElse: () => UserRole.aluno),
-        isActive: row.isActive,
-      )).toList();
+      final trimmedQuery = query?.trim().toLowerCase() ?? '';
+
+      return results
+          .map((row) => User(
+                id: row.id,
+                name: row.name,
+                email: row.email,
+                role: UserRole.values.firstWhere((e) => e.name == row.role, orElse: () => UserRole.aluno),
+                isActive: row.isActive,
+              ))
+          .where((u) {
+            if (role != null && u.role != role) return false;
+            if (trimmedQuery.isNotEmpty &&
+                !u.name.toLowerCase().contains(trimmedQuery) &&
+                !u.email.toLowerCase().contains(trimmedQuery)) {
+              return false;
+            }
+            return true;
+          })
+          .toList();
     }
   }
 
@@ -58,7 +70,16 @@ class UserManagementRepository implements IUserManagementRepository {
     await _apiClient.instance.patch('/users/$userId/role', data: {'role': role.name});
   }
 
-  void _updateLocalCache(List<User> users) async {
+  Future<void> _updateLocalCache(List<User> users, {bool replaceAll = false}) async {
+    if (replaceAll) {
+      final remoteIds = users.map((u) => u.id).toSet();
+      final existing = await _localDb.select(_localDb.usersLocal).get();
+      for (final row in existing) {
+        if (!remoteIds.contains(row.id)) {
+          await (_localDb.delete(_localDb.usersLocal)..where((t) => t.id.equals(row.id))).go();
+        }
+      }
+    }
     for (var user in users) {
       await _localDb.into(_localDb.usersLocal).insertOnConflictUpdate(
         UsersLocalCompanion.insert(

@@ -41,8 +41,16 @@ class PatientHistoryScreen extends ConsumerWidget {
   }
 
   Widget _buildLogCard(PatientChangeLog log) {
-    final Map<String, dynamic> changes = jsonDecode(log.changesJson);
-    
+    Map<String, dynamic> changes = {};
+    try {
+      final decoded = jsonDecode(log.changesJson);
+      if (decoded is Map) {
+        changes = Map<String, dynamic>.from(decoded);
+      }
+    } catch (_) {
+      changes = {};
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -72,25 +80,30 @@ class PatientHistoryScreen extends ConsumerWidget {
               ],
             ),
             const Divider(height: 24),
-            ...changes.entries.map((e) {
-              final val = e.value as Map<String, dynamic>;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(e.key, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    Row(
-                      children: [
-                        Expanded(child: Text('${val['old']}', style: const TextStyle(color: Colors.red, fontSize: 12))),
-                        const Icon(Icons.arrow_forward, size: 14, color: Colors.grey),
-                        Expanded(child: Text('${val['new']}', style: const TextStyle(color: Colors.green, fontSize: 12))),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
+            if (changes.isEmpty)
+              const Text('Detalhes de alteração indisponíveis.', style: TextStyle(color: Colors.grey, fontSize: 12))
+            else
+              ...changes.entries.map((e) {
+                final rawVal = e.value;
+                final oldText = rawVal is Map ? '${rawVal['old'] ?? '-'}' : '-';
+                final newText = rawVal is Map ? '${rawVal['new'] ?? '-'}' : '$rawVal';
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(e.key, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      Row(
+                        children: [
+                          Expanded(child: Text(oldText, style: const TextStyle(color: Colors.red, fontSize: 12))),
+                          const Icon(Icons.arrow_forward, size: 14, color: Colors.grey),
+                          Expanded(child: Text(newText, style: const TextStyle(color: Colors.green, fontSize: 12))),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              }),
           ],
         ),
       ),
@@ -98,7 +111,7 @@ class PatientHistoryScreen extends ConsumerWidget {
   }
 }
 
-final patientHistoryProvider = FutureProvider.family<List<PatientChangeLog>, String>((ref, id) async {
+final patientHistoryProvider = FutureProvider.autoDispose.family<List<PatientChangeLog>, String>((ref, id) async {
   final repository = ref.watch(patientRepositoryProvider);
   return await repository.getPatientHistory(id);
 });

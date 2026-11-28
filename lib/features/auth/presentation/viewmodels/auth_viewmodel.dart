@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:promt/features/auth/domain/entities/user.dart';
 import 'package:promt/core/providers/providers.dart';
 import 'package:promt/core/network/api_client.dart';
+import 'package:promt/core/network/notification_handler.dart';
 import 'package:promt/core/network/realtime_service.dart';
 
 /// Estado da autenticação.
@@ -50,6 +51,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
       state = state.copyWith(user: user, isInitialized: true, clearError: true);
       // Inicializa serviços de fundo sem bloquear a entrada do usuário
       ref.read(realtimeServiceProvider).init();
+      ref.read(notificationHandlerProvider).init();
     } else {
       state = state.copyWith(isInitialized: true);
     }
@@ -77,6 +79,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
       // Dispara inicializações em segundo plano (Background)
       // Não usamos 'await' aqui para não travar o carregamento do login
       ref.read(realtimeServiceProvider).init();
+      ref.read(notificationHandlerProvider).init();
       ref.read(auditRepositoryProvider).registerAccess(user.id, 'USER_LOGIN');
       
     } on DioException catch (e) {

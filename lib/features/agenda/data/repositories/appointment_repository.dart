@@ -127,9 +127,41 @@ class AppointmentRepository implements IAppointmentRepository {
   Future<void> syncAppointments() async {
     final unsynced = await (_localDb.select(_localDb.appointmentsLocal)..where((t) => t.isSynced.equals(false))).get();
     for (final row in unsynced) {
+      final entity = _mapSchemaToEntity(row);
       try {
-        await scheduleAppointment(_mapSchemaToEntity(row));
-      } catch (_) {}
+        // Primeiro tenta atualizar agendamento já existente no servidor (status + horário)
+        await _apiClient.instance.patch(
+          '/appointments/${entity.id}/status',
+          data: {'status': entity.status.apiValue},
+        );
+        try {
+          await _apiClient.instance.put(
+            '/appointments/${entity.id}/reschedule',
+            data: {
+              'startTime': entity.startTime.toUtc().toIso8601String(),
+              'endTime': entity.endTime.toUtc().toIso8601String(),
+            },
+          );
+        } on DioException catch (rescheduleErr) {
+          if (rescheduleErr.response?.statusCode != 409) rethrow;
+        }
+        await (_localDb.update(_localDb.appointmentsLocal)..where((t) => t.id.equals(entity.id))).write(
+          const AppointmentsLocalCompanion(isSynced: Value(true)),
+        );
+      } on DioException catch (e) {
+        if (e.response?.statusCode == 404) {
+          // Agendamento foi criado offline e ainda não existe no servidor -> cria via POST
+          try {
+            await scheduleAppointment(entity);
+          } catch (postErr) {
+            _logger.warning('Falha ao criar agendamento offline ${entity.id} no servidor: $postErr');
+          }
+        } else {
+          _logger.warning('Falha ao sincronizar agendamento ${entity.id}: $e');
+        }
+      } catch (e) {
+        _logger.warning('Erro inesperado ao sincronizar agendamento ${entity.id}: $e');
+      }
     }
   }
 

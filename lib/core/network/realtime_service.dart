@@ -80,5 +80,9 @@ class RealtimeService {
 final realtimeServiceProvider = Provider((ref) {
   final storage = ref.watch(storageServiceProvider);
   final serverIp = ref.watch(serverIpProvider);
-  return RealtimeService(storage, serverIp);
+  final service = RealtimeService(storage, serverIp);
+  ref.onDispose(() {
+    service.stop();
+  });
+  return service;
 });

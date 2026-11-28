@@ -18,18 +18,25 @@ class Procedure {
   });
 
   factory Procedure.fromJson(Map<String, dynamic> json) {
+    final rawPrice = json['basePrice'] ?? json['baseValue'] ?? json['BasePrice'] ?? json['BaseValue'];
+    final rawDesc = json['description'] ?? json['Description'] ?? json['code'] ?? json['Code'];
+    final rawCat = json['category'] ?? json['Category'] ?? json['specialty'] ?? json['Specialty'];
     return Procedure(
-      id: json['id'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      description: json['description'] as String?,
-      basePrice: (json['basePrice'] as num?)?.toDouble(),
-      category: json['category'] as String? ?? 'Geral',
+      id: (json['id'] ?? json['Id'] ?? '').toString(),
+      name: (json['name'] ?? json['Name'] ?? '').toString(),
+      description: rawDesc?.toString(),
+      basePrice: rawPrice is num ? rawPrice.toDouble() : double.tryParse(rawPrice?.toString() ?? ''),
+      category: (rawCat?.toString().trim().isNotEmpty ?? false) ? rawCat.toString().trim() : 'Geral',
     );
   }
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
+    'description': description,
+    'code': description ?? '',
+    'basePrice': basePrice ?? 0.0,
+    'baseValue': basePrice ?? 0.0,
     'category': category,
   };
 }

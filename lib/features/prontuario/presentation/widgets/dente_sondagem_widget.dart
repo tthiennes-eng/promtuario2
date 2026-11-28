@@ -108,7 +108,10 @@ class DenteSondagemWidget extends StatelessWidget {
           const TableRow(children: [SizedBox(height: 8), SizedBox(), SizedBox(), SizedBox(), SizedBox(), SizedBox(), SizedBox()]),
           
           // Profundidade (PS)
-          _buildDataRow("Prof. Sondagem", (p) => p.profundidade, (p, v) => p.profundidade = v, isProbing: true),
+          _buildDataRow("Prof. Sondagem", (p) => p.profundidade, (p, v) {
+            p.profundidade = v;
+            p.nivelInsercao = p.profundidade + p.recessao;
+          }, isProbing: true),
           
           // Recessão (MG)
           _buildDataRow("Margem Gengival", (p) => p.recessao, (p, v) {

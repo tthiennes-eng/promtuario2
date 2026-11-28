@@ -13,11 +13,19 @@ namespace DentalClinic.Api.Controllers;
 public class WaitListController : ControllerBase
 {
     private readonly IWaitListRepository _repository;
+    private readonly IPatientRepository _patientRepository;
+    private readonly IClinicRepository _clinicRepository;
     private readonly ILogger<WaitListController> _logger;
 
-    public WaitListController(IWaitListRepository repository, ILogger<WaitListController> logger)
+    public WaitListController(
+        IWaitListRepository repository,
+        IPatientRepository patientRepository,
+        IClinicRepository clinicRepository,
+        ILogger<WaitListController> logger)
     {
         _repository = repository;
+        _patientRepository = patientRepository;
+        _clinicRepository = clinicRepository;
         _logger = logger;
     }
 
@@ -41,16 +49,41 @@ public class WaitListController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateWaitListRequest request)
     {
+        if (request.PatientId == Guid.Empty || request.ClinicId == Guid.Empty)
+            return BadRequest(new { message = "Paciente e clínica devem possuir IDs válidos." });
+
+        var patient = await _patientRepository.GetByIdAsync(request.PatientId);
+        if (patient == null)
+            return BadRequest(new { message = "O paciente informado não existe." });
+
+        var clinic = await _clinicRepository.GetByIdAsync(request.ClinicId);
+        if (clinic == null)
+            return BadRequest(new { message = "A clínica informada não existe." });
+
+        var priority = string.IsNullOrWhiteSpace(request.Priority) ? "Normal" : request.Priority.Trim();
+        if (priority.Length > 50)
+            priority = priority[..50];
+
         var specialty = ParseSpecialty(request.Specialty);
         var entry = WaitListEntry.Create(
             request.PatientId,
             request.ClinicId,
             specialty,
-            string.IsNullOrWhiteSpace(request.Priority) ? "Normal" : request.Priority.Trim(),
+            priority,
             request.Observation);
 
         await _repository.AddAsync(entry);
-        return CreatedAtAction(nameof(GetByClinic), new { clinicId = entry.ClinicId }, entry);
+        return CreatedAtAction(nameof(GetByClinic), new { clinicId = entry.ClinicId }, new
+        {
+            id = entry.Id,
+            patientId = entry.PatientId,
+            patientName = patient.FullName,
+            clinicId = entry.ClinicId,
+            specialty = entry.Specialty.ToString(),
+            priority = entry.Priority,
+            observation = entry.Observation,
+            createdAt = entry.CreatedAt
+        });
     }
 
     [HttpPatch("{id}/resolve")]

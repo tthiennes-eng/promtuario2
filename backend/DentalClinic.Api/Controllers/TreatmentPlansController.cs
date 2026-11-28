@@ -45,23 +45,26 @@ public class TreatmentPlansController : ControllerBase
             return Unauthorized();
 
         var existing = await _repository.GetActivePlanByPatientIdAsync(request.PatientId);
-        if (existing != null && request.Items != null && request.Items.Count > 0)
+        if (existing != null)
         {
-            var existingKeys = existing.Items
-                .Select(i => $"{i.ProcedureName}|{i.ToothNumber}|{i.Observation}")
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var item in request.Items)
+            if (request.Items != null && request.Items.Count > 0)
             {
-                var key = $"{item.ProcedureName}|{item.ToothNumber}|{item.Observation}";
-                if (!existingKeys.Contains(key))
+                var existingKeys = existing.Items
+                    .Select(i => $"{i.ProcedureName}|{i.ToothNumber}|{i.Observation}")
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var item in request.Items)
                 {
-                    var procId = item.ProcedureId == Guid.Empty ? Guid.NewGuid() : item.ProcedureId;
-                    existing.AddItem(procId, item.ProcedureName, item.Value ?? 0, item.ToothNumber, item.Observation);
-                    existingKeys.Add(key);
+                    var key = $"{item.ProcedureName}|{item.ToothNumber}|{item.Observation}";
+                    if (!existingKeys.Contains(key))
+                    {
+                        var procId = item.ProcedureId == Guid.Empty ? Guid.NewGuid() : item.ProcedureId;
+                        existing.AddItem(procId, item.ProcedureName, item.Value ?? 0, item.ToothNumber, item.Observation);
+                        existingKeys.Add(key);
+                    }
                 }
+                await _repository.UpdateAsync(existing);
             }
-            await _repository.UpdateAsync(existing);
             return Ok(existing);
         }
 
@@ -110,7 +113,7 @@ public class TreatmentPlansController : ControllerBase
         {
             parsedStatus = TreatmentItemStatus.Cancelled;
         }
-        else if (!Enum.TryParse(raw, true, out parsedStatus))
+        else if (!Enum.TryParse(raw, true, out parsedStatus) || !Enum.IsDefined(typeof(TreatmentItemStatus), parsedStatus))
         {
             return BadRequest(new { message = $"Status inválido: {request.Status}" });
         }
@@ -146,6 +149,9 @@ public class TreatmentPlansController : ControllerBase
     {
         var plan = await _repository.GetByIdAsync(id);
         if (plan == null) return NotFound();
+
+        if (plan.Status == TreatmentPlanStatus.Completed || plan.Status == TreatmentPlanStatus.Cancelled)
+            return BadRequest(new { message = "Não é possível aprovar um plano já concluído ou cancelado." });
 
         plan.Approve();
         await _repository.UpdateAsync(plan);

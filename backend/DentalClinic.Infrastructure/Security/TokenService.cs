@@ -28,9 +28,18 @@ public class TokenService : ITokenService
         {
             secret = _configuration["Jwt:Key"];
         }
-        if (string.IsNullOrWhiteSpace(secret))
+        if (string.IsNullOrWhiteSpace(secret) || secret.Length < 32)
         {
-            throw new InvalidOperationException("JWT Key not configured");
+            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+                ?? Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
+            if (string.Equals(env, "Development", StringComparison.OrdinalIgnoreCase))
+            {
+                secret = "DevOnlyLocalJwtSecretKeyWithAtLeast32Chars!!";
+            }
+            else
+            {
+                throw new InvalidOperationException("JWT Key not configured (requires at least 32 characters).");
+            }
         }
         return Encoding.UTF8.GetBytes(secret);
     }

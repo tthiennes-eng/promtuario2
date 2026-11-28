@@ -324,9 +324,12 @@ class AppointmentViewModel extends StateNotifier<AppointmentState> {
     
     double occupancy = 0.0;
     if (state.selectedClinic != null && state.selectedClinic!.capacity > 0) {
-      final hours = (state.selectedClinic!.endHour - state.selectedClinic!.startHour) - 2; // -2 almoço
+      final rawHours = state.selectedClinic!.endHourSafe - state.selectedClinic!.startHourSafe;
+      final hours = rawHours > 2 ? (rawHours - 2) : (rawHours > 0 ? rawHours : 1);
       final totalCapacity = hours * state.selectedClinic!.capacity;
-      occupancy = total / totalCapacity;
+      if (totalCapacity > 0) {
+        occupancy = (total / totalCapacity).clamp(0.0, 1.0);
+      }
     }
 
     return {

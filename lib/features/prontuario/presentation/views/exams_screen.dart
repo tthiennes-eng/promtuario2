@@ -9,6 +9,8 @@ import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:promt/core/network/api_client.dart';
+import 'package:promt/features/auth/domain/entities/user.dart';
+import 'package:promt/features/auth/presentation/viewmodels/auth_viewmodel.dart';
 import '../viewmodels/attachment_viewmodel.dart';
 import '../viewmodels/prontuario_summary_provider.dart';
 import '../../domain/entities/attachment.dart';
@@ -46,10 +48,16 @@ class _ExamsScreenState extends ConsumerState<ExamsScreen> {
     };
   }
 
+  final Map<String, Future<Response<List<int>>>> _imageFutureCache = {};
+
   Widget _buildAuthenticatedRemoteImage(String remoteUrl, {required BoxFit fit, double errorIconSize = 32}) {
     final dio = ref.read(apiClientProvider).instance;
+    final future = _imageFutureCache.putIfAbsent(
+      remoteUrl,
+      () => dio.get<List<int>>(remoteUrl, options: Options(responseType: ResponseType.bytes)),
+    );
     return FutureBuilder<Response<List<int>>>(
-      future: dio.get<List<int>>(remoteUrl, options: Options(responseType: ResponseType.bytes)),
+      future: future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)));
@@ -150,11 +158,36 @@ class _ExamsScreenState extends ConsumerState<ExamsScreen> {
   }
 
   Future<void> _openExternally(Attachment attachment) async {
-    final target = (attachment.localPath != null &&
-            attachment.localPath!.isNotEmpty &&
-            File(attachment.localPath!).existsSync())
-        ? attachment.localPath!
-        : (attachment.remoteUrl ?? '');
+    String target = '';
+    if (attachment.localPath != null &&
+        attachment.localPath!.isNotEmpty &&
+        File(attachment.localPath!).existsSync()) {
+      target = attachment.localPath!;
+    } else if (attachment.remoteUrl != null && attachment.remoteUrl!.isNotEmpty) {
+      try {
+        final response = await ref.read(apiClientProvider).instance.get<List<int>>(
+          attachment.remoteUrl!,
+          options: Options(responseType: ResponseType.bytes),
+        );
+        final bytes = response.data;
+        if (bytes != null && bytes.isNotEmpty) {
+          final tempDir = await getTemporaryDirectory();
+          final safeName = (attachment.description?.trim().isNotEmpty ?? false)
+              ? attachment.description!.trim().replaceAll(RegExp(r'[^\w\.\-]'), '_')
+              : 'anexo_${attachment.id}.${attachment.fileExtension.isNotEmpty ? attachment.fileExtension : 'bin'}';
+          final file = File(p.join(tempDir.path, safeName));
+          await file.writeAsBytes(bytes, flush: true);
+          target = file.path;
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao baixar anexo autenticado: $e'), backgroundColor: Colors.red),
+          );
+        }
+        return;
+      }
+    }
     if (target.isEmpty) return;
 
     try {
@@ -164,6 +197,10 @@ class _ExamsScreenState extends ConsumerState<ExamsScreen> {
         await Process.run('xdg-open', [target]);
       } else if (Platform.isMacOS) {
         await Process.run('open', [target]);
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Arquivo salvo em: $target')),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -485,6 +522,8 @@ class _ExamsScreenState extends ConsumerState<ExamsScreen> {
         ],
       ),
     );
+    titleController.dispose();
+    contentController.dispose();
   }
 
   Future<void> _uploadFile(File file, AttachmentType type, {String? description}) async {
@@ -556,16 +595,26 @@ class _ExamsScreenState extends ConsumerState<ExamsScreen> {
                   tooltip: 'Abrir arquivo externamente',
                   onPressed: () => _openExternally(attachment),
                 ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.red),
-                onPressed: () async {
-                  await ref
-                      .read(attachmentViewModelProvider(widget.patientId).notifier)
-                      .removeAttachment(attachment.id);
-                  ref.invalidate(prontuarioSummaryProvider(widget.patientId));
-                  if (dialogContext.mounted) Navigator.pop(dialogContext);
-                },
-              ),
+              if (ref.read(authViewModelProvider).user?.role == UserRole.admin ||
+                  ref.read(authViewModelProvider).user?.role == UserRole.professor)
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  onPressed: () async {
+                    try {
+                      await ref
+                          .read(attachmentViewModelProvider(widget.patientId).notifier)
+                          .removeAttachment(attachment.id);
+                      ref.invalidate(prontuarioSummaryProvider(widget.patientId));
+                      if (dialogContext.mounted) Navigator.pop(dialogContext);
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(this.context).showSnackBar(
+                          SnackBar(content: Text('Erro ao excluir anexo: $e'), backgroundColor: Colors.red),
+                        );
+                      }
+                    }
+                  },
+                ),
             ],
           ),
           body: attachment.isImageFile

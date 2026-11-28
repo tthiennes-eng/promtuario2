@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import 'package:promt/features/agenda/presentation/viewmodels/wait_list_viewmodel.dart';
@@ -184,9 +185,19 @@ class _WaitListCard extends ConsumerWidget {
           ],
         ),
         trailing: PopupMenuButton<String>(
-          onSelected: (val) {
-            if (val == 'resolve') {
-              ref.read(waitListViewModelProvider(clinicId).notifier).resolve(entry.id);
+          onSelected: (val) async {
+            if (val == 'schedule') {
+              context.push('/dashboard/agenda/add');
+            } else if (val == 'resolve' || val == 'remove') {
+              try {
+                await ref.read(waitListViewModelProvider(clinicId).notifier).resolve(entry.id);
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Erro ao atualizar fila: $e'), backgroundColor: Colors.red),
+                  );
+                }
+              }
             }
           },
           itemBuilder: (context) => [

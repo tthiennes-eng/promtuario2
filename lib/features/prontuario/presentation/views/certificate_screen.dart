@@ -28,17 +28,22 @@ class _CertificateScreenState extends ConsumerState<CertificateScreen> {
   final _daysController = TextEditingController(text: '1');
   final _cidController = TextEditingController();
   bool _isSaving = false;
+  String _lastAutoText = '';
 
   @override
   void initState() {
     super.initState();
-    _syncDefaultText('1');
+    _syncDefaultText('1', force: true);
   }
 
-  void _syncDefaultText(String days) {
+  void _syncDefaultText(String days, {bool force = false}) {
     final safeDays = days.trim().isEmpty ? '1' : days.trim();
-    _contentController.text =
+    final generated =
         'Atesto para os devidos fins que o(a) Sr(a). ${widget.patientName} foi submetido(a) a tratamento odontológico nesta data, necessitando de $safeDays dia(s) de repouso.';
+    if (force || _contentController.text.isEmpty || _contentController.text == _lastAutoText) {
+      _contentController.text = generated;
+    }
+    _lastAutoText = generated;
   }
 
   @override

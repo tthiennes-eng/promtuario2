@@ -29,6 +29,14 @@ class Clinic {
   int get endHourSafe => endHour.clamp(0, 23);
   int get slotDurationMinutesSafe => slotDurationMinutes <= 0 ? 60 : slotDurationMinutes;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Clinic && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
+
   Clinic copyWith({
     String? id,
     String? name,

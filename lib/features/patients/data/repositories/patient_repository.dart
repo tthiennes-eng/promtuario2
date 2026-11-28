@@ -86,8 +86,17 @@ class PatientRepository implements IPatientRepository {
     final selectQuery = _localDb.select(_localDb.patientsLocal);
     if (query != null && query.trim().isNotEmpty) {
       final trimmed = query.trim();
+      final digits = trimmed.replaceAll(RegExp(r'[^\d]'), '');
       selectQuery.where(
-        (t) => t.fullName.contains(trimmed) | t.cpf.contains(trimmed),
+        (t) {
+          Expression<bool> cond = t.fullName.contains(trimmed) |
+              t.socialName.contains(trimmed) |
+              t.cpf.contains(trimmed);
+          if (digits.isNotEmpty && digits != trimmed) {
+            cond = cond | t.cpf.contains(digits);
+          }
+          return cond;
+        },
       );
     }
     selectQuery.orderBy([(t) => OrderingTerm(expression: t.fullName)]);
@@ -141,8 +150,20 @@ class PatientRepository implements IPatientRepository {
               ..where((t) => t.id.equals(patient.id)))
             .write(const drift_db.PatientsLocalCompanion(isSynced: Value(true)));
       }
-    } catch (e) {
-      debugPrint('Erro ao atualizar paciente na API: $e');
+    } on DioException catch (e) {
+      if (e.response != null) {
+        final data = e.response?.data;
+        String? message;
+        if (data is Map) {
+          message = (data['message'] ?? data['title'] ?? data['error'])?.toString();
+        } else if (data is String && data.trim().isNotEmpty) {
+          message = data.trim();
+        }
+        throw Exception(
+          message ?? 'Erro ao atualizar paciente no servidor (HTTP ${e.response?.statusCode}).',
+        );
+      }
+      debugPrint('Sem conexão ao atualizar paciente; salvo offline: $e');
     }
   }
 
@@ -312,6 +333,12 @@ class PatientRepository implements IPatientRepository {
     List<entity.Patient> patients, {
     bool replaceSynced = false,
   }) async {
+    final unsyncedIds = (await (_localDb.select(_localDb.patientsLocal)
+              ..where((t) => t.isSynced.equals(false)))
+            .get())
+        .map((r) => r.id)
+        .toSet();
+
     if (replaceSynced) {
       final remoteIds = patients.map((p) => p.id).toSet();
       final existingSynced = await (_localDb.select(_localDb.patientsLocal)
@@ -324,6 +351,7 @@ class PatientRepository implements IPatientRepository {
       }
     }
     for (var p in patients) {
+      if (unsyncedIds.contains(p.id)) continue;
       await _saveLocal(p, true);
     }
   }

@@ -7,6 +7,7 @@ import 'package:promt/features/patients/presentation/viewmodels/patient_viewmode
 import 'package:promt/features/patients/domain/entities/patient.dart';
 import 'package:promt/features/agenda/domain/entities/appointment.dart';
 import 'package:promt/features/procedures/domain/entities/clinic.dart';
+import 'package:promt/core/utils/date_utils.dart';
 import 'package:promt/features/procedures/presentation/viewmodels/clinics_viewmodel.dart';
 
 class PatientListScreen extends ConsumerStatefulWidget {
@@ -183,7 +184,10 @@ class _PatientListScreenState extends ConsumerState<PatientListScreen> {
     Appointment? next,
     int total,
   ) {
-    final age = DateTime.now().year - patient.birthDate.year;
+    final age = SafeDateParser.calculateAge(patient.birthDate);
+    final initial = patient.fullName.trim().isNotEmpty
+        ? patient.fullName.trim().substring(0, 1).toUpperCase()
+        : '?';
 
     String getClinic(Appointment app) {
       final clinics = ref.read(clinicsViewModelProvider).value ?? [];
@@ -214,7 +218,7 @@ class _PatientListScreenState extends ConsumerState<PatientListScreen> {
                   CircleAvatar(
                     backgroundColor: const Color(0xFF006494).withValues(alpha: 0.1),
                     child: Text(
-                      patient.fullName[0],
+                      initial,
                       style: const TextStyle(
                         color: Color(0xFF006494),
                         fontWeight: FontWeight.bold,

@@ -23,4 +23,5 @@ public interface IPatientRepository
     /// Busca pacientes modificados após uma data específica (usado para sincronização entre dispositivos).
     /// </summary>
     Task<IEnumerable<Patient>> GetModifiedSinceAsync(DateTime since, int page = 1, int pageSize = 50);
+    Task<int> CountModifiedSinceAsync(DateTime since);
 }

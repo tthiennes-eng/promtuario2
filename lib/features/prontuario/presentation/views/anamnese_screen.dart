@@ -95,7 +95,7 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
         data: (savedData) {
           if (!_initialized) {
             _initFields();
-            if (savedData != null) _data.addAll(savedData);
+            if (savedData != null) _deepMerge(_data, savedData);
             _initialized = true;
           }
           return _buildForm();
@@ -698,6 +698,22 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
     );
   }
 
+  void _deepMerge(Map<String, dynamic> target, Map<String, dynamic> source) {
+    source.forEach((key, value) {
+      if (value == null) return;
+      final existing = target[key];
+      if (existing is Map && value is Map) {
+        final merged = Map<String, dynamic>.from(existing);
+        _deepMerge(merged, Map<String, dynamic>.from(value));
+        target[key] = merged;
+      } else if (existing is List && value is List) {
+        target[key] = List<String>.from(value.map((e) => e.toString()));
+      } else {
+        target[key] = value;
+      }
+    });
+  }
+
   Widget _buildSaveButton() {
     return SizedBox(
       width: double.infinity,
@@ -710,20 +726,32 @@ class _AnamneseScreenState extends ConsumerState<AnamneseScreen> {
           ),
         ),
         onPressed: () async {
-          await ref
-              .read(
-                endodontiaViewModelProvider(
-                  "anamnese_${widget.patientId}",
-                ).notifier,
-              )
-              .save(_data);
-          if (mounted)
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Anamnese salva com sucesso!"),
-                backgroundColor: Colors.green,
-              ),
-            );
+          try {
+            await ref
+                .read(
+                  endodontiaViewModelProvider(
+                    "anamnese_${widget.patientId}",
+                  ).notifier,
+                )
+                .save(_data);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Anamnese salva com sucesso!"),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text("Erro ao salvar anamnese: $e"),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
         },
         icon: const Icon(Icons.save),
         label: const Text(

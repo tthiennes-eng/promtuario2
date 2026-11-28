@@ -79,13 +79,20 @@ public class AppointmentsController : ControllerBase
     public async Task<IActionResult> GetByRange([FromQuery] DateTime start, [FromQuery] DateTime end, [FromQuery] Guid? clinicId = null)
     {
         var appointments = await _appointmentRepository.GetByRangeAsync(start, end, clinicId);
-        var clinics = await _clinicRepository.GetAllAsync();
+        var clinics = await _clinicRepository.GetAllAsync(includeInactive: true);
         var clinicNamesById = clinics.ToDictionary(c => c.Id, c => c.Name);
 
         var responses = appointments.Select(a =>
             new AppointmentResponse(a, clinicNamesById.TryGetValue(a.ClinicId, out var name) ? name : null));
         return Ok(responses);
     }
+
+    private static DateTime NormalizeUtc(DateTime value) =>
+        value.Kind == DateTimeKind.Utc
+            ? value
+            : value.Kind == DateTimeKind.Local
+                ? value.ToUniversalTime()
+                : DateTime.SpecifyKind(value, DateTimeKind.Utc);
 
     /// <summary>
     /// Cria um novo agendamento.
@@ -95,12 +102,8 @@ public class AppointmentsController : ControllerBase
     {
         if (request.PatientId == Guid.Empty || request.ClinicId == Guid.Empty)
             return BadRequest("Paciente e clínica devem possuir IDs válidos.");
-        var startTime = request.StartTime.Kind == DateTimeKind.Utc
-            ? request.StartTime
-            : DateTime.SpecifyKind(request.StartTime, DateTimeKind.Utc);
-        var endTime = request.EndTime.Kind == DateTimeKind.Utc
-            ? request.EndTime
-            : DateTime.SpecifyKind(request.EndTime, DateTimeKind.Utc);
+        var startTime = NormalizeUtc(request.StartTime);
+        var endTime = NormalizeUtc(request.EndTime);
 
         if (endTime <= startTime)
             return BadRequest("O horário de término deve ser posterior ao início.");
@@ -127,6 +130,9 @@ public class AppointmentsController : ControllerBase
 
         if (clinic == null)
         {
+            if (User?.IsInRole("Admin") != true)
+                return BadRequest("A clínica selecionada não existe no servidor.");
+
             clinic = Clinic.CreateBasic(clinicName ?? "Clínica selecionada", "Clínica Escola", 1, 8, 18);
             clinic.Id = request.ClinicId;
             await _clinicRepository.AddAsync(clinic);
@@ -322,12 +328,8 @@ public class AppointmentsController : ControllerBase
         var appointment = await _appointmentRepository.GetByIdAsync(id);
         if (appointment == null) return NotFound();
 
-        var startTime = request.StartTime.Kind == DateTimeKind.Utc
-            ? request.StartTime
-            : DateTime.SpecifyKind(request.StartTime, DateTimeKind.Utc);
-        var endTime = request.EndTime.Kind == DateTimeKind.Utc
-            ? request.EndTime
-            : DateTime.SpecifyKind(request.EndTime, DateTimeKind.Utc);
+        var startTime = NormalizeUtc(request.StartTime);
+        var endTime = NormalizeUtc(request.EndTime);
 
         if (endTime <= startTime)
             return BadRequest("O horário de término deve ser posterior ao início.");

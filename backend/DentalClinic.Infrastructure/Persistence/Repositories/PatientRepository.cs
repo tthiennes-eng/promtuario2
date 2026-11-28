@@ -30,20 +30,25 @@ public class PatientRepository : IPatientRepository
 
     public async Task<IEnumerable<Patient>> GetAllAsync(int page, int pageSize, string? searchTerm)
     {
+        var safePage = Math.Max(1, page);
+        var safePageSize = Math.Clamp(pageSize, 1, 200);
         var query = _context.Patients.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            searchTerm = searchTerm.ToLower();
+            var term = searchTerm.Trim().ToLower();
+            var digits = new string(term.Where(char.IsDigit).ToArray());
             query = query.Where(p =>
-                p.FullName.ToLower().Contains(searchTerm) ||
-                p.CPF.Contains(searchTerm));
+                p.FullName.ToLower().Contains(term) ||
+                (p.SocialName != null && p.SocialName.ToLower().Contains(term)) ||
+                p.CPF.Contains(term) ||
+                (digits.Length > 0 && p.CPF.Contains(digits)));
         }
 
         return await query
             .OrderByDescending(p => p.CreatedAt) // Mostra os mais recentes primeiro
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+            .Skip((safePage - 1) * safePageSize)
+            .Take(safePageSize)
             .ToListAsync();
     }
 
@@ -153,6 +158,17 @@ public class PatientRepository : IPatientRepository
         var records = await _context.MedicalRecords.Where(r => r.PatientId == id).ToListAsync();
         if (records.Count > 0) _context.MedicalRecords.RemoveRange(records);
 
+        var plans = await _context.TreatmentPlans.Include(p => p.Items).Where(p => p.PatientId == id).ToListAsync();
+        if (plans.Count > 0)
+        {
+            var planItems = plans.SelectMany(p => p.Items).ToList();
+            if (planItems.Count > 0) _context.TreatmentItems.RemoveRange(planItems);
+            _context.TreatmentPlans.RemoveRange(plans);
+        }
+
+        var sheets = await _context.ClinicalSheets.Where(s => s.PatientId == id).ToListAsync();
+        if (sheets.Count > 0) _context.ClinicalSheets.RemoveRange(sheets);
+
         _context.Patients.Remove(patient);
         await _context.SaveChangesAsync();
     }
@@ -208,7 +224,10 @@ public class PatientRepository : IPatientRepository
             WHERE table_schema = 'public'
               AND table_name <> 'pacientes'
               AND data_type = 'uuid'
-              AND lower(column_name) IN ('paciente_id', 'pacienteid', 'patient_id', 'patientid');";
+              AND (
+                    lower(column_name) IN ('paciente_id', 'pacienteid', 'patient_id', 'patientid')
+                    OR (table_name = 'evolucoes' AND lower(column_name) = 'prontuario_id')
+                  );";
 
         await using var reader = await cmd.ExecuteReaderAsync();
         while (await reader.ReadAsync())
@@ -364,10 +383,13 @@ public class PatientRepository : IPatientRepository
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            searchTerm = searchTerm.ToLower();
+            var term = searchTerm.Trim().ToLower();
+            var digits = new string(term.Where(char.IsDigit).ToArray());
             query = query.Where(p =>
-                p.FullName.ToLower().Contains(searchTerm) ||
-                p.CPF.Contains(searchTerm));
+                p.FullName.ToLower().Contains(term) ||
+                (p.SocialName != null && p.SocialName.ToLower().Contains(term)) ||
+                p.CPF.Contains(term) ||
+                (digits.Length > 0 && p.CPF.Contains(digits)));
         }
 
         return await query.CountAsync();
@@ -379,22 +401,36 @@ public class PatientRepository : IPatientRepository
         if (patient != null)
         {
             patient.FullName = "PACIENTE ANONIMIZADO (LGPD)";
-            patient.CPF = "00000000000";
-            patient.Email = "anonimo@odontoclinica.edu.br";
-            patient.Phone = "0000000000";
+            patient.SocialName = null;
+            patient.SusNumber = null;
+            // Mantém unicidade no índice UNIQUE de CPF (máx 14 chars) sem expor dados reais
+            patient.CPF = "A" + patient.Id.ToString("N")[..13];
+            patient.Email = null;
+            patient.Phone = null;
             patient.Address = null;
-            
+            patient.IsActive = false;
+            patient.LastModifiedAt = DateTime.UtcNow;
+
             await UpdateAsync(patient);
         }
     }
-    
+
     public async Task<IEnumerable<Patient>> GetModifiedSinceAsync(DateTime since, int page = 1, int pageSize = 50)
     {
+        var safePage = Math.Max(1, page);
+        var safePageSize = Math.Clamp(pageSize, 1, 200);
         return await _context.Patients
             .Where(p => p.LastModifiedAt > since)
             .OrderByDescending(p => p.LastModifiedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+            .Skip((safePage - 1) * safePageSize)
+            .Take(safePageSize)
             .ToListAsync();
+    }
+
+    public async Task<int> CountModifiedSinceAsync(DateTime since)
+    {
+        return await _context.Patients
+            .Where(p => p.LastModifiedAt > since)
+            .CountAsync();
     }
 }

@@ -249,6 +249,62 @@ await RunTest("User.Role reflects persisted Roles list (never defaults Admin to 
     Assert(u.Role == UserRole.Coordinator, $"Expected Coordinator, got {u.Role}");
 });
 
+await RunTest("UsersController blocks Coordinator->Admin privilege escalation and duplicate email (409)", async () =>
+{
+    var repo = new InMemoryUserRepo();
+    var controller = new UsersController(repo, new StubHasher(), NullLogger<UsersController>.Instance)
+    {
+        ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity(new[]
+                {
+                    new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+                    new Claim(ClaimTypes.Role, "Coordinator")
+                }))
+            }
+        }
+    };
+
+    var forbidCreate = await controller.Create(new CreateUserRequest("Hack Admin", "hack@ufma.br", "senha123", "Admin"));
+    Assert(forbidCreate is ForbidResult, $"Expected ForbidResult for Coordinator creating Admin, got {forbidCreate.GetType().Name}");
+
+    var okCreate = await controller.Create(new CreateUserRequest("Aluno 1", "aluno1@ufma.br", "senha123", "Student"));
+    Assert(okCreate is CreatedAtActionResult, "Coordinator should be able to create Student");
+
+    var dup = await controller.Create(new CreateUserRequest("Aluno Dup", "aluno1@ufma.br", "senha123", "Student"));
+    Assert(dup is ConflictObjectResult, $"Expected 409 Conflict for duplicate email, got {dup.GetType().Name}");
+
+    var createdDto = ((CreatedAtActionResult)okCreate).Value as UserDto;
+    var forbidPromote = await controller.UpdateRole(createdDto!.Id, new UpdateRoleRequest("Admin"));
+    Assert(forbidPromote is ForbidResult, $"Expected ForbidResult for Coordinator promoting to Admin, got {forbidPromote.GetType().Name}");
+});
+
+await RunTest("Evolution.Sign enforces responsible professor and records actual signer on override", () =>
+{
+    var profA = Guid.NewGuid();
+    var profB = Guid.NewGuid();
+    var adminId = Guid.NewGuid();
+    var evo = Evolution.Create(Guid.NewGuid(), Guid.NewGuid(), profA, Guid.NewGuid(), "Restauração dente 16");
+
+    bool blocked = false;
+    try
+    {
+        evo.Sign(profB, allowOverride: false);
+    }
+    catch (InvalidOperationException)
+    {
+        blocked = true;
+    }
+    Assert(blocked, "Another professor without override must be rejected");
+    Assert(!evo.IsSignedByProfessor, "Evolution must remain unsigned after rejection");
+
+    evo.Sign(adminId, allowOverride: true);
+    Assert(evo.IsSignedByProfessor && evo.ProfessorId == adminId, "Override sign must record actual signer ID");
+    return Task.CompletedTask;
+});
+
 Console.WriteLine($"\nBackend test summary: {passed} passed, {failed} failed.");
 return failed == 0 ? 0 : 1;
 
@@ -264,6 +320,9 @@ sealed class InMemoryAppointmentRepo : IAppointmentRepository
         Task.FromResult<IEnumerable<Appointment>>(_items.Where(a =>
             (!clinicId.HasValue || a.ClinicId == clinicId.Value) &&
             a.StartTime < end && a.EndTime > start).ToList());
+
+    public Task<IEnumerable<Appointment>> GetByPatientIdAsync(Guid patientId) =>
+        Task.FromResult<IEnumerable<Appointment>>(_items.Where(a => a.PatientId == patientId).ToList());
 
     public Task AddAsync(Appointment appointment)
     {

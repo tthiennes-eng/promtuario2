@@ -37,15 +37,18 @@ public class PatientsController : ControllerBase
         [FromQuery] int pageSize = 10,
         [FromQuery(Name = "search")] string? searchTerm = null) // Sincronizado com Flutter
     {
-        var patients = await _patientRepository.GetAllAsync(page, pageSize, searchTerm);
+        var safePage = Math.Max(1, page);
+        var safePageSize = Math.Clamp(pageSize, 1, 200);
+
+        var patients = await _patientRepository.GetAllAsync(safePage, safePageSize, searchTerm);
         var total = await _patientRepository.CountAsync(searchTerm);
 
         return Ok(new
         {
             Items = patients,
             Total = total,
-            Page = page,
-            PageSize = pageSize
+            Page = safePage,
+            PageSize = safePageSize
         });
     }
 
@@ -64,13 +67,51 @@ public class PatientsController : ControllerBase
                 ? value.ToUniversalTime()
                 : DateTime.SpecifyKind(value, DateTimeKind.Utc);
 
+    private static string? ValidatePatient(Patient patient)
+    {
+        if (string.IsNullOrWhiteSpace(patient.FullName) || patient.FullName.Trim().Length < 2)
+            return "Nome completo deve ter pelo menos 2 caracteres.";
+
+        var cpfDigits = new string((patient.CPF ?? string.Empty).Where(char.IsDigit).ToArray());
+        if (cpfDigits.Length != 11)
+            return "CPF inválido. Informe exatamente 11 dígitos.";
+
+        if (!string.IsNullOrWhiteSpace(patient.SusNumber))
+        {
+            var susDigits = new string(patient.SusNumber.Where(char.IsDigit).ToArray());
+            if (susDigits.Length != 15)
+                return "Número do Cartão SUS inválido. Deve conter 15 dígitos.";
+            patient.SusNumber = susDigits;
+        }
+
+        if (NormalizeUtc(patient.BirthDate) > DateTime.UtcNow.AddDays(1))
+            return "A data de nascimento não pode ser no futuro.";
+
+        patient.FullName = patient.FullName.Trim();
+        patient.CPF = cpfDigits;
+        patient.SocialName = string.IsNullOrWhiteSpace(patient.SocialName) ? null : patient.SocialName.Trim();
+        patient.Email = string.IsNullOrWhiteSpace(patient.Email) ? null : patient.Email.Trim();
+        patient.Phone = string.IsNullOrWhiteSpace(patient.Phone) ? null : patient.Phone.Trim();
+        return null;
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] Patient patient)
     {
+        var validationError = ValidatePatient(patient);
+        if (validationError != null)
+            return BadRequest(new { message = validationError });
+
+        // Previne overposting de coleções de navegação enviadas no payload JSON
+        patient.Appointments?.Clear();
+        patient.Evolutions?.Clear();
+        patient.Anexos?.Clear();
+
         try
         {
             patient.BirthDate = NormalizeUtc(patient.BirthDate);
             patient.CreatedAt = patient.CreatedAt == default ? DateTime.UtcNow : NormalizeUtc(patient.CreatedAt);
+            patient.LastModifiedAt = DateTime.UtcNow;
 
             await _patientRepository.AddAsync(patient);
 
@@ -102,7 +143,7 @@ public class PatientsController : ControllerBase
                 return Conflict(new { message = "Já existe um paciente cadastrado com este CPF." });
             }
 
-            return BadRequest(new { message = rootMsg });
+            return BadRequest(new { message = "Não foi possível cadastrar o paciente. Verifique os dados informados." });
         }
     }
 
@@ -110,6 +151,11 @@ public class PatientsController : ControllerBase
     public async Task<IActionResult> Update(Guid id, [FromBody] Patient patient)
     {
         if (id != patient.Id) return BadRequest();
+
+        var validationError = ValidatePatient(patient);
+        if (validationError != null)
+            return BadRequest(new { message = validationError });
+
         var existing = await _patientRepository.GetByIdAsync(id);
         if (existing == null) return NotFound();
 
@@ -117,10 +163,10 @@ public class PatientsController : ControllerBase
 
         // Comparar campos e gerar log de alterações se houver mudanças
         var changes = new Dictionary<string, object>();
-        
+
         if (existing.FullName != patient.FullName)
             changes["FullName"] = new { old = existing.FullName, @new = patient.FullName };
-        
+
         if (existing.SocialName != patient.SocialName)
             changes["SocialName"] = new { old = existing.SocialName, @new = patient.SocialName };
 
@@ -129,28 +175,31 @@ public class PatientsController : ControllerBase
 
         if (existing.SusNumber != patient.SusNumber)
             changes["SusNumber"] = new { old = existing.SusNumber, @new = patient.SusNumber };
-        
+
         if (existing.Email != patient.Email)
             changes["Email"] = new { old = existing.Email, @new = patient.Email };
-        
+
         if (existing.Phone != patient.Phone)
             changes["Phone"] = new { old = existing.Phone, @new = patient.Phone };
-        
+
         if (existing.BirthDate != normalizedBirthDate)
             changes["BirthDate"] = new { old = existing.BirthDate, @new = normalizedBirthDate };
-        
+
         if (existing.Gender != patient.Gender)
             changes["Gender"] = new { old = existing.Gender, @new = patient.Gender };
-        
-        // Comparar endereço (objeto complexo)
-        var existingAddressJson = JsonSerializer.Serialize(existing.Address);
-        var newAddressJson = JsonSerializer.Serialize(patient.Address);
-        if (existingAddressJson != newAddressJson)
-            changes["Address"] = new { old = existing.Address, @new = patient.Address };
-        
+
+        // Só registra e aplica alteração de endereço quando o payload inclui Address
+        if (patient.Address != null)
+        {
+            var existingAddressJson = JsonSerializer.Serialize(existing.Address);
+            var newAddressJson = JsonSerializer.Serialize(patient.Address);
+            if (existingAddressJson != newAddressJson)
+                changes["Address"] = new { old = existing.Address, @new = patient.Address };
+        }
+
         if (existing.LgpdConsent != patient.LgpdConsent)
             changes["LgpdConsent"] = new { old = existing.LgpdConsent, @new = patient.LgpdConsent };
-        
+
         if (existing.IsActive != patient.IsActive)
             changes["IsActive"] = new { old = existing.IsActive, @new = patient.IsActive };
 
@@ -185,7 +234,7 @@ public class PatientsController : ControllerBase
                 return Conflict(new { message = "Já existe outro paciente cadastrado com este CPF." });
             }
             _logger.LogError(ex, "Erro ao atualizar paciente {PatientId}", id);
-            return BadRequest(new { message = root.Message });
+            return BadRequest(new { message = "Não foi possível atualizar os dados do paciente." });
         }
 
         // Se houver mudanças, criar log de alteração
@@ -194,8 +243,8 @@ public class PatientsController : ControllerBase
             try
             {
                 var userIdClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var userNameClaim = HttpContext.User.FindFirst(ClaimTypes.Name)?.Value 
-                    ?? HttpContext.User.Identity?.Name 
+                var userNameClaim = HttpContext.User.FindFirst(ClaimTypes.Name)?.Value
+                    ?? HttpContext.User.Identity?.Name
                     ?? "Usuário Desconhecido";
 
                 if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var userId))
@@ -232,6 +281,7 @@ public class PatientsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin,Coordinator")]
     public async Task<IActionResult> Delete(Guid id)
     {
         try
@@ -257,7 +307,7 @@ public class PatientsController : ControllerBase
             _logger.LogError(ex, "Erro ao excluir paciente {PatientId}", id);
             return StatusCode(500, new
             {
-                message = $"Erro ao excluir paciente: {ex.InnerException?.Message ?? ex.Message}"
+                message = "Erro interno ao excluir paciente."
             });
         }
     }
@@ -269,7 +319,7 @@ public class PatientsController : ControllerBase
     public async Task<IActionResult> GetHistory(Guid id)
     {
         var logs = await _patientChangeLogRepository.GetByPatientIdAsync(id);
-        
+
         // Retorna no formato esperado pelo Flutter:
         // id, patientId, userId, userName, timestamp, changesJson
         return Ok(logs.Select(l => new
@@ -282,7 +332,7 @@ public class PatientsController : ControllerBase
             changesJson = l.ChangesJson
         }));
     }
-    
+
     /// <summary>
     /// Endpoint para sincronização de pacientes entre dispositivos.
     /// Retorna todos os pacientes modificados após a data informada.
@@ -296,15 +346,18 @@ public class PatientsController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50)
     {
+        var safePage = Math.Max(1, page);
+        var safePageSize = Math.Clamp(pageSize, 1, 200);
         var sinceUtc = NormalizeUtc(since);
-        var patients = await _patientRepository.GetModifiedSinceAsync(sinceUtc, page, pageSize);
-        
+        var patients = await _patientRepository.GetModifiedSinceAsync(sinceUtc, safePage, safePageSize);
+        var total = await _patientRepository.CountModifiedSinceAsync(sinceUtc);
+
         return Ok(new
         {
             Items = patients,
-            Total = patients.Count(),
-            Page = page,
-            PageSize = pageSize,
+            Total = total,
+            Page = safePage,
+            PageSize = safePageSize,
             SyncedAt = DateTime.UtcNow
         });
     }

@@ -64,10 +64,10 @@ class ProceduresRepository implements IProceduresRepository {
               ),
             );
       }
-      return clinics;
+      return onlyActive ? clinics.where((c) => c.isActive).toList() : clinics;
     } catch (e) {
       final localClinics = await _localDb.select(_localDb.clinicsLocal).get();
-      return Clinic.sortBySequence(
+      final mapped = Clinic.sortBySequence(
         localClinics.map(
           (row) => Clinic(
             id: row.id,
@@ -82,6 +82,7 @@ class ProceduresRepository implements IProceduresRepository {
           ),
         ),
       );
+      return onlyActive ? mapped.where((c) => c.isActive).toList() : mapped;
     }
   }
 

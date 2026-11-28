@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using System.Security.Claims;
 using DentalClinic.Core.Domain.Entities;
 using DentalClinic.Infrastructure.Persistence;
@@ -11,12 +12,12 @@ namespace DentalClinic.Api.Filters;
 /// </summary>
 public class AuditFilter : IAsyncActionFilter
 {
-    private readonly ApplicationDbContext _context;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<AuditFilter> _logger;
 
-    public AuditFilter(ApplicationDbContext context, ILogger<AuditFilter> logger)
+    public AuditFilter(IServiceScopeFactory scopeFactory, ILogger<AuditFilter> logger)
     {
-        _context = context;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
@@ -38,22 +39,36 @@ public class AuditFilter : IAsyncActionFilter
         {
             try
             {
-                var auditLog = new DentalClinic.Core.Domain.Entities.LogAuditoria
+                var statusCode = resultContext.Exception != null && !resultContext.ExceptionHandled
+                    ? 500
+                    : (resultContext.Result as IStatusCodeActionResult)?.StatusCode
+                      ?? context.HttpContext.Response.StatusCode;
+
+                var rawAcao = $"{method} {path}";
+                var acao = rawAcao.Length > 100 ? rawAcao[..100] : rawAcao;
+
+                var rawRecurso = path.Split('/').Skip(2).FirstOrDefault() ?? "API";
+                var recurso = rawRecurso.Length > 100 ? rawRecurso[..100] : rawRecurso;
+
+                var auditLog = new LogAuditoria
                 {
                     UsuarioId = userId,
-                    Acao = $"{method} {path}",
-                    Recurso = path.Split('/').Skip(2).FirstOrDefault() ?? "API",
+                    Acao = acao,
+                    Recurso = recurso,
                     IpAddress = context.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
                     DataHora = DateTime.UtcNow,
                     Detalhes = JsonSerializer.Serialize(new
                     {
-                        StatusCode = context.HttpContext.Response.StatusCode,
+                        StatusCode = statusCode,
+                        Path = path,
                         Query = context.HttpContext.Request.QueryString.ToString()
                     })
                 };
 
-                _context.LogsAuditoria.Add(auditLog);
-                await _context.SaveChangesAsync();
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                db.LogsAuditoria.Add(auditLog);
+                await db.SaveChangesAsync();
             }
             catch (Exception ex)
             {

@@ -34,6 +34,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final remember = await storage.getRememberMe();
       final savedEmail = await storage.getSavedEmail();
       final savedPassword = await storage.getSavedPassword();
+      final savedToken = await storage.getAccessToken();
       if (!mounted) return;
       setState(() {
         _rememberMe = remember;
@@ -46,6 +47,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           }
         }
       });
+      if (remember && savedToken != null && savedToken.isNotEmpty) {
+        await ref.read(authViewModelProvider.notifier).checkAuth();
+      }
     } catch (e) {
       debugPrint('Erro ao carregar credenciais salvas: $e');
     }
@@ -438,7 +442,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           );
                         }
                       } catch (e) {
-                        setDialogState(() => sending = false);
+                        if (dialogCtx.mounted) {
+                          setDialogState(() => sending = false);
+                        }
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(

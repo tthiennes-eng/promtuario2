@@ -3,6 +3,7 @@ using DentalClinic.Core.Domain.Repositories;
 using DentalClinic.Core.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace DentalClinic.Infrastructure.Persistence.Repositories;
 
@@ -13,11 +14,16 @@ public class ReportRepository : IReportRepository
 {
     private readonly ApplicationDbContext _context;
     private readonly IMemoryCache? _cache;
+    private readonly ILogger<ReportRepository>? _logger;
 
-    public ReportRepository(ApplicationDbContext context, IMemoryCache? cache = null)
+    public ReportRepository(
+        ApplicationDbContext context,
+        IMemoryCache? cache = null,
+        ILogger<ReportRepository>? logger = null)
     {
         _context = context;
         _cache = cache;
+        _logger = logger;
     }
 
     public async Task<DashboardStats> GetDashboardStatsAsync()
@@ -122,9 +128,25 @@ public class ReportRepository : IReportRepository
             .OrderByDescending(s => s.AppointmentCount)
             .ToList();
 
-        var completedItems = await _context.Set<TreatmentItem>()
-            .AsNoTracking()
-            .CountAsync(i => i.Status == TreatmentItemStatus.Completed && i.UpdatedAt >= startUtc && i.UpdatedAt <= endUtc);
+        int completedItems;
+        if (clinicId.HasValue && clinicId.Value != Guid.Empty)
+        {
+            var clinicPatientIds = appointments.Select(a => a.PatientId).Distinct().ToList();
+            completedItems = clinicPatientIds.Count == 0
+                ? 0
+                : await _context.Set<TreatmentItem>()
+                    .AsNoTracking()
+                    .CountAsync(i =>
+                        i.Status == TreatmentItemStatus.Completed &&
+                        i.UpdatedAt >= startUtc && i.UpdatedAt <= endUtc &&
+                        _context.TreatmentPlans.Any(p => p.Id == i.TreatmentPlanId && clinicPatientIds.Contains(p.PatientId)));
+        }
+        else
+        {
+            completedItems = await _context.Set<TreatmentItem>()
+                .AsNoTracking()
+                .CountAsync(i => i.Status == TreatmentItemStatus.Completed && i.UpdatedAt >= startUtc && i.UpdatedAt <= endUtc);
+        }
 
         return new ClinicMetricsReport(
             completedItems > 0 ? completedItems : completed,
@@ -170,14 +192,6 @@ public class ReportRepository : IReportRepository
             return q.ToListAsync();
         });
 
-        var filteredPlans = await SafeLoadAsync(() =>
-        {
-            var q = _context.TreatmentPlans.AsNoTracking().Include(p => p.Items).AsQueryable();
-            if (startUtc.HasValue) q = q.Where(p => p.CreatedAt >= startUtc.Value);
-            if (endUtc.HasValue) q = q.Where(p => p.CreatedAt <= endUtc.Value);
-            return q.ToListAsync();
-        });
-
         var filteredPrescriptions = await SafeLoadAsync(() =>
         {
             var q = _context.Prescriptions.AsNoTracking().AsQueryable();
@@ -220,6 +234,15 @@ public class ReportRepository : IReportRepository
 
         var scopedPatientIds = patients.Select(p => p.Id).ToHashSet();
         var scopedPatients = patients;
+
+        var filteredPlans = await SafeLoadAsync(() =>
+        {
+            var q = _context.TreatmentPlans.AsNoTracking().Include(p => p.Items).AsQueryable();
+            if (startUtc.HasValue) q = q.Where(p => p.CreatedAt >= startUtc.Value);
+            if (endUtc.HasValue) q = q.Where(p => p.CreatedAt <= endUtc.Value);
+            if (clinicId.HasValue) q = q.Where(p => scopedPatientIds.Contains(p.PatientId));
+            return q.ToListAsync();
+        });
 
         var odontograms = await SafeLoadAsync(() =>
             _context.Odontograms.AsNoTracking()
@@ -863,16 +886,21 @@ public class ReportRepository : IReportRepository
     }
 
     private static DateTime NormalizeUtc(DateTime dt) =>
-        dt.Kind == DateTimeKind.Utc ? dt : DateTime.SpecifyKind(dt, DateTimeKind.Utc);
+        dt.Kind == DateTimeKind.Utc
+            ? dt
+            : dt.Kind == DateTimeKind.Local
+                ? dt.ToUniversalTime()
+                : DateTime.SpecifyKind(dt, DateTimeKind.Utc);
 
-    private static async Task<List<T>> SafeLoadAsync<T>(Func<Task<List<T>>> loader)
+    private async Task<List<T>> SafeLoadAsync<T>(Func<Task<List<T>>> loader)
     {
         try
         {
             return await loader();
         }
-        catch
+        catch (Exception ex)
         {
+            _logger?.LogWarning(ex, "Falha ao carregar dados de {EntityType} para relatório.", typeof(T).Name);
             return new List<T>();
         }
     }

@@ -115,7 +115,16 @@ class ReportsScreen extends ConsumerWidget {
     );
   }
 
+  double _asPercent(double value) {
+    final pct = (value > 0 && value <= 1.0) ? value * 100.0 : value;
+    return pct.clamp(0.0, 100.0);
+  }
+
   Widget _buildSummaryGrid(ClinicPerformanceMetrics metrics) {
+    final occupancyPct = _asPercent(metrics.occupancyRate);
+    final absencePct = _asPercent(metrics.absenceRate);
+    final attendancePct = (100.0 - absencePct).clamp(0.0, 100.0);
+
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -125,8 +134,8 @@ class ReportsScreen extends ConsumerWidget {
       childAspectRatio: 1.5,
       children: [
         _reportStat('Total Atendimentos', '${metrics.totalProceduresThisMonth}', Icons.check_circle, Colors.blue),
-        _reportStat('Taxa de Ocupação', '${(metrics.occupancyRate * 100).toStringAsFixed(1)}%', Icons.pie_chart, Colors.orange),
-        _reportStat('Índice de Assiduidade', '${((1 - metrics.absenceRate) * 100).toStringAsFixed(1)}%', Icons.person, Colors.green),
+        _reportStat('Taxa de Ocupação', '${occupancyPct.toStringAsFixed(1)}%', Icons.pie_chart, Colors.orange),
+        _reportStat('Índice de Assiduidade', '${attendancePct.toStringAsFixed(1)}%', Icons.person, Colors.green),
       ],
     );
   }
@@ -162,7 +171,7 @@ class ReportsScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(color: Colors.grey.shade200),
       ),
-      child: Container(
+      child: SizedBox(
         width: double.infinity,
         child: DataTable(
           columns: const [
@@ -181,7 +190,8 @@ class ReportsScreen extends ConsumerWidget {
   }
 
   Widget _buildEfficiencyIndicator(double rate) {
-    Color color = rate > 0.8 ? Colors.green : (rate > 0.5 ? Colors.orange : Colors.red);
+    final pct = _asPercent(rate);
+    final Color color = pct >= 80 ? Colors.green : (pct >= 50 ? Colors.orange : Colors.red);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -191,17 +201,24 @@ class ReportsScreen extends ConsumerWidget {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 8),
-        Text('${(rate * 100).toStringAsFixed(0)}%'),
+        Text('${pct.toStringAsFixed(0)}%'),
       ],
     );
   }
 
   Future<void> _selectDateRange(BuildContext context, ReportsState state, ReportsViewModel notifier) async {
+    final now = DateTime.now();
+    final maxDate = DateTime(now.year + 1, 12, 31);
+    final safeStart = state.startDate.isBefore(DateTime(2020)) ? DateTime(2020) : state.startDate;
+    final safeEnd = state.endDate.isAfter(maxDate)
+        ? maxDate
+        : (state.endDate.isBefore(safeStart) ? safeStart : state.endDate);
+
     final DateTimeRange? picked = await showDateRangePicker(
       context: context,
-      initialDateRange: DateTimeRange(start: state.startDate, end: state.endDate),
+      initialDateRange: DateTimeRange(start: safeStart, end: safeEnd),
       firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      lastDate: maxDate,
     );
     if (picked != null) {
       notifier.setPeriod(picked.start, picked.end);

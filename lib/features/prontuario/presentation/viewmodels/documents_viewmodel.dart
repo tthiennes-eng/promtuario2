@@ -24,23 +24,13 @@ class DocumentsViewModel extends StateNotifier<AsyncValue<List<dynamic>>> {
   Future<void> refresh() async => _fetchDocuments();
 
   Future<void> emitPrescription(Prescription prescription) async {
-    state = const AsyncValue.loading();
-    final result = await AsyncValue.guard(() async {
-      await ref.read(prontuarioRepositoryProvider).createPrescription(prescription);
-      return _fetchDocumentsInternal();
-    });
-    state = result;
-    if (result is AsyncError) throw result.error!;
+    await ref.read(prontuarioRepositoryProvider).createPrescription(prescription);
+    state = await AsyncValue.guard(_fetchDocumentsInternal);
   }
 
   Future<void> emitCertificate(MedicalCertificate certificate) async {
-    state = const AsyncValue.loading();
-    final result = await AsyncValue.guard(() async {
-      await ref.read(prontuarioRepositoryProvider).createCertificate(certificate);
-      return _fetchDocumentsInternal();
-    });
-    state = result;
-    if (result is AsyncError) throw result.error!;
+    await ref.read(prontuarioRepositoryProvider).createCertificate(certificate);
+    state = await AsyncValue.guard(_fetchDocumentsInternal);
   }
 
   Future<List<dynamic>> _fetchDocumentsInternal() async {
