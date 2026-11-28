@@ -39,8 +39,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       debugPrint('Erro na inicialização: $e\n$stackTrace');
       // Em caso de erro crítico, marca como inicializado para o router lidar
       if (mounted) {
-        ref.read(authViewModelProvider.notifier).state = 
-          ref.read(authViewModelProvider).copyWith(isInitialized: true);
+        ref.read(authViewModelProvider.notifier).markInitialized();
       }
     }
   }

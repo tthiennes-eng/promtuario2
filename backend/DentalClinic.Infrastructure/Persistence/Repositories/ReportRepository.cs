@@ -81,6 +81,59 @@ public class ReportRepository : IReportRepository
         return report;
     }
 
+    public async Task<ClinicMetricsReport> GetClinicMetricsAsync(DateTime start, DateTime end, Guid? clinicId)
+    {
+        var startUtc = NormalizeUtc(start);
+        var endUtc = NormalizeUtc(end);
+        if (endUtc <= startUtc)
+            endUtc = startUtc.AddMonths(1);
+
+        var apptsQuery = _context.Appointments
+            .AsNoTracking()
+            .Where(a => a.StartTime >= startUtc && a.StartTime <= endUtc);
+
+        if (clinicId.HasValue && clinicId.Value != Guid.Empty)
+            apptsQuery = apptsQuery.Where(a => a.ClinicId == clinicId.Value);
+
+        var appointments = await apptsQuery.ToListAsync();
+        var clinics = await _context.Clinics.AsNoTracking().ToListAsync();
+        var clinicMap = clinics.ToDictionary(c => c.Id, c => c.Name);
+
+        var totalAppointments = appointments.Count;
+        var completed = appointments.Count(a => a.Status == AppointmentStatus.Completed);
+        var absent = appointments.Count(a => a.Status == AppointmentStatus.NoShow || a.Status == AppointmentStatus.Missed);
+
+        var occupancyRate = totalAppointments > 0 ? Math.Round(completed * 100.0 / totalAppointments, 1) : 0.0;
+        var absenceRate = totalAppointments > 0 ? Math.Round(absent * 100.0 / totalAppointments, 1) : 0.0;
+
+        var byClinic = appointments
+            .GroupBy(a => a.ClinicId)
+            .Select(g =>
+            {
+                var groupTotal = g.Count();
+                var groupCompleted = g.Count(a => a.Status == AppointmentStatus.Completed);
+                var name = clinicMap.TryGetValue(g.Key, out var n) ? n : "Clínica Geral";
+                return new SpecialtyProductionDto(
+                    name,
+                    groupTotal,
+                    groupTotal > 0 ? Math.Round(groupCompleted * 100.0 / groupTotal, 1) : 0.0
+                );
+            })
+            .OrderByDescending(s => s.AppointmentCount)
+            .ToList();
+
+        var completedItems = await _context.Set<TreatmentItem>()
+            .AsNoTracking()
+            .CountAsync(i => i.Status == TreatmentItemStatus.Completed && i.UpdatedAt >= startUtc && i.UpdatedAt <= endUtc);
+
+        return new ClinicMetricsReport(
+            completedItems > 0 ? completedItems : completed,
+            occupancyRate,
+            absenceRate,
+            byClinic
+        );
+    }
+
     public async Task<Dictionary<string, object>> GetStatisticalStudiesAsync(DateTime? start, DateTime? end, Guid? clinicId)
     {
         DateTime? startUtc = start.HasValue ? NormalizeUtc(start.Value) : null;

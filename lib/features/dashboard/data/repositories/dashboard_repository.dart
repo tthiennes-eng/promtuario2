@@ -40,7 +40,7 @@ class DashboardRepository implements IDashboardRepository {
       try {
         final summary = await _readSummary();
         if (!controller.isClosed) controller.add(summary);
-      } catch (error, stackTrace) {
+      } catch (error) {
         _logger.severe('Erro no dashboard: $error');
       }
     }

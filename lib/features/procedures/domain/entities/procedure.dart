@@ -1,5 +1,3 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
-
 // Comentado para destravar o compilador FFI durante o impasse de geração
 // part 'procedure.freezed.dart';
 // part 'procedure.g.dart';

@@ -138,6 +138,11 @@ class AuthViewModel extends StateNotifier<AuthState> {
     return 'Solicitação registrada com sucesso.';
   }
 
+  /// Marca a inicialização como concluída em caso de falha na restauração da sessão.
+  void markInitialized() {
+    state = state.copyWith(isInitialized: true);
+  }
+
   /// Encerra o estado autenticado quando o refresh token expira.
   void handleSessionExpired() {
     if (state.user != null) {

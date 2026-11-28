@@ -13,12 +13,13 @@ class WaitListRepository implements IWaitListRepository {
   @override
   Future<List<WaitListEntry>> getWaitListByClinic(String clinicId) async {
     try {
-      final response = await _apiClient.instance.get('/wait-list', queryParameters: {
-        'clinicId': clinicId,
-      });
+      final response = await _apiClient.instance.get('WaitList/clinic/$clinicId');
 
-      final List<dynamic> data = response.data;
-      final entries = data.map((json) => WaitListEntry.fromJson(json)).toList();
+      final List<dynamic> data = response.data is List ? response.data as List : const [];
+      final entries = data
+          .whereType<Map>()
+          .map((json) => WaitListEntry.fromJson(Map<String, dynamic>.from(json)))
+          .toList();
       _updateLocalCache(entries);
       return entries;
     } catch (e) {
@@ -41,7 +42,7 @@ class WaitListRepository implements IWaitListRepository {
   @override
   Future<void> addToWaitList(WaitListEntry entry) async {
     try {
-      await _apiClient.instance.post('/wait-list', data: entry.toJson());
+      await _apiClient.instance.post('WaitList', data: entry.toJson());
       await _saveLocal(entry, true);
     } catch (e) {
       await _saveLocal(entry, false);
@@ -51,9 +52,9 @@ class WaitListRepository implements IWaitListRepository {
   @override
   Future<void> resolveEntry(String entryId) async {
     try {
-      await _apiClient.instance.patch('/wait-list/$entryId/resolve');
+      await _apiClient.instance.patch('WaitList/$entryId/resolve');
       await (_localDb.delete(_localDb.waitListLocal)..where((t) => t.id.equals(entryId))).go();
-    } catch (e) {}
+    } catch (_) {}
   }
 
   @override
@@ -73,10 +74,10 @@ class WaitListRepository implements IWaitListRepository {
           specialty: row.specialty,
           createdAt: row.createdAt,
         );
-        await _apiClient.instance.post('/wait-list', data: entry.toJson());
+        await _apiClient.instance.post('WaitList', data: entry.toJson());
         
         await (_localDb.update(_localDb.waitListLocal)..where((t) => t.id.equals(row.id))).write(
-          WaitListLocalCompanion(isSynced: Value(true)), // Removido const
+          const WaitListLocalCompanion(isSynced: Value(true)),
         );
       } catch (_) {}
     }

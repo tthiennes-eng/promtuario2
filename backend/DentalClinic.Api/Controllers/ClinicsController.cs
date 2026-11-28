@@ -49,17 +49,41 @@ public class ClinicsController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(request.Name)) return BadRequest("Nome da clínica é obrigatório.");
 
+        if (Guid.TryParse(request.Id, out var existingId) && existingId != Guid.Empty)
+        {
+            var existing = await _repository.GetByIdAsync(existingId);
+            if (existing != null)
+            {
+                existing.UpdateBasic(
+                    request.Name,
+                    request.Description,
+                    request.Capacity > 0 ? request.Capacity : 1,
+                    request.StartHour > 0 ? request.StartHour : 8,
+                    request.EndHour > request.StartHour ? request.EndHour : 18,
+                    request.IsActive,
+                    request.Location);
+                await _repository.UpdateAsync(existing);
+                return Ok(new ClinicResponse(existing.Id, existing.Name, existing.Description, request.Location,
+                    existing.MaxCapacity, existing.IsActive, request.StartHour, request.EndHour, request.SlotDurationMinutes));
+            }
+        }
+
+        var startHour = request.StartHour > 0 ? request.StartHour : 8;
+        var endHour = request.EndHour > startHour ? request.EndHour : 18;
         var clinic = Clinic.CreateBasic(
             request.Name,
             request.Description ?? string.Empty,
             request.Capacity > 0 ? request.Capacity : 1,
-            request.StartHour,
-            request.EndHour);
+            startHour,
+            endHour,
+            request.Location);
 
-        if (request.Id != Guid.Empty) clinic.Id = request.Id;
+        if (Guid.TryParse(request.Id, out var parsedId) && parsedId != Guid.Empty)
+            clinic.Id = parsedId;
+
         await _repository.AddAsync(clinic);
         return StatusCode(201, new ClinicResponse(clinic.Id, clinic.Name, clinic.Description, request.Location,
-            clinic.MaxCapacity, clinic.IsActive, request.StartHour, request.EndHour, request.SlotDurationMinutes));
+            clinic.MaxCapacity, clinic.IsActive, startHour, endHour, request.SlotDurationMinutes > 0 ? request.SlotDurationMinutes : 60));
     }
 
     /// <summary>
@@ -67,9 +91,24 @@ public class ClinicsController : ControllerBase
     /// </summary>
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin,Coordinator")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] Clinic clinic)
+    public async Task<IActionResult> Update(Guid id, [FromBody] CreateClinicRequest request)
     {
-        if (id != clinic.Id) return BadRequest();
+        if (string.IsNullOrWhiteSpace(request.Name)) return BadRequest("Nome da clínica é obrigatório.");
+
+        var clinic = await _repository.GetByIdAsync(id);
+        if (clinic == null) return NotFound();
+
+        var startHour = request.StartHour > 0 ? request.StartHour : 8;
+        var endHour = request.EndHour > startHour ? request.EndHour : 18;
+        clinic.UpdateBasic(
+            request.Name,
+            request.Description,
+            request.Capacity > 0 ? request.Capacity : 1,
+            startHour,
+            endHour,
+            request.IsActive,
+            request.Location);
+
         await _repository.UpdateAsync(clinic);
         return NoContent();
     }
@@ -82,15 +121,15 @@ public class ClinicsController : ControllerBase
 }
 
 public record CreateClinicRequest(
-    Guid Id,
+    string? Id,
     string Name,
     string? Description,
     string? Location,
-    int Capacity,
-    bool IsActive,
-    int StartHour,
-    int EndHour,
-    int SlotDurationMinutes);
+    int Capacity = 1,
+    bool IsActive = true,
+    int StartHour = 8,
+    int EndHour = 18,
+    int SlotDurationMinutes = 60);
 
 public record ClinicResponse(
     Guid Id,

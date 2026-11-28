@@ -1,7 +1,11 @@
+using System.Security.Claims;
 using System.Text.Json;
 using DentalClinic.Api.Controllers;
+using DentalClinic.Core.Application.DTOs;
+using DentalClinic.Core.Application.Interfaces;
 using DentalClinic.Core.Domain.Entities;
 using DentalClinic.Core.Domain.Repositories;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -173,6 +177,63 @@ await RunTest("AuthController.ForgotPassword validates email and never leaks acc
     Assert(ok is OkObjectResult, "Valid email should return 200 without leaking existence");
 });
 
+await RunTest("UsersController supports PT roles, minimal payload, IsActive in GET, and PATCH role", async () =>
+{
+    var repo = new InMemoryUserRepo();
+    var controller = new UsersController(repo, new StubHasher(), NullLogger<UsersController>.Instance);
+
+    var created = await controller.Create(new CreateUserRequest("Aluno Teste", "aluno@ufma.br", "senha123", "aluno"));
+    Assert(created is CreatedAtActionResult, $"Expected 201 Created, got {created.GetType().Name}");
+
+    var listRes = await controller.Get(role: "aluno") as OkObjectResult;
+    var dtos = (listRes?.Value as IEnumerable<UserDto>)?.ToList() ?? new List<UserDto>();
+    Assert(dtos.Count == 1 && dtos[0].Role == "Student" && dtos[0].IsActive, "Should return created Student with IsActive=true");
+
+    var toggleRes = await controller.ToggleStatus(dtos[0].Id, new ToggleStatusRequest(false));
+    Assert(toggleRes is NoContentResult, "ToggleStatus should return 204");
+
+    var roleRes = await controller.UpdateRole(dtos[0].Id, new UpdateRoleRequest("coordenador"));
+    Assert(roleRes is NoContentResult, "UpdateRole should accept Portuguese role 'coordenador'");
+
+    var afterRes = await controller.Get(role: "coordenador") as OkObjectResult;
+    var afterDtos = (afterRes?.Value as IEnumerable<UserDto>)?.ToList() ?? new List<UserDto>();
+    Assert(afterDtos.Count == 1 && !afterDtos[0].IsActive && afterDtos[0].Role == "Coordinator", "Updated role and IsActive=false should be reflected");
+});
+
+await RunTest("NotificationsController enforces ownership on MarkAsRead and Delete", async () =>
+{
+    var ownerId = Guid.NewGuid();
+    var otherId = Guid.NewGuid();
+    var notif = Notification.Create(ownerId, "Aviso", "Teste", NotificationType.SystemAlert);
+    var repo = new InMemoryNotificationRepo(notif);
+
+    var controller = new NotificationsController(repo, NullLogger<NotificationsController>.Instance)
+    {
+        ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, otherId.ToString()) }))
+            }
+        }
+    };
+
+    var forbidRead = await controller.MarkAsRead(notif.Id);
+    Assert(forbidRead is ForbidResult, $"Expected ForbidResult for other user MarkAsRead, got {forbidRead.GetType().Name}");
+
+    var forbidDel = await controller.Delete(notif.Id);
+    Assert(forbidDel is ForbidResult, $"Expected ForbidResult for other user Delete, got {forbidDel.GetType().Name}");
+
+    controller.ControllerContext.HttpContext.User = new ClaimsPrincipal(
+        new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, ownerId.ToString()) }));
+
+    var okRead = await controller.MarkAsRead(notif.Id);
+    Assert(okRead is NoContentResult && notif.IsRead, "Owner should be able to mark notification as read");
+
+    var okDel = await controller.Delete(notif.Id);
+    Assert(okDel is NoContentResult && await repo.GetByIdAsync(notif.Id) == null, "Owner should be able to delete notification");
+});
+
 Console.WriteLine($"\nBackend test summary: {passed} passed, {failed} failed.");
 return failed == 0 ? 0 : 1;
 
@@ -208,4 +269,40 @@ sealed class EmptyUserRepo : IUserRepository
     public Task AddAsync(User user) => Task.CompletedTask;
     public Task UpdateAsync(User user) => Task.CompletedTask;
     public Task DeleteAsync(Guid id) => Task.CompletedTask;
+}
+
+sealed class InMemoryUserRepo : IUserRepository
+{
+    private readonly List<User> _users = new();
+    public Task<User?> GetByIdAsync(Guid id) => Task.FromResult(_users.FirstOrDefault(u => u.Id == id));
+    public Task<User?> GetByEmailAsync(string email) => Task.FromResult(_users.FirstOrDefault(u => u.EmailAddress.Value == email));
+    public Task<User?> GetByCpfAsync(string cpf) => Task.FromResult<User?>(null);
+    public Task<IEnumerable<User>> GetAllAsync(UserRole? role = null, string? query = null) =>
+        Task.FromResult<IEnumerable<User>>(_users.Where(u => !role.HasValue || u.Roles.Contains(role.Value)).ToList());
+    public Task AddAsync(User user) { _users.Add(user); return Task.CompletedTask; }
+    public Task UpdateAsync(User user) => Task.CompletedTask;
+    public Task DeleteAsync(Guid id) { _users.RemoveAll(u => u.Id == id); return Task.CompletedTask; }
+}
+
+sealed class StubHasher : IPasswordHasher
+{
+    public string HashPassword(string password) => $"hashed:{password}";
+    public bool VerifyPassword(string password, string hash) => hash == $"hashed:{password}";
+}
+
+sealed class InMemoryNotificationRepo : INotificationRepository
+{
+    private readonly List<Notification> _items;
+    public InMemoryNotificationRepo(params Notification[] items) => _items = items.ToList();
+    public Task<IEnumerable<Notification>> GetByUserIdAsync(Guid userId) =>
+        Task.FromResult<IEnumerable<Notification>>(_items.Where(n => n.UserId == userId).ToList());
+    public Task<Notification?> GetByIdAsync(Guid id) => Task.FromResult(_items.FirstOrDefault(n => n.Id == id));
+    public Task AddAsync(Notification notification) { _items.Add(notification); return Task.CompletedTask; }
+    public Task UpdateAsync(Notification notification) => Task.CompletedTask;
+    public Task DeleteAsync(Notification notification) { _items.Remove(notification); return Task.CompletedTask; }
+    public Task MarkAllAsReadAsync(Guid userId)
+    {
+        foreach (var n in _items.Where(x => x.UserId == userId)) n.MarkAsRead();
+        return Task.CompletedTask;
+    }
 }

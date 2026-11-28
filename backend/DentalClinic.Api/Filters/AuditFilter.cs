@@ -31,8 +31,10 @@ public class AuditFilter : IAsyncActionFilter
         var path = context.HttpContext.Request.Path.ToString();
         var method = context.HttpContext.Request.Method;
 
-        // Registra apenas ações de escrita ou acessos a dados sensíveis
-        if (method != "GET" || path.Contains("prontuario") || path.Contains("odontogram"))
+        // Registra apenas ações de escrita ou acessos a dados sensíveis (case-insensitive)
+        if (method != "GET"
+            || path.Contains("prontuario", StringComparison.OrdinalIgnoreCase)
+            || path.Contains("odontogram", StringComparison.OrdinalIgnoreCase))
         {
             try
             {

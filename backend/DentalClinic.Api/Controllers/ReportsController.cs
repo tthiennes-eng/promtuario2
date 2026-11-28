@@ -44,10 +44,33 @@ public class ReportsController : ControllerBase
     /// </summary>
     [HttpGet("production")]
     [Authorize(Roles = "Admin,Coordinator")]
-    public async Task<IActionResult> GetProductionReport([FromQuery] DateTime start, [FromQuery] DateTime end)
+    public async Task<IActionResult> GetProductionReport(
+        [FromQuery] DateTime? start,
+        [FromQuery] DateTime? end,
+        [FromQuery] DateTime? startDate,
+        [FromQuery] DateTime? endDate)
     {
-        var report = await _reportRepository.GetProductionByProfessionalAsync(start, end);
+        var effectiveStart = start ?? startDate ?? DateTime.UtcNow.AddMonths(-1);
+        var effectiveEnd = end ?? endDate ?? DateTime.UtcNow;
+        var report = await _reportRepository.GetProductionByProfessionalAsync(effectiveStart, effectiveEnd);
         return Ok(report);
+    }
+
+    /// <summary>
+    /// Obtém métricas gerenciais de ocupação, absenteísmo e produção por clínica/especialidade.
+    /// </summary>
+    [HttpGet("metrics")]
+    public async Task<IActionResult> GetClinicMetrics(
+        [FromQuery] DateTime? startDate,
+        [FromQuery] DateTime? endDate,
+        [FromQuery] DateTime? start,
+        [FromQuery] DateTime? end,
+        [FromQuery] Guid? clinicId)
+    {
+        var effectiveStart = startDate ?? start ?? new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var effectiveEnd = endDate ?? end ?? DateTime.UtcNow;
+        var metrics = await _reportRepository.GetClinicMetricsAsync(effectiveStart, effectiveEnd, clinicId);
+        return Ok(metrics);
     }
 
     /// <summary>

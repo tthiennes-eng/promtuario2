@@ -110,7 +110,7 @@ class _AuditLogTile extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    log.detalhes ?? 'Sem detalhes adicionais.',
+                    log.detalhes.isNotEmpty ? log.detalhes : 'Sem detalhes adicionais.',
                     style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
                   ),
                 ),

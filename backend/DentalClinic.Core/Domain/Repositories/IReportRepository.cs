@@ -7,6 +7,7 @@ public interface IReportRepository
 {
     Task<DashboardStats> GetDashboardStatsAsync();
     Task<IEnumerable<ProductionReport>> GetProductionByProfessionalAsync(DateTime start, DateTime end);
+    Task<ClinicMetricsReport> GetClinicMetricsAsync(DateTime start, DateTime end, Guid? clinicId);
     Task<Dictionary<string, object>> GetStatisticalStudiesAsync(DateTime? start, DateTime? end, Guid? clinicId);
 }
 
@@ -20,3 +21,10 @@ public record DashboardStats(
 
 public record MonthlyGrowth(string Month, int Count);
 public record ProductionReport(string ProfessionalName, string Role, int TotalProcedures, decimal TotalValue);
+public record SpecialtyProductionDto(string Specialty, int AppointmentCount, double EfficiencyRate);
+public record ClinicMetricsReport(
+    int TotalProceduresThisMonth,
+    double OccupancyRate,
+    double AbsenceRate,
+    List<SpecialtyProductionDto> SpecialtyProduction
+);

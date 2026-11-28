@@ -41,6 +41,16 @@ public class ProceduresController : ControllerBase
     }
 
     /// <summary>
+    /// Lista procedimentos disponíveis para uma clínica.
+    /// </summary>
+    [HttpGet("clinic/{clinicId}")]
+    public async Task<IActionResult> GetByClinic(Guid clinicId)
+    {
+        var procedures = await _repository.GetAllAsync();
+        return Ok(procedures);
+    }
+
+    /// <summary>
     /// Cadastra um novo procedimento no catálogo.
     /// </summary>
     [HttpPost]

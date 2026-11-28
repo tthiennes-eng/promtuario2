@@ -24,13 +24,14 @@ class ReportsState {
     DateTime? startDate,
     DateTime? endDate,
     Clinic? selectedClinic,
+    bool clearClinic = false,
     List<Clinic>? clinics,
   }) {
     return ReportsState(
       metrics: metrics ?? this.metrics,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
-      selectedClinic: selectedClinic ?? this.selectedClinic,
+      selectedClinic: clearClinic ? null : (selectedClinic ?? this.selectedClinic),
       clinics: clinics ?? this.clinics,
     );
   }
@@ -57,7 +58,7 @@ class ReportsViewModel extends StateNotifier<ReportsState> {
   }
 
   Future<void> selectClinic(Clinic? clinic) async {
-    state = state.copyWith(selectedClinic: clinic);
+    state = state.copyWith(selectedClinic: clinic, clearClinic: clinic == null);
     await refresh();
   }
 

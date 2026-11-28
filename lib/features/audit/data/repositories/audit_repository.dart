@@ -18,42 +18,56 @@ class AuditRepository implements IAuditRepository {
           resourceId: Value(resourceId),
           action: Value(action),
           timestamp: Value(DateTime.now()),
-          isSynced: Value(false),
+          isSynced: const Value(false),
         ),
       );
     } catch (_) {}
 
     try {
-      await _apiClient.instance.post('/audit/access', data: {
+      await _apiClient.instance.post('Logs/access', data: {
         'resourceId': resourceId,
         'action': action,
       });
     } catch (_) {}
   }
 
+  List<AuditLog> _parseLogsPayload(dynamic raw) {
+    final List<dynamic> list;
+    if (raw is List) {
+      list = raw;
+    } else if (raw is Map) {
+      final items = raw['items'] ?? raw['Items'];
+      list = items is List ? items : const [];
+    } else {
+      list = const [];
+    }
+    return list
+        .whereType<Map>()
+        .map((json) => AuditLog.fromJson(Map<String, dynamic>.from(json)))
+        .toList();
+  }
+
   @override
   Future<List<AuditLog>> getLogs({String? userId, String? action}) async {
-    final response = await _apiClient.instance.get('/audit', queryParameters: {
+    final response = await _apiClient.instance.get('Logs', queryParameters: {
       if (userId != null) 'userId': userId,
       if (action != null) 'action': action,
     });
-    final List<dynamic> data = response.data;
-    return data.map((json) => AuditLog.fromJson(json)).toList();
+    return _parseLogsPayload(response.data);
   }
 
   Future<List<AuditLog>> getAuditLogs({String? resourceId, String? userId}) async {
-    final response = await _apiClient.instance.get('/audit', queryParameters: {
+    final response = await _apiClient.instance.get('Logs', queryParameters: {
       if (resourceId != null) 'resourceId': resourceId,
       if (userId != null) 'userId': userId,
     });
-    final List<dynamic> data = response.data;
-    return data.map((json) => AuditLog.fromJson(json)).toList();
+    return _parseLogsPayload(response.data);
   }
 
   @override
   Future<bool> syncPendingAccess(String resourceId, String action) async {
     try {
-      final response = await _apiClient.instance.post('/audit/access', data: {
+      final response = await _apiClient.instance.post('Logs/access', data: {
         'resourceId': resourceId,
         'action': action,
       });

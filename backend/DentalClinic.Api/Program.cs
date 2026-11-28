@@ -48,6 +48,8 @@ builder.Services.AddScoped<IWaitListRepository, WaitListRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IAnexoRepository, AnexoRepository>();
 builder.Services.AddScoped<IPatientChangeLogRepository, PatientChangeLogRepository>();
+builder.Services.AddScoped<ILogAuditoriaRepository, LogAuditoriaRepository>();
+builder.Services.AddScoped<IProcedureRepository, ProcedureRepository>();
 
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<ITokenService, TokenService>();

@@ -45,7 +45,11 @@ class UserListScreen extends ConsumerWidget {
                         final user = users[index];
                         return ListTile(
                           leading: CircleAvatar(
-                            child: Text(user.name.substring(0, 1).toUpperCase()),
+                            child: Text(
+                              user.name.trim().isNotEmpty
+                                  ? user.name.trim().substring(0, 1).toUpperCase()
+                                  : '?',
+                            ),
                           ),
                           title: Text(user.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                           subtitle: Text('${user.email} • ${user.role.displayName}'),

@@ -22,7 +22,7 @@ class NotificationRepository implements INotificationRepository {
 
   @override
   Future<void> markAllAsRead() async {
-    await _apiClient.instance.post('/notifications/read-all');
+    await _apiClient.instance.post('/notifications/mark-all-read');
   }
 
   @override

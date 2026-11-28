@@ -73,10 +73,9 @@ public sealed class Clinic : Entity
     /// <param name="openingTime">Horário de abertura (HH:mm).</param>
     /// <param name="closingTime">Horário de fechamento (HH:mm).</param>
     /// <returns>Uma nova clínica.</returns>
-    public static Clinic CreateBasic(string name, string description, int maxCapacity, int startHour, int endHour)
+    public static Clinic CreateBasic(string name, string description, int maxCapacity, int startHour, int endHour, string? location = null)
     {
         ValidateName(name);
-        ValidateDescription(description);
         ValidateCapacity(maxCapacity);
         var opening = $"{startHour:00}:00";
         var closing = $"{endHour:00}:00";
@@ -84,18 +83,46 @@ public sealed class Clinic : Entity
         ValidateTime(closing);
         ValidateOpeningClosingTimes(opening, closing);
 
+        var safeDescription = string.IsNullOrWhiteSpace(description)
+            ? $"Clínica {name.Trim()}"
+            : description.Trim();
+        var city = string.IsNullOrWhiteSpace(location) ? "." : location.Trim();
+
         return new Clinic
         {
             Name = name.Trim(),
-            Description = description.Trim(),
+            Description = safeDescription,
             Specialty = Specialty.IntegratedClinic,
-            Address = Address.Create(".", ".", null, ".", ".", "SP", "00000-000"),
+            Address = Address.Create(".", ".", null, ".", city, "MA", "00000-000"),
             MaxCapacity = maxCapacity,
             CoordinatorUserId = Guid.Empty,
             OpeningTime = opening,
             ClosingTime = closing,
             IsActive = true
         };
+    }
+
+    public void UpdateBasic(string name, string? description, int maxCapacity, int startHour, int endHour, bool isActive, string? location = null)
+    {
+        ValidateName(name);
+        ValidateCapacity(maxCapacity);
+        var opening = $"{startHour:00}:00";
+        var closing = $"{endHour:00}:00";
+        ValidateTime(opening);
+        ValidateTime(closing);
+        ValidateOpeningClosingTimes(opening, closing);
+
+        Name = name.Trim();
+        Description = string.IsNullOrWhiteSpace(description) ? $"Clínica {Name}" : description.Trim();
+        MaxCapacity = maxCapacity;
+        OpeningTime = opening;
+        ClosingTime = closing;
+        IsActive = isActive;
+        if (!string.IsNullOrWhiteSpace(location))
+        {
+            Address = Address.Create(".", ".", null, ".", location.Trim(), "MA", "00000-000");
+        }
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public static Clinic Create(

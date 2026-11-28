@@ -87,7 +87,13 @@ class ProceduresRepository implements IProceduresRepository {
 
   @override
   Future<void> saveClinic(Clinic clinic) async {
-    await _apiClient.instance.post('/clinics', data: clinic.toJson());
+    final trimmedId = clinic.id.trim();
+    if (trimmedId.isNotEmpty) {
+      await _apiClient.instance.put('/clinics/$trimmedId', data: clinic.toJson());
+    } else {
+      final payload = Map<String, dynamic>.from(clinic.toJson())..remove('id');
+      await _apiClient.instance.post('/clinics', data: payload);
+    }
   }
 
   @override

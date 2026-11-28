@@ -76,6 +76,12 @@ public class User : Entity
 
     public void Activate() => IsActive = true;
     public void Deactivate() => IsActive = false;
+    public void UpdateRole(UserRole newRole)
+    {
+        Role = newRole;
+        Roles = new List<UserRole> { newRole };
+        UpdatedAt = DateTime.UtcNow;
+    }
     public void SetPasswordHash(string hash) => PasswordHash = hash;
     public void ConfirmEmail() => EmailConfirmed = true;
     public void IncrementFailedLogin() => FailedLoginAttempts++;

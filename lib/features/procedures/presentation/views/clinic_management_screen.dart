@@ -40,7 +40,7 @@ class ClinicManagementScreen extends ConsumerWidget {
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('${clinic.location ?? "Sem local"} • ${clinic.capacity} consultórios'),
+                    Text('${clinic.location.isNotEmpty ? clinic.location : "Sem local"} • ${clinic.capacity} consultórios'),
                     Text('Funcionamento: ${startHour}h às ${endHour}h • Slots: ${slotDuration}min', 
                       style: const TextStyle(fontSize: 11, color: Colors.blueGrey)),
                   ],
@@ -155,7 +155,7 @@ class ClinicManagementScreen extends ConsumerWidget {
                 id: clinic?.id ?? '',
                 name: nameController.text,
                 location: locationController.text,
-                description: descController.text ?? '',
+                description: descController.text,
                 capacity: int.tryParse(capacityController.text) ?? 1,
                 startHour: int.tryParse(startController.text) ?? 8,
                 endHour: int.tryParse(endController.text) ?? 18,

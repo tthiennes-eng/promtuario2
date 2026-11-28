@@ -37,13 +37,18 @@ public class NotificationsController : ControllerBase
     }
 
     /// <summary>
-    /// Marca uma notificação específica como lida.
+    /// Marca uma notificação específica como lida (somente do usuário autenticado).
     /// </summary>
     [HttpPatch("{id}/read")]
     public async Task<IActionResult> MarkAsRead(Guid id)
     {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized();
+
         var notification = await _repository.GetByIdAsync(id);
         if (notification == null) return NotFound();
+        if (notification.UserId != userId) return Forbid();
 
         notification.MarkAsRead();
         await _repository.UpdateAsync(notification);
@@ -51,15 +56,34 @@ public class NotificationsController : ControllerBase
     }
 
     /// <summary>
+    /// Remove uma notificação do usuário autenticado.
+    /// </summary>
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized();
+
+        var notification = await _repository.GetByIdAsync(id);
+        if (notification == null) return NotFound();
+        if (notification.UserId != userId) return Forbid();
+
+        await _repository.DeleteAsync(notification);
+        return NoContent();
+    }
+
+    /// <summary>
     /// Marca todas as notificações do usuário como lidas.
     /// </summary>
     [HttpPost("mark-all-read")]
+    [HttpPost("read-all")]
     public async Task<IActionResult> MarkAllRead()
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userId)) return Unauthorized();
+        if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var parsedId)) return Unauthorized();
 
-        await _repository.MarkAllAsReadAsync(Guid.Parse(userId));
+        await _repository.MarkAllAsReadAsync(parsedId);
         return NoContent();
     }
 }

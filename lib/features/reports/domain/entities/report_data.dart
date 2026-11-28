@@ -1,5 +1,3 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
-
 // part 'report_data.freezed.dart';
 // part 'report_data.g.dart';
 

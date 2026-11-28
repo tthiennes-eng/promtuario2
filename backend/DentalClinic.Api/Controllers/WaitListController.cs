@@ -31,11 +31,12 @@ public class WaitListController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateWaitListRequest request)
     {
+        var specialty = ParseSpecialty(request.Specialty);
         var entry = WaitListEntry.Create(
             request.PatientId,
             request.ClinicId,
-            request.Specialty,
-            request.Priority,
+            specialty,
+            string.IsNullOrWhiteSpace(request.Priority) ? "Normal" : request.Priority.Trim(),
             request.Observation);
 
         await _repository.AddAsync(entry);
@@ -52,11 +53,29 @@ public class WaitListController : ControllerBase
         await _repository.UpdateAsync(entry);
         return NoContent();
     }
+
+    private static Specialty ParseSpecialty(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return Specialty.IntegratedClinic;
+        if (Enum.TryParse<Specialty>(raw.Trim(), true, out var parsed)) return parsed;
+        return raw.Trim().ToLowerInvariant() switch
+        {
+            "endodontia" => Specialty.Endodontics,
+            "periodontia" => Specialty.Periodontics,
+            "protese" or "prótese" => Specialty.Prosthodontics,
+            "cirurgia" => Specialty.Surgery,
+            "ortodontia" => Specialty.Orthodontics,
+            "odontopediatria" => Specialty.PediatricDentistry,
+            "implantodontia" => Specialty.Implantology,
+            "dentistica" or "dentística" => Specialty.RestorativeDentistry,
+            _ => Specialty.IntegratedClinic
+        };
+    }
 }
 
 public record CreateWaitListRequest(
     Guid PatientId,
     Guid ClinicId,
-    Specialty Specialty,
-    string Priority,
+    string? Specialty,
+    string? Priority,
     string? Observation);

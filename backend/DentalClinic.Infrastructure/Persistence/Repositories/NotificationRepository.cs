@@ -42,6 +42,12 @@ public class NotificationRepository : INotificationRepository
         await _context.SaveChangesAsync();
     }
 
+    public async Task DeleteAsync(Notification notification)
+    {
+        _context.Set<Notification>().Remove(notification);
+        await _context.SaveChangesAsync();
+    }
+
     public async Task MarkAllAsReadAsync(Guid userId)
     {
         var unread = await _context.Set<Notification>()
