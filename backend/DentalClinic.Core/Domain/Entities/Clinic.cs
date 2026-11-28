@@ -28,6 +28,11 @@ public sealed class Clinic : Entity
     public Address Address { get; private set; } = null!;
 
     /// <summary>
+    /// Localização física da clínica (bloco/sala).
+    /// </summary>
+    public string Location { get; private set; } = string.Empty;
+
+    /// <summary>
     /// Capacidade máxima de pacientes simultâneos.
     /// </summary>
     public int MaxCapacity { get; private set; }
@@ -56,9 +61,11 @@ public sealed class Clinic : Entity
     {
         Name = string.Empty;
         Description = string.Empty;
-        OpeningTime = string.Empty;
-        ClosingTime = string.Empty;
-        Address = Address.Create(".", ".", null, ".", ".", "SP", "00000-000");
+        Location = string.Empty;
+        OpeningTime = "08:00";
+        ClosingTime = "18:00";
+        MaxCapacity = 1;
+        Address = Address.Create(".", ".", null, ".", ".", "MA", "00000-000");
     }
 
     /// <summary>
@@ -86,12 +93,14 @@ public sealed class Clinic : Entity
         var safeDescription = string.IsNullOrWhiteSpace(description)
             ? $"Clínica {name.Trim()}"
             : description.Trim();
-        var city = string.IsNullOrWhiteSpace(location) ? "." : location.Trim();
+        var loc = location?.Trim() ?? string.Empty;
+        var city = string.IsNullOrWhiteSpace(loc) ? "." : loc;
 
         return new Clinic
         {
             Name = name.Trim(),
             Description = safeDescription,
+            Location = loc,
             Specialty = Specialty.IntegratedClinic,
             Address = Address.Create(".", ".", null, ".", city, "MA", "00000-000"),
             MaxCapacity = maxCapacity,
@@ -114,13 +123,14 @@ public sealed class Clinic : Entity
 
         Name = name.Trim();
         Description = string.IsNullOrWhiteSpace(description) ? $"Clínica {Name}" : description.Trim();
+        Location = location?.Trim() ?? string.Empty;
         MaxCapacity = maxCapacity;
         OpeningTime = opening;
         ClosingTime = closing;
         IsActive = isActive;
-        if (!string.IsNullOrWhiteSpace(location))
+        if (!string.IsNullOrWhiteSpace(Location))
         {
-            Address = Address.Create(".", ".", null, ".", location.Trim(), "MA", "00000-000");
+            Address = Address.Create(".", ".", null, ".", Location, "MA", "00000-000");
         }
         UpdatedAt = DateTime.UtcNow;
     }

@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:promt/features/procedures/domain/entities/clinic.dart';
 import 'package:promt/core/providers/providers.dart';
-import 'package:uuid/uuid.dart';
 
 class ClinicsViewModel extends StateNotifier<AsyncValue<List<Clinic>>> {
   ClinicsViewModel(this.ref) : super(const AsyncValue.loading()) {
@@ -20,13 +19,7 @@ class ClinicsViewModel extends StateNotifier<AsyncValue<List<Clinic>>> {
 
   Future<void> saveClinic(Clinic clinic) async {
     final repository = ref.read(proceduresRepositoryProvider);
-    
-    // Gera ID se for uma nova clínica
-    final clinicToSave = clinic.id.isEmpty 
-        ? clinic.copyWith(id: const Uuid().v4()) 
-        : clinic;
-
-    await repository.saveClinic(clinicToSave);
+    await repository.saveClinic(clinic);
     await refresh();
   }
 
@@ -45,7 +38,7 @@ class ClinicsViewModel extends StateNotifier<AsyncValue<List<Clinic>>> {
     int slotDuration = 60,
   }) async {
     final clinic = Clinic(
-      id: const Uuid().v4(),
+      id: '',
       name: name,
       description: description ?? '',
       location: location ?? '',

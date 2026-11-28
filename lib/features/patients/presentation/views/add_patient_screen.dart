@@ -47,7 +47,12 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
       _phoneController.text = p.phone ?? '';
       _selectedBirthDate = p.birthDate;
       _birthDateController.text = DateFormat('dd/MM/yyyy').format(p.birthDate);
-      _selectedGender = p.gender == 'Feminino' ? 'F' : 'M';
+      final normalizedGender = (p.gender ?? '').trim().toLowerCase();
+      _selectedGender = (normalizedGender == 'f' ||
+              normalizedGender == 'feminino' ||
+              normalizedGender == 'fem')
+          ? 'F'
+          : 'M';
 
       if (p.address != null) {
         _streetController.text = p.address!.street;

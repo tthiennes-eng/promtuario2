@@ -20,15 +20,17 @@ public class ClinicConfiguration : IEntityTypeConfiguration<Clinic>
             .HasColumnName("especialidade")
             .HasConversion<int>();
 
+        builder.Property(c => c.Location).HasColumnName("localizacao").HasMaxLength(255).HasDefaultValue("");
+        builder.Property(c => c.MaxCapacity).HasColumnName("capacidade").HasDefaultValue(1);
+        builder.Property(c => c.OpeningTime).HasColumnName("horario_abertura").HasMaxLength(10).HasDefaultValue("08:00");
+        builder.Property(c => c.ClosingTime).HasColumnName("horario_fechamento").HasMaxLength(10).HasDefaultValue("18:00");
+
         builder.Property(c => c.IsActive).HasColumnName("ativo").HasDefaultValue(true);
         builder.Property(c => c.CreatedAt).HasColumnName("criado_em");
         builder.Property(c => c.UpdatedAt).HasColumnName("atualizado_em");
 
-        // Ignora propriedades que não estão no SQL original
+        // Ignora propriedades de Value Object / vínculo não presentes na tabela clinicas
         builder.Ignore(c => c.Address);
-        builder.Ignore(c => c.OpeningTime);
-        builder.Ignore(c => c.ClosingTime);
-        builder.Ignore(c => c.MaxCapacity);
         builder.Ignore(c => c.CoordinatorUserId);
     }
 }

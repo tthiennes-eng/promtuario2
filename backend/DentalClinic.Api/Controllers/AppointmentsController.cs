@@ -134,7 +134,7 @@ public class AppointmentsController : ControllerBase
 
         var effectiveClinicId = clinic.Id;
         var occupied = await _appointmentRepository.GetByRangeAsync(startTime, endTime, effectiveClinicId);
-        if (occupied.Any(a => a.StartTime < endTime && a.EndTime > startTime))
+        if (occupied.Any(a => IsBlockingStatus(a.Status) && a.StartTime < endTime && a.EndTime > startTime))
             return Conflict("Já existe um agendamento nesse horário para esta clínica.");
 
         var doctorId = request.DoctorId ?? request.ProfessorId ?? request.StudentId ?? Guid.Empty;
@@ -308,6 +308,11 @@ public class AppointmentsController : ControllerBase
         return NoContent();
     }
 
+    private static bool IsBlockingStatus(AppointmentStatus status) =>
+        status != AppointmentStatus.Cancelled &&
+        status != AppointmentStatus.NoShow &&
+        status != AppointmentStatus.Missed;
+
     /// <summary>
     /// Reagenda uma consulta.
     /// </summary>
@@ -328,7 +333,7 @@ public class AppointmentsController : ControllerBase
             return BadRequest("O horário de término deve ser posterior ao início.");
 
         var occupied = await _appointmentRepository.GetByRangeAsync(startTime, endTime, appointment.ClinicId);
-        if (occupied.Any(a => a.Id != id && a.StartTime < endTime && a.EndTime > startTime))
+        if (occupied.Any(a => a.Id != id && IsBlockingStatus(a.Status) && a.StartTime < endTime && a.EndTime > startTime))
             return Conflict("Já existe um agendamento nesse horário para esta clínica.");
 
         appointment.Reschedule(startTime, endTime);

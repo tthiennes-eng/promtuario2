@@ -161,6 +161,11 @@ await RunTest("AppointmentsController.Reschedule rejects conflicting time slot w
     var conflict = await controller.Reschedule(a2.Id, new RescheduleRequest(t1, t1.AddHours(1)));
     Assert(conflict is ConflictObjectResult, $"Expected 409 Conflict, got {conflict.GetType().Name}");
 
+    // Se a1 tiver status Falta (NoShow), o horário t1 deve ficar liberado para reagendamento
+    a1.UpdateStatus(AppointmentStatus.NoShow);
+    var freedSlot = await controller.Reschedule(a2.Id, new RescheduleRequest(t1, t1.AddHours(1)));
+    Assert(freedSlot is NoContentResult, $"Expected 204 NoContent when conflicting slot is NoShow, got {freedSlot.GetType().Name}");
+
     var freeSlot = t2.AddHours(2);
     var ok = await controller.Reschedule(a2.Id, new RescheduleRequest(freeSlot, freeSlot.AddHours(1)));
     Assert(ok is NoContentResult, $"Expected 204 NoContent for free slot, got {ok.GetType().Name}");

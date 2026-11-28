@@ -29,7 +29,7 @@ public class AppointmentRepository : IAppointmentRepository
         var query = _context.Appointments
             .Include(a => a.Patient)
             .Include(a => a.Doctor)
-            .Where(a => a.StartTime >= start && a.StartTime <= end);
+            .Where(a => a.StartTime < end && a.EndTime > start);
 
         if (clinicId.HasValue)
         {

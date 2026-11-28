@@ -186,6 +186,12 @@ public static class DatabaseBootstrap
             ALTER TABLE IF EXISTS public.evolucoes
                 ADD COLUMN IF NOT EXISTS assinado_em timestamp with time zone NULL;
 
+            ALTER TABLE IF EXISTS public.clinicas
+                ADD COLUMN IF NOT EXISTS localizacao character varying(255) NOT NULL DEFAULT '',
+                ADD COLUMN IF NOT EXISTS capacidade integer NOT NULL DEFAULT 1,
+                ADD COLUMN IF NOT EXISTS horario_abertura character varying(10) NOT NULL DEFAULT '08:00',
+                ADD COLUMN IF NOT EXISTS horario_fechamento character varying(10) NOT NULL DEFAULT '18:00';
+
             -- Se a FK legada evolucoes_prontuario_id_fkey apontar para prontuarios em vez de pacientes, remove para permitir gravação direta por paciente
             DO $$
             BEGIN
