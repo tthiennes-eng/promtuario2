@@ -182,6 +182,19 @@ class PatientRepository implements IPatientRepository {
   }
 
   entity.Patient _mapJsonToEntity(Map<String, dynamic> json) {
+    final rawAddr = json['address'] ?? json['Address'];
+    entity.PatientAddress? address;
+    if (rawAddr is Map) {
+      final parsed = entity.PatientAddress.fromJson(Map<String, dynamic>.from(rawAddr));
+      if (parsed.street.isNotEmpty ||
+          parsed.number.isNotEmpty ||
+          parsed.neighborhood.isNotEmpty ||
+          parsed.city.isNotEmpty ||
+          parsed.zipCode.isNotEmpty) {
+        address = parsed;
+      }
+    }
+
     return entity.Patient(
       id: json['id']?.toString() ?? json['Id']?.toString() ?? '',
       fullName: json['fullName'] ?? json['FullName'] ?? 'Sem Nome',
@@ -192,12 +205,19 @@ class PatientRepository implements IPatientRepository {
       email: json['email'] ?? json['Email'],
       phone: json['phone'] ?? json['Phone'],
       gender: json['gender'] ?? json['Gender'],
+      address: address,
       lgpdConsent: json['lgpdConsent'] ?? json['LgpdConsent'] ?? false,
       createdAt: _safeParseDate(json['createdAt'] ?? json['CreatedAt']),
     );
   }
 
   entity.Patient _mapSchemaToEntity(drift_db.PatientLocalData row) {
+    final hasAddress = (row.street?.isNotEmpty ?? false) ||
+        (row.number?.isNotEmpty ?? false) ||
+        (row.neighborhood?.isNotEmpty ?? false) ||
+        (row.city?.isNotEmpty ?? false) ||
+        (row.zipCode?.isNotEmpty ?? false);
+
     return entity.Patient(
       id: row.id,
       fullName: row.fullName,
@@ -208,6 +228,16 @@ class PatientRepository implements IPatientRepository {
       email: row.email,
       phone: row.phone,
       gender: row.gender,
+      address: hasAddress
+          ? entity.PatientAddress(
+              street: row.street ?? '',
+              number: row.number ?? '',
+              neighborhood: row.neighborhood ?? '',
+              city: row.city ?? '',
+              state: row.state ?? '',
+              zipCode: row.zipCode ?? '',
+            )
+          : null,
       lgpdConsent: row.lgpdConsent,
       isSynced: row.isSynced,
       createdAt: row.createdAt,
@@ -266,6 +296,12 @@ class PatientRepository implements IPatientRepository {
             email: Value(patient.email),
             phone: Value(patient.phone),
             gender: Value(patient.gender),
+            street: Value(patient.address?.street),
+            number: Value(patient.address?.number),
+            neighborhood: Value(patient.address?.neighborhood),
+            city: Value(patient.address?.city),
+            state: Value(patient.address?.state),
+            zipCode: Value(patient.address?.zipCode),
             lgpdConsent: Value(patient.lgpdConsent),
             isSynced: Value(isSynced),
           ),

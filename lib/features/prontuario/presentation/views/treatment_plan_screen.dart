@@ -176,7 +176,10 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
                           );
                         }
                       } finally {
-                        setDialogState(() => _isSaving = false);
+                        _isSaving = false;
+                        if (dialogContext.mounted) {
+                          setDialogState(() {});
+                        }
                       }
                     },
               child: _isSaving
@@ -191,6 +194,7 @@ class _TreatmentPlanScreenState extends ConsumerState<TreatmentPlanScreen> {
         ),
       ),
     );
+    obsController.dispose();
   }
 
   Future<void> _changeItemStatus(

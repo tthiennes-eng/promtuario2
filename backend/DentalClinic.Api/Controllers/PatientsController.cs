@@ -57,19 +57,26 @@ public class PatientsController : ControllerBase
         return Ok(patient);
     }
 
+    private static DateTime NormalizeUtc(DateTime value) =>
+        value.Kind == DateTimeKind.Utc
+            ? value
+            : value.Kind == DateTimeKind.Local
+                ? value.ToUniversalTime()
+                : DateTime.SpecifyKind(value, DateTimeKind.Utc);
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] Patient patient)
     {
         try
         {
+            patient.BirthDate = NormalizeUtc(patient.BirthDate);
+            patient.CreatedAt = patient.CreatedAt == default ? DateTime.UtcNow : NormalizeUtc(patient.CreatedAt);
+
             await _patientRepository.AddAsync(patient);
 
-            // Notifica em tempo real todos os terminais conectados na rede
-            // local para que a lista de pacientes seja atualizada sem
-            // depender de o usuário reabrir a tela manualmente.
             try
             {
-                await _hubContext.Clients.All.SendAsync("PatientCreated", patient);
+                await _hubContext.Clients.All.SendAsync("PatientCreated", new { id = patient.Id });
             }
             catch (Exception hubEx)
             {
@@ -106,6 +113,8 @@ public class PatientsController : ControllerBase
         var existing = await _patientRepository.GetByIdAsync(id);
         if (existing == null) return NotFound();
 
+        var normalizedBirthDate = NormalizeUtc(patient.BirthDate);
+
         // Comparar campos e gerar log de alterações se houver mudanças
         var changes = new Dictionary<string, object>();
         
@@ -127,8 +136,8 @@ public class PatientsController : ControllerBase
         if (existing.Phone != patient.Phone)
             changes["Phone"] = new { old = existing.Phone, @new = patient.Phone };
         
-        if (existing.BirthDate != patient.BirthDate)
-            changes["BirthDate"] = new { old = existing.BirthDate, @new = patient.BirthDate };
+        if (existing.BirthDate != normalizedBirthDate)
+            changes["BirthDate"] = new { old = existing.BirthDate, @new = normalizedBirthDate };
         
         if (existing.Gender != patient.Gender)
             changes["Gender"] = new { old = existing.Gender, @new = patient.Gender };
@@ -152,7 +161,7 @@ public class PatientsController : ControllerBase
         existing.SusNumber = patient.SusNumber;
         existing.Email = patient.Email;
         existing.Phone = patient.Phone;
-        existing.BirthDate = patient.BirthDate;
+        existing.BirthDate = normalizedBirthDate;
         existing.Gender = patient.Gender;
         if (patient.Address != null)
         {
@@ -162,15 +171,28 @@ public class PatientsController : ControllerBase
         existing.IsActive = patient.IsActive;
         existing.LastModifiedAt = DateTime.UtcNow;
 
-        // Persistir alterações do paciente
-        await _patientRepository.UpdateAsync(existing);
+        try
+        {
+            await _patientRepository.UpdateAsync(existing);
+        }
+        catch (Exception ex)
+        {
+            var root = ex;
+            while (root.InnerException != null) root = root.InnerException;
+            if (root.Message.Contains("23505", StringComparison.OrdinalIgnoreCase) &&
+                root.Message.Contains("cpf", StringComparison.OrdinalIgnoreCase))
+            {
+                return Conflict(new { message = "Já existe outro paciente cadastrado com este CPF." });
+            }
+            _logger.LogError(ex, "Erro ao atualizar paciente {PatientId}", id);
+            return BadRequest(new { message = root.Message });
+        }
 
         // Se houver mudanças, criar log de alteração
         if (changes.Count > 0)
         {
             try
             {
-                // Resolver usuário logado conforme padrão do AuditFilter
                 var userIdClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var userNameClaim = HttpContext.User.FindFirst(ClaimTypes.Name)?.Value 
                     ?? HttpContext.User.Identity?.Name 
@@ -180,7 +202,7 @@ public class PatientsController : ControllerBase
                 {
                     var changeLog = new PatientChangeLog
                     {
-                        PatientId = patient.Id,
+                        PatientId = existing.Id,
                         UserId = userId,
                         UserName = userNameClaim,
                         Timestamp = DateTime.UtcNow,
@@ -193,13 +215,18 @@ public class PatientsController : ControllerBase
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Falha ao criar log de alteração do paciente {PatientId}", patient.Id);
-                // Não falha a operação principal se o log falhar
+                _logger.LogWarning(ex, "Falha ao criar log de alteração do paciente {PatientId}", existing.Id);
             }
         }
 
-        // Notifica os demais terminais para que sincronizem o cache local.
-        await _hubContext.Clients.All.SendAsync("PatientUpdated", patient);
+        try
+        {
+            await _hubContext.Clients.All.SendAsync("PatientUpdated", new { id = existing.Id });
+        }
+        catch (Exception hubEx)
+        {
+            _logger.LogWarning(hubEx, "Paciente {PatientId} atualizado, mas falhou a notificação SignalR.", existing.Id);
+        }
 
         return NoContent();
     }
@@ -269,7 +296,8 @@ public class PatientsController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50)
     {
-        var patients = await _patientRepository.GetModifiedSinceAsync(since, page, pageSize);
+        var sinceUtc = NormalizeUtc(since);
+        var patients = await _patientRepository.GetModifiedSinceAsync(sinceUtc, page, pageSize);
         
         return Ok(new
         {

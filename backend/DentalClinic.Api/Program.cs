@@ -106,6 +106,19 @@ builder.Services.AddAuthentication(x =>
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
+    x.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/clinic"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
 });
 
 // 4. CORS configurável (restritivo quando Cors:AllowedOrigins estiver definido)

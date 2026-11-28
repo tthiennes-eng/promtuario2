@@ -38,7 +38,22 @@ public class TreatmentPlanRepository : ITreatmentPlanRepository
 
     public async Task UpdateAsync(TreatmentPlan plan)
     {
-        _context.Set<TreatmentPlan>().Update(plan);
+        var planEntry = _context.Entry(plan);
+        if (planEntry.State == EntityState.Detached)
+        {
+            _context.Set<TreatmentPlan>().Attach(plan);
+            planEntry.State = EntityState.Modified;
+        }
+
+        foreach (var item in plan.Items)
+        {
+            var itemEntry = _context.Entry(item);
+            if (itemEntry.State == EntityState.Detached)
+            {
+                itemEntry.State = EntityState.Added;
+            }
+        }
+
         await _context.SaveChangesAsync();
     }
 }

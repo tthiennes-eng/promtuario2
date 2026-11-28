@@ -52,10 +52,16 @@ class WaitListEntry {
       return '';
     }
 
+    String patientName = getString(['patientName', 'PatientName', 'fullName', 'FullName']);
+    if (patientName.isEmpty && json['patient'] is Map) {
+      final p = Map<String, dynamic>.from(json['patient'] as Map);
+      patientName = (p['fullName'] ?? p['FullName'] ?? p['name'] ?? '').toString();
+    }
+
     return WaitListEntry(
       id: (json['id'] ?? json['Id'] ?? '').toString(),
       patientId: getString(['patientId', 'PatientId', 'patient_id']),
-      patientName: getString(['patientName', 'PatientName', 'fullName', 'FullName']),
+      patientName: patientName.isNotEmpty ? patientName : 'Paciente',
       clinicId: getString(['clinicId', 'ClinicId', 'clinic_id']),
       priority: getString(['priority', 'Priority']),
       specialty: getString(['specialty', 'Specialty']),

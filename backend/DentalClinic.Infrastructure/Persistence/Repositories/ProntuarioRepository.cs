@@ -141,7 +141,7 @@ public class ProntuarioRepository : IProntuarioRepository
         if (existing == null)
             _context.Anamneses.Add(anamnese);
         else
-            _context.Entry(existing).CurrentValues.SetValues(anamnese);
+            existing.Update(anamnese.RespostasJson);
 
         await _context.SaveChangesAsync();
     }

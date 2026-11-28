@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace DentalClinic.Api.Hubs;
@@ -6,6 +7,7 @@ namespace DentalClinic.Api.Hubs;
 /// Hub para comunicação em tempo real entre o servidor e os aplicativos Flutter.
 /// Gerencia atualizações de Odontograma, Notificações e Agenda.
 /// </summary>
+[Authorize]
 public class ClinicHub : Hub
 {
     /// <summary>

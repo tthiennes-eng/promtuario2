@@ -3,45 +3,54 @@ import 'package:logging/logging.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../security/storage_service.dart';
-import 'api_client.dart'; // Import necessário para acessar o serverIpProvider
+import 'api_client.dart';
 
 /// Serviço responsável pela comunicação em tempo real via SignalR.
-/// Refatorado para suportar IPs dinâmicos e garantir sincronização em rede local.
+/// Usa leitura dinâmica do JWT no reconnect e registra listeners mesmo antes de init().
 class RealtimeService {
   final StorageService _storage;
-  final String _serverIp; // IP do servidor centralizado
+  final String _serverIp;
   HubConnection? _hubConnection;
+  final Map<String, List<void Function(List<Object?>?)>> _listeners = {};
   final _logger = Logger('RealtimeService');
 
   RealtimeService(this._storage, this._serverIp);
 
-  /// Inicializa a conexão com o Hub do SignalR.
+  /// Inicializa a conexão autenticada com o Hub do SignalR.
   Future<void> init() async {
-    // Evita múltiplas conexões ativas
-    if (_hubConnection?.state == HubConnectionState.Connected) return;
+    if (_hubConnection?.state == HubConnectionState.Connected ||
+        _hubConnection?.state == HubConnectionState.Connecting) {
+      return;
+    }
 
-    final token = await _storage.getAccessToken();
-    if (token == null) {
+    final initialToken = await _storage.getAccessToken();
+    if (initialToken == null || initialToken.isEmpty) {
       _logger.warning('Tentativa de conexão SignalR sem token de acesso.');
       return;
     }
 
     final httpOptions = HttpConnectionOptions(
-      accessTokenFactory: () async => token,
+      // Busca sempre o token mais recente (evita reconexão com JWT expirado após refresh)
+      accessTokenFactory: () async => (await _storage.getAccessToken()) ?? '',
       logMessageContent: kDebugMode,
     );
 
-    // CORREÇÃO: Lógica de URL dinâmica replicando a segurança do ApiClient.
-    // Garante que terminais Windows e dispositivos Android (emulador ou físico) 
-    // apontem corretamente para o servidor central na rede.
     final url = '${ApiClient.resolveOrigin(_serverIp)}/hubs/clinic';
-
     _logger.info('Iniciando conexão SignalR em: $url');
 
-    _hubConnection = HubConnectionBuilder()
+    final connection = HubConnectionBuilder()
         .withUrl(url, options: httpOptions)
         .withAutomaticReconnect()
         .build();
+
+    // Aplica todos os listeners que já foram registrados antes da inicialização do Hub
+    _listeners.forEach((methodName, callbacks) {
+      for (final cb in callbacks) {
+        connection.on(methodName, cb);
+      }
+    });
+
+    _hubConnection = connection;
 
     try {
       await _hubConnection?.start();
@@ -51,8 +60,12 @@ class RealtimeService {
     }
   }
 
-  /// Registra um ouvinte para eventos enviados pelo servidor.
+  /// Registra um ouvinte para eventos enviados pelo servidor (funciona antes ou depois de init()).
   void on(String methodName, void Function(List<Object?>?) callback) {
+    final list = _listeners.putIfAbsent(methodName, () => []);
+    if (!list.contains(callback)) {
+      list.add(callback);
+    }
     _hubConnection?.on(methodName, callback);
   }
 
@@ -64,11 +77,8 @@ class RealtimeService {
   }
 }
 
-/// Provider que gerencia a instância única do RealtimeService.
-/// Observa o serverIpProvider para reagir a mudanças de configuração sem reiniciar o app.
 final realtimeServiceProvider = Provider((ref) {
   final storage = ref.watch(storageServiceProvider);
-  final serverIp = ref.watch(serverIpProvider); // Dependência do IP configurado
-  
+  final serverIp = ref.watch(serverIpProvider);
   return RealtimeService(storage, serverIp);
 });

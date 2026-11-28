@@ -163,13 +163,18 @@ class _WaitListCard extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: _getPriorityColor(entry.priority).withOpacity(0.1),
+          backgroundColor: _getPriorityColor(entry.priority).withValues(alpha: 0.1),
           child: Text(
-            entry.patientName.substring(0, 1).toUpperCase(),
+            entry.patientName.trim().isNotEmpty
+                ? entry.patientName.trim().substring(0, 1).toUpperCase()
+                : '?',
             style: TextStyle(color: _getPriorityColor(entry.priority), fontWeight: FontWeight.bold),
           ),
         ),
-        title: Text(entry.patientName, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          entry.patientName.trim().isNotEmpty ? entry.patientName : 'Paciente',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

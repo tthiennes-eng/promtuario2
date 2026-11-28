@@ -73,14 +73,37 @@ class _PrescriptionScreenState extends ConsumerState<PrescriptionScreen> {
     super.dispose();
   }
 
-  String _extractAllergy(Map<String, dynamic>? anamnese) {
+  String _extractAllergy(Map<String, dynamic>? anamnese, [Map<String, dynamic>? pedData]) {
+    final parts = <String>[];
     final sistemico = anamnese?['sistemico'];
-    if (sistemico is! Map) return '';
-    final alergia = sistemico['alergia'];
-    if (alergia is Map && alergia['sim'] == true) {
-      return (alergia['qual'] ?? '').toString().trim();
+    if (sistemico is Map) {
+      final alergia = sistemico['alergia'];
+      if (alergia is Map && (alergia['sim'] == true || alergia['sim'] == 'true')) {
+        final qual = (alergia['qual'] ?? '').toString().trim();
+        if (qual.isNotEmpty) parts.add(qual);
+      }
     }
-    return '';
+
+    if (pedData != null) {
+      final fields = pedData['fields'] is Map
+          ? Map<String, dynamic>.from(pedData['fields'] as Map)
+          : pedData;
+      String pedStr(String key) => fields[key]?.toString().trim() ?? '';
+
+      if (pedStr('t4_hb_q17_alergia_anestesico') == '(1) Sim') {
+        parts.add('Anestésico (Odontopediatria)');
+      }
+      if (pedStr('t5_hma_alergia') == '(1) Sim') {
+        final qual = pedStr('t5_hma_alergia_qual');
+        final tipo = pedStr('t5_hmat_tipo_alergia');
+        final merged = [qual, tipo].where((s) => s.isNotEmpty).join(' / ');
+        if (merged.isNotEmpty) parts.add(merged);
+      } else if (pedStr('t5_hmat_tipo_alergia').isNotEmpty) {
+        parts.add(pedStr('t5_hmat_tipo_alergia'));
+      }
+    }
+
+    return parts.join(', ');
   }
 
   bool _matchesAllergy(String medicine, String allergyText) {
@@ -230,7 +253,8 @@ class _PrescriptionScreenState extends ConsumerState<PrescriptionScreen> {
   @override
   Widget build(BuildContext context) {
     final anamneseData = ref.watch(endodontiaViewModelProvider('anamnese_${widget.patientId}')).valueOrNull;
-    final allergyText = _extractAllergy(anamneseData);
+    final pedData = ref.watch(endodontiaViewModelProvider('odontopediatria_${widget.patientId}')).valueOrNull;
+    final allergyText = _extractAllergy(anamneseData, pedData);
     final clinics = ref.watch(clinicsViewModelProvider).valueOrNull ?? const [];
     final docsAsync = ref.watch(documentsViewModelProvider(widget.patientId));
 

@@ -25,7 +25,17 @@ public class WaitListController : ControllerBase
     public async Task<IActionResult> GetByClinic(Guid clinicId)
     {
         var entries = await _repository.GetActiveByClinicAsync(clinicId);
-        return Ok(entries);
+        return Ok(entries.Select(e => new
+        {
+            id = e.Id,
+            patientId = e.PatientId,
+            patientName = e.Patient?.FullName ?? "Paciente",
+            clinicId = e.ClinicId,
+            specialty = e.Specialty.ToString(),
+            priority = e.Priority,
+            observation = e.Observation,
+            createdAt = e.CreatedAt
+        }));
     }
 
     [HttpPost]
